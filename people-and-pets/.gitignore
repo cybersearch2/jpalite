@@ -1,0 +1,8 @@
+.classpath
+/.apt_generated/
+/bin/
+/target/
+/libs/
+/test-libs/
+/pom.xml.*
+/.apt_generated_tests/

@@ -1,0 +1,9 @@
+.classpath
+/.apt_generated/
+/bin/
+/target/
+/libs/
+/test-libs/
+/resources/db/
+/pom.xml.releaseBackup
+/.apt_generated_tests/
