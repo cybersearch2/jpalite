@@ -42,16 +42,16 @@ import au.com.cybersearch2.classydb.OpenHelperCallbacks;
  */
 public class PersistenceFactory
 {
-
+    /** Persist double values as bit-encode long values */
     public static boolean useDoubleLongBits = false;
 
-
+    /** Native support. */
     protected DatabaseSupport databaseSupport;
-
+    /** Maps PersistenceAdmin implementation to persistence unit name */
     protected Map<String, PersistenceAdminImpl> persistenceImplMap;
-
+    /** Maps DatabaseAdmin implementation to persistence unit name */
     protected Map<String, DatabaseAdminImpl> databaseAdminImplMap;
-
+    /** Interface for access to persistence.xml */
     private final ResourceEnvironment resourceEnvironment;
     
     /**
@@ -64,8 +64,8 @@ public class PersistenceFactory
     {
         this.databaseSupport = databaseSupport;
         this.resourceEnvironment = resourceEnvironment;
-        persistenceImplMap = new HashMap<String, PersistenceAdminImpl>();
-        databaseAdminImplMap = new HashMap<String, DatabaseAdminImpl>();
+        persistenceImplMap = new HashMap<>();
+        databaseAdminImplMap = new HashMap<>();
         if (useDoubleLongBits)
         	setUseDoubleLongBits();
         initializePersistenceContext();

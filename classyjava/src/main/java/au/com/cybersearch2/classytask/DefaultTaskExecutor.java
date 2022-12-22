@@ -25,9 +25,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class DefaultTaskExecutor implements TaskExecutor
 {
-
+	/** Number of threads to keep in the pool, even if they are idle */
     private static final int CORE_POOL_SIZE = 1;
-
+    /** Maximum number of threads to allow in the pool */
     private static final int MAXIMUM_POOL_SIZE = 10;
     /** Maximum time that excess idle threads
         will wait for new tasks before terminating */

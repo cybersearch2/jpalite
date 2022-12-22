@@ -39,7 +39,7 @@ import com.j256.ormlite.support.DatabaseConnection;
  * EntityManagerImpl
  * Implementation of EntityManager interface
  * Transaction scoped. Entity objects are managed only while a transaction is active.
- * Excect for when the EntityManger has been closed, a new transaction will begin whenever an object needs to be managed and the transaction is not active. 
+ * Except for when the EntityManger has been closed, a new transaction will begin whenever an object needs to be managed and the transaction is not active. 
  * @author Andrew Bowley
  * 01/05/2014
  */
@@ -55,19 +55,19 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
         }        
     }
 
-
+    /** Flag set when close() is called */
     protected volatile boolean isOpen;
- 
+    /** Enclosing transaction object */ 
     protected EntityTransaction entityTransaction;
-
+    /** Connection Source to use for all database connections */
     protected final ConnectionSource connectionSource;
-
+    /** PersistenceUnitAdmin Unit configuration */
     protected final PersistenceConfig persistenceConfig;
-
+    /** Callback to complete transaction management prior to commit */
     protected final OnTransactionPreCommitCallback onTransactionPreCommitCallback;
-
+    /** Flag for user transaction mode. If true, getTransaction() returns rollbackonly transaction otherwise it returns the actual entityTransaction */
     protected boolean isUserTransaction; 
- 
+    /** Delegate management of entity objects */ 
     protected ObjectMonitor objectMonitor;
  
     /**
@@ -105,17 +105,17 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
      * @throws IllegalStateException if this EntityManager has been closed.
      */
     @Override
-    public void persist(Object entity) 
+    public void persist(OrmEntity entity) 
     {
         if (entity == null)
             throw new IllegalArgumentException("Parameter \"entity\" is null");
         checkEntityManagerClosed("persist()");
-        OrmDaoHelper<?,?> ormDaoHelper = getOrmDaoHelperForClass(entity.getClass());
-        Object primaryKey = ormDaoHelper.extractId(entity);
+        OrmDaoHelper<?> ormDaoHelper = getOrmDaoHelperForClass(entity.getClass());
+        int primaryKey = ormDaoHelper.extractId(entity);
         Object alreadyManaged = objectMonitor.startManagingEntity(entity, primaryKey, PersistOp.persist);
         if ((alreadyManaged != null) || 
-            ((primaryKey != null) && ormDaoHelper.entityExists(entity)))
-            throw new EntityExistsException("Entity of class " + entity.getClass() + ", primary key " + primaryKey.toString() + " already exists");
+            ((primaryKey > 0) && ormDaoHelper.entityExists(entity)))
+            throw new EntityExistsException("Entity of class " + entity.getClass() + ", primary key " + primaryKey + " already exists");
         if (!entityTransaction.isActive())
             entityTransaction.begin(); // Transaction commit/rollback triggers refresh
         if (ormDaoHelper.create(entity) == 0)
@@ -138,11 +138,11 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
      * @throws IllegalStateException if this EntityManager has been closed.
      */
     @Override
-    public <T> T merge(T entity) 
+    public <T extends OrmEntity> T merge(T entity) 
     {
         checkEntityManagerClosed("merge()");
-        OrmDaoHelper<?,?> ormDaoHelper = getOrmDaoHelperForClass(entity.getClass());
-        Object primaryKey = ormDaoHelper.extractId(entity);
+        OrmDaoHelper<?> ormDaoHelper = getOrmDaoHelperForClass(entity.getClass());
+        int primaryKey = ormDaoHelper.extractId(entity);
         T managed = objectMonitor.startManagingEntity(entity, primaryKey, PersistOp.merge);
         if (!entityTransaction.isActive())
             entityTransaction.begin(); // Transaction commit triggers update and refresh
@@ -157,15 +157,15 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
      * @throws IllegalStateException if this EntityManager has been closed.
      */
     @Override
-    public void refresh(Object entity) 
+    public void refresh(OrmEntity entity) 
     {
         checkEntityManagerClosed("refresh()");
-        OrmDaoHelper<?,?> ormDaoHelper = getOrmDaoHelperForClass(entity.getClass());
-        Object primaryKey = ormDaoHelper.extractId(entity);
+        OrmDaoHelper<? extends OrmEntity> ormDaoHelper = getOrmDaoHelperForClass(entity.getClass());
+        int primaryKey = ormDaoHelper.extractId(entity);
         // For refresh, the returned object is the entity, not the former managed object
         Object managed = objectMonitor.startManagingEntity(entity, primaryKey, PersistOp.refresh);
         if (managed == null)
-            throw new IllegalArgumentException("Entity of class " + entity.getClass() + ", primary key " + primaryKey.toString() + " is not managed");
+            throw new IllegalArgumentException("Entity of class " + entity.getClass() + ", primary key " + primaryKey + " is not managed");
         if (!entityTransaction.isActive())
             entityTransaction.begin(); // Transaction commit/rollback triggers refresh
         if (ormDaoHelper.refresh(managed) == 0)
@@ -180,11 +180,11 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
      * @throws IllegalStateException if this EntityManager has been closed.
      */
     @Override
-    public void remove(Object entity) 
+    public void remove(OrmEntity entity) 
     {
         checkEntityManagerClosed("remove()");
-        OrmDaoHelper<?,?> ormDaoHelper = getOrmDaoHelperForClass(entity.getClass());
-        Object primaryKey = ormDaoHelper.extractId(entity);
+        OrmDaoHelper<?> ormDaoHelper = getOrmDaoHelperForClass(entity.getClass());
+        int primaryKey = ormDaoHelper.extractId(entity);
         objectMonitor.markForRemoval(entity.getClass(), primaryKey);
         if (!entityTransaction.isActive())
             entityTransaction.begin();
@@ -205,12 +205,11 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
      *    entity's primary key
      */
     @Override
-    public <T> T find(Class<T> entityClass, Object primaryKey) 
+    public <T extends OrmEntity> T find(Class<T> entityClass, int primaryKey) 
     {
         checkEntityManagerClosed("find()");
-        @SuppressWarnings("unchecked")
-        OrmDaoHelper<T,?> ormDaoHelper = (OrmDaoHelper<T, ?>) getOrmDaoHelperForClass(entityClass);
-        return ormDaoHelper.queryForId(primaryKey);
+        OrmDaoHelper<T> ormDaoHelper = getOrmDaoHelperForClass(entityClass);
+        return ormDaoHelper.queryForId((Integer)primaryKey);
     }
 
     /**
@@ -235,12 +234,12 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
      * @throws IllegalStateException if this EntityManager has been closed.
      */
     @Override
-    public <T> T getReference(Class<T> entityClass, Object primaryKey) 
+    public <T extends OrmEntity> T getReference(Class<T> entityClass, int primaryKey) 
     {
         checkEntityManagerClosed("getReference()");
         T entity = find(entityClass, primaryKey);
         if (entity == null)
-            throw new EntityNotFoundException("Not found: class " + entityClass.getName() + ", primary key " + primaryKey.toString());
+            throw new EntityNotFoundException("Not found: class " + entityClass.getName() + ", primary key " + primaryKey);
         return entity;
     }
 
@@ -324,14 +323,14 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
      * @throws IllegalStateException if this EntityManager has been closed.
      */
     @Override
-    public boolean contains(Object entity) 
+    public boolean contains(OrmEntity entity) 
     {
         checkEntityManagerClosed("contains()");
-        OrmDaoHelper<?,?> ormDaoHelper = getOrmDaoHelperForClass(entity.getClass());
-        Object primaryKey = ormDaoHelper.extractId(entity);
+        OrmDaoHelper<?> ormDaoHelper = getOrmDaoHelperForClass(entity.getClass());
+        int primaryKey = ormDaoHelper.extractId(entity);
         Object alreadyManaged = objectMonitor.startManagingEntity(entity, primaryKey, PersistOp.contains);
         return (alreadyManaged != null) || 
-                ((primaryKey != null) && ormDaoHelper.entityExists(entity));
+                ((primaryKey > 0l) && ormDaoHelper.entityExists(entity));
     }
 
 
@@ -348,18 +347,22 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
     public Query createNamedQuery(String name) 
     {
         checkEntityManagerClosed("createNamedQuery()");
-        NamedDaoQuery namedDaoQuery = persistenceConfig.getNamedQueryMap().get(name);
-        if (namedDaoQuery == null)
-        {
-            NamedSqlQuery namedSqlQuery = persistenceConfig.getNativeQueryMap().get(name);
+        NamedDaoQuery<?> namedDaoQuery = persistenceConfig.getNamedQuery(name);
+        if (namedDaoQuery != null) {
+        	Class<? extends OrmEntity> clazz = namedDaoQuery.getEntityClass();
+            return namedDaoQuery.createQuery(daoInstance(clazz));
+        } else {
+            NamedSqlQuery namedSqlQuery = persistenceConfig.getNativeQuery(name);
             if (namedSqlQuery == null)
                 throw new IllegalArgumentException("Named query '" + name + "' not found");
             return namedSqlQuery.createQuery();
         }
-        PersistenceDao<?, ?> dao = getOrmDaoHelperFactoryForClass(namedDaoQuery.getEntityClass()).getDao(connectionSource);
-        return namedDaoQuery.createQuery(dao);
     }
 
+    private <T extends OrmEntity> PersistenceDao<T> daoInstance(Class<T> clazz ) {
+    	return getOrmDaoHelperFactoryForClass(clazz).getDao(connectionSource);
+    }
+    
     /**
      * NOT SUPPORTED
      * Indicate to the EntityManager that a JTA transaction is
@@ -442,7 +445,7 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
      * @return OrmDaoHelper
      * @throws IllegalStateException if class is unknown to the current PersistenceUnitAdmin Unit.
      */
-    private OrmDaoHelper<?,?> getOrmDaoHelperForClass(Class<?> clazz)
+    private <T extends OrmEntity> OrmDaoHelper<T> getOrmDaoHelperForClass(Class<T> clazz)
     {
         return getOrmDaoHelperFactoryForClass(clazz).getOrmDaoHelper(connectionSource);
     }
@@ -453,9 +456,9 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
      * @return OrmDaoHelper
      * @throws IllegalStateException if class is unknown to the current PersistenceUnitAdmin Unit.
      */
-    private OrmDaoHelperFactory<?,?> getOrmDaoHelperFactoryForClass(Class<?> clazz)
+    private <T extends OrmEntity> OrmDaoHelperFactory<T> getOrmDaoHelperFactoryForClass(Class<T> clazz)
     {
-        OrmDaoHelperFactory<?,?> ormDaoHelperFactory = persistenceConfig.getHelperFactoryMap().get(clazz.getName());
+        OrmDaoHelperFactory<T> ormDaoHelperFactory = persistenceConfig.getHelperFactory(clazz);
         if (ormDaoHelperFactory == null)
             throw new IllegalArgumentException("Class " + clazz.getName() + " not an entity in this persistence context");
         return ormDaoHelperFactory;
@@ -466,10 +469,10 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
      */
     private void updateAllManagedObjects()
     {
-        List<Object> updateList = objectMonitor.getObjectsToUpdate();
-        for (Object entity: updateList)
+        List<OrmEntity> updateList = objectMonitor.getObjectsToUpdate();
+        for (OrmEntity entity: updateList)
         {
-            OrmDaoHelper<?,?> ormDaoHelper = getOrmDaoHelperForClass(entity.getClass());
+            OrmDaoHelper<? extends OrmEntity> ormDaoHelper = getOrmDaoHelperForClass(entity.getClass());
             if (ormDaoHelper.update(entity) == 0)
                 throw new PersistenceException("update operation returned result count 0");
         }

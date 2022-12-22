@@ -15,6 +15,7 @@ package au.com.cybersearch2.classyjpa.query;
 
 import java.sql.SQLException;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
 
 /**
@@ -33,5 +34,5 @@ public interface DaoQueryFactory
      * @return DaoQuery
      * @throws SQLException if database operation fails
      */
-    <T> DaoQuery<T> generateQuery(PersistenceDao<T, ?> dao) throws SQLException;
+    <T extends OrmEntity> DaoQuery<T> generateQuery(PersistenceDao<T> dao) throws SQLException;
 }

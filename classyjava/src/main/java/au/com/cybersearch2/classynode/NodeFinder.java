@@ -55,12 +55,12 @@ public class NodeFinder implements PersistenceWork
         void onRollback(int nodeId, Throwable rollbackException);
     }
 
-
+    /** Callback to handle completion in caller's thread */
     protected Callback callback;
     
-
+    /** Primary key to search on */
     protected int nodeId;
-
+    /**  Node returned by successful search */
     protected Node node;
     
     /**
@@ -91,7 +91,7 @@ public class NodeFinder implements PersistenceWork
         {
             Object result = query.getSingleResult();
             Set<DataPair> dataSet = BeanUtil.getDataPairSet(result);
-            Map<String,Object> propertiesMap = new HashMap<String,Object>(dataSet.size());
+            Map<String,Object> propertiesMap = new HashMap<>(dataSet.size());
             for (DataPair dataPair: dataSet)
                 propertiesMap.put(dataPair.getKey(), dataPair.getValue());
             node.setProperties((propertiesMap));

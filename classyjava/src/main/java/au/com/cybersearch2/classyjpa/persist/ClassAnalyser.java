@@ -32,6 +32,7 @@ import au.com.cybersearch2.classylog.Log;
 import au.com.cybersearch2.classybean.BeanException;
 import au.com.cybersearch2.classybean.BeanUtil;
 import au.com.cybersearch2.classyjpa.entity.EntityClassLoader;
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 
 import com.j256.ormlite.db.DatabaseType;
 import com.j256.ormlite.field.DataPersisterManager;
@@ -59,7 +60,7 @@ public class ClassAnalyser
          * @param entityClass
          * @param primaryKeyClass
          */
-        <T,ID> void registerEntityClass(Class<T> entityClass, Class<ID> primaryKeyClass);
+        <T extends OrmEntity> void registerEntityClass(Class<T> entityClass);
     }
 
     /**
@@ -77,8 +78,8 @@ public class ClassAnalyser
         
         public ForeignFieldData()
         {
-            foreignFieldMap = new HashMap<FieldKey, DatabaseFieldConfig>();
-            foreignCollectionMap = new HashMap<FieldKey, DatabaseFieldConfig>();
+            foreignFieldMap = new HashMap<>();
+            foreignCollectionMap = new HashMap<>();
         }
     }
     
@@ -86,11 +87,11 @@ public class ClassAnalyser
     public static final String TAG = "ClassAnalyser";
     protected static Log log = JavaLogger.getLogger(TAG);
     
-
+    /** Definition of the per-database functionality needed to isolate the differences between the various databases */
     protected DatabaseType databaseType;
-
+    /** Maps entity class  to OrmDaoHelper<T,ID> object */
     protected ClassRegistry classRegistry;
-
+    /** Instantiates entity classes */
     protected EntityClassLoader entityClassLoader;
 
     /**
@@ -121,9 +122,10 @@ public class ClassAnalyser
      * @param managedClassNames List of class names representing all entities within a single PersistenceUnitAdmin Unit
      * @return List of DatabaseTableConfig
      */
-    protected List<DatabaseTableConfig<?>> getDatabaseTableConfigList(List<String> managedClassNames)
+    @SuppressWarnings("unchecked")
+	protected List<DatabaseTableConfig<?>> getDatabaseTableConfigList(List<String> managedClassNames)
     {
-        List<Class<?>> classList = new ArrayList<Class<?>>();
+        List<Class<? extends OrmEntity>> classList = new ArrayList<>();
         // Report list of failed classes only after consuming managedClassNames list
         List<String> failedList = null;
         // Record data during analysis to resolve foreign field references
@@ -134,11 +136,11 @@ public class ClassAnalyser
             boolean success = false;
             try
             {
-            	Class<?> clazz;
+            	Class<? extends OrmEntity> clazz;
             	if (entityClassLoader != null)
             		clazz = entityClassLoader.loadClass(className);
             	else
-            		clazz = Class.forName(className);
+            		clazz = (Class<? extends OrmEntity>) Class.forName(className);
                 classList.add(clazz);
                 success = true;
             }
@@ -149,23 +151,23 @@ public class ClassAnalyser
             if (!success)
             {
                 if (failedList == null)
-                    failedList = new ArrayList<String>();
+                    failedList = new ArrayList<>();
                 failedList.add(className);
             }
         }
         if (failedList != null)
             throw new PersistenceException("Failed to load following entity classes: " + failedList.toString());
         // Put database table configurations into a Map instead of a list to support set ForeignTableConfig below
-        Map<String, DatabaseTableConfig<?>> tableConfigMap = new HashMap<String, DatabaseTableConfig<?>>();
-        for(Class<?> clazz: classList)
+        Map<String, DatabaseTableConfig<? extends OrmEntity>> tableConfigMap = new HashMap<>();
+        for(Class<? extends OrmEntity> clazz: classList)
         {
-            DatabaseTableConfig<?> config = getTableConfiguration(clazz, foreignFieldData);
+            DatabaseTableConfig<? extends OrmEntity> config = getTableConfiguration(clazz, foreignFieldData);
             if (config != null)
                 tableConfigMap.put(clazz.getName(), config);
             else
             {
                 if (failedList == null)
-                    failedList = new ArrayList<String>();
+                    failedList = new ArrayList<>();
                 failedList.add(clazz.getName());
             }
         }
@@ -206,7 +208,7 @@ public class ClassAnalyser
     		}
         });
         // Return tableConfigMap values converted to a list
-        return new ArrayList<DatabaseTableConfig<?>>(tableConfigMap.values());
+        return new ArrayList<>(tableConfigMap.values());
     }
 
     /**
@@ -262,9 +264,9 @@ public class ClassAnalyser
      * @return DatabaseTableConfig of generic type matching entity class or null if error occurs
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    protected DatabaseTableConfig<?> getTableConfiguration(Class<?> clazz, ForeignFieldData foreignFieldData)
+    protected DatabaseTableConfig<? extends OrmEntity> getTableConfiguration(Class<? extends OrmEntity> clazz, ForeignFieldData foreignFieldData)
     {
-        List<DatabaseFieldConfig> fieldConfigs = new ArrayList<DatabaseFieldConfig>();
+        List<DatabaseFieldConfig> fieldConfigs = new ArrayList<>();
         // Obtain table name from @Entity annotation if available, otherwise use default name
         String tableName = new JavaxPersistenceImpl().getEntityName(clazz);
         // Allow name to be omitted
@@ -313,7 +315,7 @@ public class ClassAnalyser
         else
         {   
         	// Perform helper registration before returning database table configuration
-            classRegistry.registerEntityClass(clazz, idClass);
+            classRegistry.registerEntityClass(clazz);
             return new DatabaseTableConfig(clazz, tableName, fieldConfigs);
         }
         return null;

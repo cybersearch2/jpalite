@@ -235,8 +235,8 @@ public class JpaIntegrationTest
             {
                 EntityManagerDelegate delegate = (EntityManagerDelegate)entityManager.getDelegate();
                 @SuppressWarnings("unchecked")
-                PersistenceDao<RecordCategory, Integer> recordCategoryDao = 
-                        (PersistenceDao<RecordCategory, Integer>) delegate.getDaoForClass(RecordCategory.class);
+                PersistenceDao<RecordCategory> recordCategoryDao = 
+                        (PersistenceDao<RecordCategory>) delegate.getDaoForClass(RecordCategory.class);
                 QueryBuilder<RecordCategory, Integer> statementBuilder = recordCategoryDao.queryBuilder();
                 SelectArg selectArg = new SelectArg();
                 // build a query with the WHERE clause set to 'name = ?'

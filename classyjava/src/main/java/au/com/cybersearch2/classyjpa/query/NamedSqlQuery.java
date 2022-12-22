@@ -23,11 +23,11 @@ import javax.persistence.Query;
  */
 public class NamedSqlQuery implements Comparable<NamedSqlQuery>
 {
-
+    /** Name of query */
     private String name;
-
+    /** Native query information */
     private QueryInfo queryInfo;
-
+    /** Native query generator */
     protected SqlQueryFactory sqlQueryFactory;
     
     /**

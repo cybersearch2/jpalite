@@ -48,8 +48,8 @@ public class PersistenceConfigTest
     {
         PersistenceConfig persistenceConfig = new PersistenceConfig(new SqliteDatabaseType());
         DaoQueryFactory daoQueryFactory = mock(DaoQueryFactory.class);
-        @SuppressWarnings("unchecked")
-        Map<String,NamedDaoQuery> namedQueryMap = mock(Map.class);
+        @SuppressWarnings({ "unchecked" })
+        Map<String,NamedDaoQuery<?>> namedQueryMap = mock(Map.class);
         persistenceConfig.namedQueryMap = namedQueryMap;
         when(namedQueryMap.containsKey(QUERY_NAME)).thenReturn(false);
         persistenceConfig.addNamedQuery(RecordCategory.class, QUERY_NAME, daoQueryFactory);
@@ -61,8 +61,8 @@ public class PersistenceConfigTest
     {   // Check error does not throw exeption or change existing setting
         PersistenceConfig persistenceConfig = new PersistenceConfig(new SqliteDatabaseType());
         DaoQueryFactory daoQueryFactory = mock(DaoQueryFactory.class);
-        @SuppressWarnings("unchecked")
-        Map<String,NamedDaoQuery> namedQueryMap = mock(Map.class);
+        @SuppressWarnings({ "unchecked" })
+        Map<String,NamedDaoQuery<?>> namedQueryMap = mock(Map.class);
         persistenceConfig.namedQueryMap = namedQueryMap;
         when(namedQueryMap.containsKey(QUERY_NAME)).thenReturn(true);
         persistenceConfig.addNamedQuery(RecordCategory.class, QUERY_NAME, daoQueryFactory);

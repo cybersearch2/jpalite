@@ -21,11 +21,11 @@ import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
   */
 public abstract class PersistenceWorker
 {
-
+    /** Application persistence interface */
 	protected PersistenceContext persistenceContext;
-
+    /** JPA container to execute named query */
 	protected String persistenceUnit;
-
+	/** Aggregate count of errors to track asynchronous work progress */
 	protected int errorCount;
 
 	/**

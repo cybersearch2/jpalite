@@ -36,10 +36,10 @@ import com.j256.ormlite.support.ConnectionSource;
  */
 public class H2DatabaseSupport extends DatabaseSupportBase 
 {
-
+	/** Log name */
     private static final String TAG = "H2DatabaseSupport";
     static Log log = JavaLogger.getLogger(TAG);
-
+    /** H2 memory path */
     private static final String IN_MEMORY_PATH = "jdbc:h2:mem:";
     
     private static final String[] EXCLUDE_KEYS = 
@@ -50,7 +50,8 @@ public class H2DatabaseSupport extends DatabaseSupportBase
 		DatabaseAdmin.DROP_SCHEMA_FILENAME,
 		DatabaseAdmin.SCHEMA_FILENAME,
 		DatabaseAdmin.UPGRADE_FILENAME_FORMAT,
-		PersistenceUnitInfoImpl.PU_NAME_PROPERTY 
+		PersistenceUnitInfoImpl.PU_NAME_PROPERTY,
+		PersistenceUnitInfoImpl.CUSTOM_OHC_PROPERTY
     };
     
     private File databaseDirectory;

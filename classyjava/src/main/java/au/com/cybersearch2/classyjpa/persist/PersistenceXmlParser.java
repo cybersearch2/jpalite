@@ -62,7 +62,7 @@ public class PersistenceXmlParser
      */
     public Map<String, PersistenceUnitInfo> parsePersistenceXml(InputStream stream)
     {
-        Map<String, PersistenceUnitInfo> result = new HashMap<String, PersistenceUnitInfo>();
+        Map<String, PersistenceUnitInfo> result = new HashMap<>();
         Reader reader = new BufferedReader(new InputStreamReader(stream));
         try
         {

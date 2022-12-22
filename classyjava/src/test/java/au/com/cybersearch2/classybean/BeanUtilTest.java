@@ -78,7 +78,7 @@ public class BeanUtilTest
         Set<DataPair> datapairSet = BeanUtil.getDataPairSet(recordCategory);
         int size = datapairSet.size();
         assertThat(size).isGreaterThan(6);
-        Map<String,Object> shadowMap = new HashMap<String,Object>();
+        Map<String,Object> shadowMap = new HashMap<>();
         Iterator<DataPair> iterator = datapairSet.iterator();
         while (iterator.hasNext())
         {

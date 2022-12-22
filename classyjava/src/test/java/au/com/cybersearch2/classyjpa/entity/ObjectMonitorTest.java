@@ -94,56 +94,6 @@ public class ObjectMonitorTest
     }
 
 
-    @Test 
-    public void test_start_managing_persist_null_primary_key()
-    {
-        ObjectMonitor monitor = new ObjectMonitor();
-        Integer id = null;
-        assertThat(monitor.startManagingEntity(entity1, id, PersistOp.persist) == null);
-    }
-    
-    @Test 
-    public void test_start_managing_merge_null_primary_key()
-    {
-        ObjectMonitor monitor = new ObjectMonitor();
-        Integer id = null;
-        try
-        {
-            monitor.startManagingEntity(entity1, id, PersistOp.merge);
-            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
-        }
-        catch(IllegalArgumentException e)
-        {
-            assertThat(e.getMessage()).contains(PersistOp.merge.toString());
-            assertThat(e.getMessage()).contains("null primary key");
-        }
-   }
-
-    @Test 
-    public void test_start_managing_refresh_null_primary_key()
-    {
-        ObjectMonitor monitor = new ObjectMonitor();
-        Integer id = null;
-        try
-        {
-            monitor.startManagingEntity(entity1, id, PersistOp.refresh);
-            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
-        }
-        catch(IllegalArgumentException e)
-        {
-            assertThat(e.getMessage()).contains(PersistOp.refresh.toString());
-            assertThat(e.getMessage()).contains("null primary key");
-        }
-   }
-
-    @Test 
-    public void test_start_managing_contains_null_primary_key()
-    {
-        ObjectMonitor monitor = new ObjectMonitor();
-        Integer id = null;
-        assertThat(monitor.startManagingEntity(entity1, id, PersistOp.contains) == null);
-    }
-    
     @SuppressWarnings("unchecked")
     @Test 
     public void test_start_managing_persist_already_managed()
@@ -468,7 +418,7 @@ public class ObjectMonitorTest
     public void test_get_objects_to_update()
     {
         ObjectMonitor monitor = new ObjectMonitor();
-        monitor.managedObjects = new  HashMap<EntityKey, Object>();
+        monitor.managedObjects = new  HashMap<EntityKey, OrmEntity>();
         Integer id1 = Integer.valueOf(1);
         Integer id2 = Integer.valueOf(2);
         EntityKey key1 = new EntityKey(RecordCategory.class, id1);
@@ -476,7 +426,7 @@ public class ObjectMonitorTest
         key2.setDirty(true);
         monitor.managedObjects.put(key1, entity1);
         monitor.managedObjects.put(key2, entity2);
-        List<Object> list = monitor.getObjectsToUpdate();
+        List<OrmEntity> list = monitor.getObjectsToUpdate();
         assertThat(list).isNotNull();
         assertThat(list.size()).isEqualTo(1);
         assertThat(list.get(0)).isEqualTo(entity2);

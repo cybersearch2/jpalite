@@ -45,7 +45,7 @@ public class BeanMap extends AbstractMap<String, Object>
     public BeanMap(Object bean)  
     {
         this.bean = bean;
-        properties = new HashMap<String, PropertyDescriptor>();
+        properties = new HashMap<>();
         BeanInfo info = BeanUtil.getBeanInfo(bean);
         for (PropertyDescriptor property : info.getPropertyDescriptors()) 
             properties.put(property.getName(), property);

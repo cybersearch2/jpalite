@@ -15,6 +15,7 @@ package au.com.cybersearch2.classynode;
 
 import java.sql.SQLException;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
 import au.com.cybersearch2.classyjpa.query.DaoQuery;
 import au.com.cybersearch2.classyjpa.query.DaoQueryFactory;
@@ -35,7 +36,7 @@ public class EntityByNodeIdGenerator implements DaoQueryFactory
      * Generate query to find Node by primary key
      * @see au.com.cybersearch2.classyjpa.query.DaoQueryFactory#generateQuery(au.com.cybersearch2.classyjpa.entity.PersistenceDao)
      */
-    public <T> DaoQuery<T> generateQuery(PersistenceDao<T, ?> dao)
+    public <T extends OrmEntity> DaoQuery<T> generateQuery(PersistenceDao<T> dao)
             throws SQLException 
     {   // Only one select argument required for primary key 
         final SimpleSelectArg nodeIdArg = new SimpleSelectArg();
@@ -48,7 +49,7 @@ public class EntityByNodeIdGenerator implements DaoQueryFactory
              * @see au.com.cybersearch2.classyjpa.query.DaoQuery#buildQuery(com.j256.ormlite.stmt.QueryBuilder)
              */
             @Override
-            protected QueryBuilder<T, ?> buildQuery(QueryBuilder<T, ?> queryBuilder)
+            protected QueryBuilder<T, Integer> buildQuery(QueryBuilder<T, Integer> queryBuilder)
                     throws SQLException {
                 // build a query with the WHERE clause set to 'node_id = ?'
                 queryBuilder.where().eq("node_id", nodeIdArg);

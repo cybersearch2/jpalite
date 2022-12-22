@@ -37,17 +37,17 @@ import au.com.cybersearch2.pp.api.Pet;
  */
 public class PeopleAndPetsMain 
 {
-
+	/** Custom log tags are supported. Along with this default, the persistence unit names are also used */
     static public final String TAG = "PeopleAndPets";
-
+    /** Entity objects are hidden behind interfaces to allow working with different versions */
     private static final ObjectsStore objectsStoreV1;
-
+    /** Map to implement custom log tags */
     private final static Map<String, Log> logMap;
     private static TaskExecutor taskExecutor;
 
     static {
-
-    	logMap = new HashMap<String, Log>(2); 
+    	/** Create and populate log map */
+    	logMap = new HashMap<>(2); 
     	logMap.put(TAG, JavaLogger.getLogger(TAG));
     	logMap.put(PeopleAndPets.PETS_PU, JavaLogger.getLogger(PeopleAndPets.PETS_PU));
     	logMap.put(PeopleAndPets.PEOPLE_PU, JavaLogger.getLogger(PeopleAndPets.PEOPLE_PU));

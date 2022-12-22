@@ -20,6 +20,8 @@ import javax.persistence.LockModeType;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+
 /**
  * Interface used to interact with the persistence context and to create executable query objects.
  * Only a subset of PersistenceUnitAdmin API 1.0 methods supported, except generic version selected 
@@ -57,7 +59,7 @@ public interface EntityManagerLite
      * @throws IllegalStateException 
      *             if this EntityManager has been closed.
 	 */
-	public boolean contains(Object entity);
+	public boolean contains(OrmEntity entity);
 
 	/**
 	 * Create an instance of Query for executing a named query (in the Java PersistenceUnitAdmin query language or in native SQL).
@@ -119,7 +121,7 @@ public interface EntityManagerLite
      * @throws IllegalStateException 
      *             if this EntityManager has been closed.
 	 */
-	public <T> T getReference(Class<T> entityClass, Object primaryKey) throws EntityNotFoundException;
+	public <T extends OrmEntity> T getReference(Class<T> entityClass, int primaryKey) throws EntityNotFoundException;
 
 	/**
      * Returns the resource-level transaction object, if User Transactions selected,  otherwise proxy object returned for which only setRollbackOnly() is active.
@@ -148,7 +150,7 @@ public interface EntityManagerLite
      * @throws IllegalStateException 
      *             if this EntityManager has been closed.
 	 */
-	public <T> T merge(T entity);
+	public <T extends OrmEntity> T merge(T entity);
 
 	/**
 	 * Make an instance managed and persistent.
@@ -160,7 +162,7 @@ public interface EntityManagerLite
      * @throws IllegalStateException 
      *             if this EntityManager has been closed.
 	 */
-	public void persist(Object entity);
+	public void persist(OrmEntity entity);
 
 	/**
 	 * Refresh the state of the instance from the database, overwriting changes made to the entity, if any.
@@ -172,7 +174,7 @@ public interface EntityManagerLite
      * @throws IllegalStateException 
      *             if this EntityManager has been closed.
 	 */
-	public void refresh(Object entity);
+	public void refresh(OrmEntity entity);
 
 	/**
 	 * Remove the entity instance.
@@ -184,7 +186,7 @@ public interface EntityManagerLite
      * @throws IllegalStateException 
      *             if this EntityManager has been closed.
 	 */
-	public void remove(Object entity);
+	public void remove(OrmEntity entity);
 
 	/**
 	 * Set the flush mode that applies to all objects contained in the persistence context.
@@ -197,7 +199,7 @@ public interface EntityManagerLite
 	public void setFlushMode(FlushModeType flushMode);
 
 	/**
-	 * Find by primary key. Search for an entity of the specified class and primary key. If the entity instance is contained in the
+	 *  by primary key. Search for an entity of the specified class and primary key. If the entity instance is contained in the
 	 * persistence context it is returned from there.
 	 * 
 	 * @param entityClass
@@ -213,7 +215,7 @@ public interface EntityManagerLite
      * @throws IllegalStateException 
      *             if this EntityManager has been closed.
 	 */
-	public <T> T find(Class<T> entityClass, Object primaryKey);
+	public <T extends OrmEntity> T find(Class<T> entityClass, int primaryKey);
 
 	/**
 	 * The next 2 methods are included, but not supported, for possible future implementation depending on database capabilities
@@ -283,7 +285,7 @@ public interface EntityManagerLite
 	 * @throws PersistenceException
 	 *             if an unsupported lock call is made
 	 */
-	//public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode);
+	//public <T> T find(Class<T> entityClass, int primaryKey, LockModeType lockMode);
 
 	/**
 	 * Find by primary key and lock, using the specified properties. Search for an entity of the specified class and primary key and lock it
@@ -322,7 +324,7 @@ public interface EntityManagerLite
 	 * @throws PersistenceException
 	 *             if an unsupported lock call is made
 	 */
-	//public <T> T find(Class<T> entityClass, Object primaryKey, LockModeType lockMode, Map<String, Object> properties);
+	//public <T> T find(Class<T> entityClass, int primaryKey, LockModeType lockMode, Map<String, Object> properties);
 
 	/**
 	 * Find by primary key, using the specified properties. Search for an entity of the specified class and primary key. If the entity
@@ -342,7 +344,7 @@ public interface EntityManagerLite
 	 *             if the first argument does not denote an entity type or the second argument is is not a valid type for that entity’s
 	 *             primary key or is null
 	 */
-	//public <T> T find(Class<T> entityClass, Object primaryKey, Map<String, Object> properties);
+	//public <T> T find(Class<T> entityClass, int primaryKey, Map<String, Object> properties);
 
 	/**
 	 * Return an instance of CriteriaBuilder for the creation of CriteriaQuery objects.

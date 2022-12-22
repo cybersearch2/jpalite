@@ -28,11 +28,11 @@ public class DefaultTaskMessenger<Progress> implements TaskMessenger<Progress,Bo
 
     public static int MAX_QUEUE_LENGTH = 16;
 
-
+    /** Progress class for runtime type check */
     private final Class<Progress> progressClass;
-
+    /** Message queue */
     private BlockingQueue<EventHandler> messageQueue;
-
+    /** Monitor thread */
     private Thread consumeThread;
 
     /**

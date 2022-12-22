@@ -33,18 +33,18 @@ import java.util.Map;
 public class Node implements Serializable 
 {
 	public static final String ROOT = "Root";
-
+    /** Prefix for name of query to fetch node by primary key */
     public static final String NODE_BY_PRIMARY_KEY_QUERY = "NodeByPrimaryKey";
 	private static final long serialVersionUID = -2122221453077225002L;
 	
-
+    /** Node properties defined by model */
     Map<String,Object> properties;
-
+    /** Persistence object */
     NodeEntity nodeEntity;
     Node parent;
-
+    /** Child nodes list. When this node is fetched from a database, the list may contain place holders with only primary key set */
     List<Node> children;
-
+    /** Flag set true if this node is included in the trunk of a marshalled node */
     boolean isFragment;
     
     /**
@@ -219,7 +219,7 @@ public class Node implements Serializable
         	
         	for (Node child: children)
         		if (child.isFragment) {
-        			ArrayList<Node> fragmentList = new ArrayList<Node>();
+        			ArrayList<Node> fragmentList = new ArrayList<>();
         			fragmentList.add(child);
         			return fragmentList;
         		}
@@ -237,7 +237,7 @@ public class Node implements Serializable
     public Map<String,Object> getProperties()
     {
         if (properties == null)
-            properties = new HashMap<String,Object>();
+            properties = new HashMap<>();
         return properties;
     }
 

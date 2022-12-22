@@ -16,8 +16,10 @@ package au.com.cybersearch2.pp.v2;
 import static org.assertj.core.api.Assertions.*;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.After;
@@ -220,13 +222,26 @@ public class PeopleAndPetsTestV2
     }
     
     private void deleteDatabaseFile() throws InterruptedException {
-    	File defaultDatabaseFile = new File(DatabaseSupportBase.DEFAULT_FILE_LOCATION, "people-and-pets.db");
-    	if (defaultDatabaseFile.isFile())
-    	{
-    		defaultDatabaseFile.delete();
-    		Thread.sleep(1000);
-    	}
+    	
+    	File defaultDatabaseFile = new File(DatabaseSupportBase.DEFAULT_FILE_LOCATION);
+    	FilenameFilter filter = new FilenameFilter() {
+
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.startsWith("people-and-pets");
+			}
+    		
+    	};
+    	File[] files = defaultDatabaseFile.listFiles(filter);
+    	Arrays.asList(files).forEach(file -> {
+    		try {
+    			file.delete();
+    		} catch (Throwable t) {
+    			t.printStackTrace();
+    		}
+    	});
     }
+    
     /*
      * Copyright (C) 2014 The Android Open Source Project
      *

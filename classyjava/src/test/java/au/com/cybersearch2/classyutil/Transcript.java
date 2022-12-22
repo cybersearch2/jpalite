@@ -30,7 +30,7 @@ public class Transcript
 
     public Transcript()
     {
-        textList = new ArrayList<String>();
+        textList = new ArrayList<>();
     }
 
     public void add(String text) 

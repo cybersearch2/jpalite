@@ -24,7 +24,7 @@ import javax.persistence.PersistenceException;
  */
 public class SetRollbackTransaction implements EntityTransaction
 {
-
+    /** Wrapped transaction */
     protected EntityTransaction entityTransaction;
    
     /**

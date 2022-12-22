@@ -33,10 +33,10 @@ import com.j256.ormlite.support.ConnectionSource;
  */
 public class SQLiteDatabaseSupport extends DatabaseSupportBase
 {
-
+	/** Log name */
     private static final String TAG = "SQLiteDatabaseSupport";
     static Log log = JavaLogger.getLogger(TAG);
-
+    /** SQLite memory path */
     private static final String IN_MEMORY_PATH = "jdbc:sqlite::memory:";
     
     private File databaseDirectory;

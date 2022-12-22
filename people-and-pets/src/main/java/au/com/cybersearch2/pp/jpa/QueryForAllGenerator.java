@@ -15,6 +15,7 @@ package au.com.cybersearch2.pp.jpa;
 
 import java.sql.SQLException;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
 import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 import au.com.cybersearch2.classyjpa.query.DaoQuery;
@@ -30,7 +31,7 @@ import com.j256.ormlite.stmt.QueryBuilder;
  */
 public class QueryForAllGenerator implements DaoQueryFactory
 {
-
+    /** Interface for JPA Support */
     PersistenceAdmin persistenceAdmin;
 
     /**
@@ -38,14 +39,14 @@ public class QueryForAllGenerator implements DaoQueryFactory
      * The query object produced each time generateQuery() is called on containing class
      * @author Andrew Bowley
      */
-    class ForAllQuery<T> extends DaoQuery<T>
+    class ForAllQuery<T extends OrmEntity> extends DaoQuery<T>
     {
         /**
          * Create ForAllQuery object
          * @param dao OrmLite data access object of generic type matching Entity class to be retrieved
          * @throws SQLException
          */
-        public ForAllQuery(PersistenceDao<T, ?> dao) throws SQLException
+        public ForAllQuery(PersistenceDao<T> dao) throws SQLException
         {
             // The super class executes the prepared statement
             super(dao);
@@ -56,8 +57,8 @@ public class QueryForAllGenerator implements DaoQueryFactory
          * @see au.com.cybersearch2.classyjpa.query.DaoQuery#buildQuery(com.j256.ormlite.stmt.QueryBuilder)
          */
         @Override
-        protected QueryBuilder<T, ?> buildQuery(
-                QueryBuilder<T, ?> statementBuilder) throws SQLException 
+        protected QueryBuilder<T, Integer> buildQuery(
+                QueryBuilder<T, Integer> statementBuilder) throws SQLException 
         {
             // Query for all objects in database by leaving out where clause
             return statementBuilder;
@@ -79,7 +80,7 @@ public class QueryForAllGenerator implements DaoQueryFactory
      * @see au.com.cybersearch2.classyjpa.query.DaoQueryFactory#generateQuery(au.com.cybersearch2.classyjpa.entity.PersistenceDao)
      */
     @Override
-    public <T> DaoQuery<T> generateQuery(PersistenceDao<T, ?> dao)
+    public <T extends OrmEntity> DaoQuery<T> generateQuery(PersistenceDao<T> dao)
             throws SQLException 
     {
         return new ForAllQuery<T>(dao);

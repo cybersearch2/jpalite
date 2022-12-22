@@ -29,9 +29,9 @@ import java.util.logging.*;
  */
 public class JavaLogger implements Log
 {
-
+    /** Use java.util.logging package for actual log implementation */
     private Logger logger;
-
+    /** Tag Used to identify the source of a log message */
     private String name;
     
     /**

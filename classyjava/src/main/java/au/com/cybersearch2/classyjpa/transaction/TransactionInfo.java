@@ -23,11 +23,11 @@ import javax.persistence.EntityTransaction;
  */
 public class TransactionInfo
 {
- 
+    /** Exception responsible for rollback if one is thrown while transaction is active */ 
     private Throwable rollbackException;
- 
+    /** Flag for user transaction. If true, then entityTransaction and userTransaction will be the same object */ 
     private boolean isUserTransaction;
-
+    /** The enclosing entity transaction */
     private EntityTransaction entityTransaction;
     
     /**

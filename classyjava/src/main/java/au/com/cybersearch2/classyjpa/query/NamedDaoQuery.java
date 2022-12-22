@@ -18,6 +18,7 @@ import java.sql.SQLException;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
 
 /**
@@ -26,13 +27,13 @@ import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
  * @author Andrew Bowley
  * 13/05/2014
  */
-public class NamedDaoQuery implements Comparable<NamedDaoQuery>
+public class NamedDaoQuery<T extends OrmEntity> implements Comparable<NamedDaoQuery<T>>
 {
-
-    protected Class<?> clazz;
-
+    /** Entity class */
+    protected Class<T> clazz;
+    /** Name of query */
     protected String name;
-
+    /** Query generator which incorporates selection arguments */
     protected DaoQueryFactory daoQueryFactory;
     
     /**
@@ -41,7 +42,7 @@ public class NamedDaoQuery implements Comparable<NamedDaoQuery>
      * @param name Name of query
      * @param daoQueryFactory Query generator which incorporates selection arguments
      */
-    public NamedDaoQuery(Class<?> clazz, String name, DaoQueryFactory daoQueryFactory)
+    public NamedDaoQuery(Class<T> clazz, String name, DaoQueryFactory daoQueryFactory)
     {
         this.clazz = clazz;
         this.name = name;
@@ -53,17 +54,19 @@ public class NamedDaoQuery implements Comparable<NamedDaoQuery>
      * @param dao Entity DAO containing open ConnectionSource
      * @return Query
      */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public Query createQuery(PersistenceDao<?, ?> dao)
+    public Query createQuery(PersistenceDao<?> dao)
     {
         try
         {
-            DaoQuery<?> daoQuery = daoQueryFactory.generateQuery(dao);
-            return new EntityQuery(daoQuery);
+        	if (!dao.getDataClass().isAssignableFrom(getEntityClass()))
+                throw new PersistenceException(String.format("Named query \"%s\" cannot be created with dao of class %x", name, getEntityClass().getName()));
+            @SuppressWarnings("unchecked")
+			DaoQuery<T> daoQuery = (DaoQuery<T>) daoQueryFactory.generateQuery(dao);
+            return new EntityQuery<T>(daoQuery);
         }
         catch (SQLException e)
         {
-            throw new PersistenceException("Named query \"" + name + "\" failed on start", e);
+            throw new PersistenceException(String.format("Named query \"%s\" failed on start", name), e);
         }
     }
 
@@ -71,7 +74,7 @@ public class NamedDaoQuery implements Comparable<NamedDaoQuery>
      * Returns Entity class
      * @return Class
      */
-    public Class<?> getEntityClass()
+    public Class<T> getEntityClass()
     {
         return clazz;
     }
@@ -85,7 +88,7 @@ public class NamedDaoQuery implements Comparable<NamedDaoQuery>
      *      is less than, equal to, or greater than the specified object.
      */
     @Override
-    public int compareTo(NamedDaoQuery another) 
+    public int compareTo(NamedDaoQuery<T> another) 
     {
         return name.compareTo(another.name);
     }
@@ -107,8 +110,11 @@ public class NamedDaoQuery implements Comparable<NamedDaoQuery>
     @Override
     public boolean equals(Object other)
     {
-        if ((other != null) && ! (other instanceof NamedDaoQuery))
-            return name.equals(((NamedDaoQuery)other).name);
+        if ((other instanceof NamedDaoQuery)) {
+        	NamedDaoQuery<?> otherQuery = (NamedDaoQuery<?>)other;
+        	return (clazz == otherQuery.getEntityClass()) && 
+                    name.equals(otherQuery.name);
+        }
         return false;
     }
     

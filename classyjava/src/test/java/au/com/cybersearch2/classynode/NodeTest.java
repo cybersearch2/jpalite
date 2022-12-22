@@ -70,7 +70,7 @@ public class NodeTest
         child.set_id(CHILD_ID);
         child.setName(CHILD_NAME);
         child.setTitle(CHILD_TITLE);
-        List<NodeEntity> childList = new ArrayList<NodeEntity>();
+        List<NodeEntity> childList = new ArrayList<>();
         childList.add(child);
         childList.add(Node.rootNodeNewInstance().nodeEntity); // This one should be ignored
         nodeEntity.set_children(childList);
@@ -100,7 +100,7 @@ public class NodeTest
     {
         Node parent = mock(Node.class);
         when(parent.getId()).thenReturn(PARENT_NODE_ID);
-        List<Node> childList = new ArrayList<Node>();
+        List<Node> childList = new ArrayList<>();
         when(parent.getChildren()).thenReturn(childList);
         when(parent.getLevel()).thenReturn(NODE_LEVEL - 1);
         NodeEntity nodeEntity = new NodeEntity();
@@ -132,7 +132,7 @@ public class NodeTest
     {
         Node parent = mock(Node.class);
         when(parent.getId()).thenReturn(PARENT_NODE_ID);
-        List<Node> childList = new ArrayList<Node>();
+        List<Node> childList = new ArrayList<>();
         Node childNode = mock(Node.class);
         when(childNode.getId()).thenReturn(NODE_ID);
         childList.add(childNode);
@@ -180,7 +180,7 @@ public class NodeTest
     public void test_model_constructor()
     {
         Node parent = mock(Node.class);
-        List<Node> childList = new ArrayList<Node>();
+        List<Node> childList = new ArrayList<>();
         when(parent.getChildren()).thenReturn(childList);
         when(parent.getLevel()).thenReturn(NODE_LEVEL - 1);
         Node node = new Node(Model.recordCategory.ordinal(), parent);
@@ -196,7 +196,7 @@ public class NodeTest
         Node node = Node.rootNodeNewInstance();
         assertThat(Node.getProperty(node, "key", null)).isEqualTo("null");
         assertThat(Node.getProperty(node, "key", "value")).isEqualTo("'value'");
-        node.setProperties(new HashMap<String,Object>());
+        node.setProperties(new HashMap<>());
         assertThat(Node.getProperty(node, "key", null)).isEqualTo("null");
         assertThat(Node.getProperty(node, "key", "value")).isEqualTo("'value'");
         node.getProperties().put("key", "superlative");
@@ -226,7 +226,7 @@ public class NodeTest
         child1.set_id(CHILD_ID + 1);
         child1.setName(CHILD_NAME);
         child1.setTitle(CHILD_TITLE);
-        List<NodeEntity> childList1 = new ArrayList<NodeEntity>();
+        List<NodeEntity> childList1 = new ArrayList<>();
         childList1.add(child1);
         //child1._parent_id = parent.get_id();
         parent.set_children(childList1);
@@ -235,7 +235,7 @@ public class NodeTest
         child2.set_id(CHILD_ID + 2);
         child2.setName(CHILD_NAME);
         child2.setTitle(CHILD_TITLE);
-        List<NodeEntity> childList2 = new ArrayList<NodeEntity>();
+        List<NodeEntity> childList2 = new ArrayList<>();
         childList2.add(child2);
         child2.set_parent_id(child1.get_id());
         child1.set_children(childList2);
@@ -244,7 +244,7 @@ public class NodeTest
         child.set_id(CHILD_ID);
         child.setName(CHILD_NAME);
         child.setTitle(CHILD_TITLE);
-        List<NodeEntity> childList = new ArrayList<NodeEntity>();
+        List<NodeEntity> childList = new ArrayList<>();
         childList.add(child);
         child.set_parent_id(level2Entity.get_id());
         level2Entity.set_children(childList);

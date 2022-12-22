@@ -31,11 +31,11 @@ import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
  */
 public class OrmDaoHelperFactoryTest
 {
-    // Overide internal methods which create concrete objects to replace them with mocks 
-    class TestOrmDaoHelperFactory extends OrmDaoHelperFactory<RecordCategory,Integer>
+    // Override internal methods which create concrete objects to replace them with mocks 
+    class TestOrmDaoHelperFactory extends OrmDaoHelperFactory<RecordCategory>
     {
         @SuppressWarnings("unchecked")
-        PersistenceDao<RecordCategory, Integer> dao = mock(PersistenceDao.class);
+        PersistenceDao<RecordCategory> dao = mock(PersistenceDao.class);
         ConnectionSource connectionSource;
         boolean tableCreated;
         SQLException toThrowOnTableCreate;
@@ -57,7 +57,7 @@ public class OrmDaoHelperFactoryTest
         }
         
         @Override
-        protected PersistenceDao<RecordCategory,Integer> createDao(ConnectionSource connectionSource) throws SQLException
+        protected PersistenceDao<RecordCategory> createDao(ConnectionSource connectionSource) throws SQLException
         {
             this.connectionSource = connectionSource;
             if (toThrowOnDaoCreate != null)
@@ -72,7 +72,7 @@ public class OrmDaoHelperFactoryTest
         TestOrmDaoHelperFactory helperFactory = new TestOrmDaoHelperFactory();
         when(helperFactory.dao.isTableExists()).thenReturn(false);
         ConnectionSource connectionSource = mock(ConnectionSource.class);
-        OrmDaoHelper<RecordCategory, Integer> ormDaoHelper = helperFactory.getOrmDaoHelper(connectionSource);
+        OrmDaoHelper<RecordCategory> ormDaoHelper = helperFactory.getOrmDaoHelper(connectionSource);
         assertThat(ormDaoHelper).isNotNull();
         assertThat(helperFactory.tableCreated).isTrue();
         assertThat(helperFactory.connectionSource).isEqualTo(connectionSource);
@@ -84,7 +84,7 @@ public class OrmDaoHelperFactoryTest
         TestOrmDaoHelperFactory helperFactory = new TestOrmDaoHelperFactory();
         when(helperFactory.dao.isTableExists()).thenReturn(true);
         ConnectionSource connectionSource = mock(ConnectionSource.class);
-        OrmDaoHelper<RecordCategory, Integer> ormDaoHelper = helperFactory.getOrmDaoHelper(connectionSource);
+        OrmDaoHelper<RecordCategory> ormDaoHelper = helperFactory.getOrmDaoHelper(connectionSource);
         assertThat(ormDaoHelper).isNotNull();
         assertThat(helperFactory.tableCreated).isFalse();
         assertThat(helperFactory.connectionSource).isEqualTo(connectionSource);

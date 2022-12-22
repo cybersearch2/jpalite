@@ -17,13 +17,15 @@ import java.util.Date;
 
 import javax.persistence.Entity;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+
 /**
  * RecordCategory
  * @author Andrew Bowley
  * 01/05/2014
  */
 @Entity(name = "categories")
-public class RecordCategory extends ManagedRecord
+public class RecordCategory extends ManagedRecord implements OrmEntity
 {
 
     private static final long serialVersionUID = 2321889578921480363L;

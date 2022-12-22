@@ -30,11 +30,11 @@ import au.com.cybersearch2.classyjpa.entity.EntityManagerImpl;
  */
 public class EntityManagerFactoryImpl implements EntityManagerLiteFactory
 {
-
+    /** Database connection provider */
     protected ConnectionSource connectionSource;
-
+    /** PersistenceUnitAdmin Unit configuration information */
     protected PersistenceConfig persistenceConfig; 
-
+    /** Flag to track if open */
     private volatile boolean isOpen;
 
     /**

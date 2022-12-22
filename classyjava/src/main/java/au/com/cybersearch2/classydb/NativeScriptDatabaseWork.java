@@ -41,7 +41,7 @@ public class NativeScriptDatabaseWork implements TransactionCallable
     private static Log log = JavaLogger.getLogger(TAG);
     
     final String[] filenames;
-
+    /** Resource environment provides system-specific file open method. */
     protected ResourceEnvironment resourceEnvironment;
     
     /**

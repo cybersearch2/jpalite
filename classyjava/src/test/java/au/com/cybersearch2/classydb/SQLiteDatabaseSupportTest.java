@@ -36,6 +36,7 @@ import com.j256.ormlite.support.DatabaseConnection;
 import com.j256.ormlite.support.DatabaseResults;
 
 import au.com.cybersearch2.classydb.DatabaseSupport.ConnectionType;
+import au.com.cybersearch2.classydb.DatabaseSupportBase.ConnectionPair;
 import au.com.cybersearch2.classyjpa.query.QueryInfo;
 import au.com.cybersearch2.classyjpa.query.QueryInfo.RowMapper;
 import au.com.cybersearch2.classyjpa.query.ResultRow;
@@ -80,10 +81,10 @@ public class SQLiteDatabaseSupportTest
     {
         sqLiteDatabaseSupport = new SQLiteDatabaseSupport(ConnectionType.memory);
         connectionSource = mock(ConnectionSource.class);
-        sqLiteDatabaseSupport.connectionSourceMap.put(DATABASE_NAME, connectionSource);
+        dbConnection = mock(DatabaseConnection.class);
+        sqLiteDatabaseSupport.connectionSourceMap.put(DATABASE_NAME, new ConnectionPair(connectionSource, dbConnection));
         results = mock(DatabaseResults.class);
         sqlException = new SQLException("Database error");
-        dbConnection = mock(DatabaseConnection.class);
         when(connectionSource.getReadWriteConnection(any(String.class))).thenReturn(dbConnection);
     }
 

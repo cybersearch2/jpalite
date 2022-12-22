@@ -60,9 +60,7 @@ public class EntityManagerImplTest
 	private static String DATABASE_INFO_NAME = "";
 	
     private ConnectionSource connectionSource;
-    private Map<String,OrmDaoHelperFactory<?,?>> helperFactoryMap;
-    private Map<String,NamedDaoQuery> namedQueryMap;
-    private Map<String,NamedSqlQuery> namedSqlQueryMap;
+    private Map<String,OrmDaoHelperFactory<? extends OrmEntity>> helperFactoryMap;
     private PersistenceConfig persistenceConfig;
     @SuppressWarnings("rawtypes")
     private OrmDaoHelper ormDaoHelper;
@@ -71,7 +69,7 @@ public class EntityManagerImplTest
     private ObjectMonitor objectMonitor;
     private TransactionCallable onPrecommit;
     private DatabaseConnection connection;
-    private PersistenceDao<?, ?> dao;
+    private PersistenceDao<? extends OrmEntity> dao;
     
     @SuppressWarnings("unchecked")
     @Before
@@ -86,8 +84,6 @@ public class EntityManagerImplTest
         when(ormDaoHelperFactory.getDao(connectionSource)).thenReturn(dao);
         ormDaoHelper = mock(OrmDaoHelper.class);
         when(ormDaoHelperFactory.getOrmDaoHelper(connectionSource)).thenReturn(ormDaoHelper);
-        namedQueryMap = mock(Map.class);
-        namedSqlQueryMap = mock(Map.class);
         transaction = mock(EntityTransactionImpl.class);
         objectMonitor = mock(ObjectMonitor.class);
         connection = mock(DatabaseConnection.class);
@@ -98,9 +94,7 @@ public class EntityManagerImplTest
         when(connection.setSavePoint(isA(String.class))).thenReturn(savePoint);
         when(savePoint.getSavepointName()).thenReturn("mySavePoint");
         persistenceConfig = mock(PersistenceConfig.class);
-        when(persistenceConfig.getHelperFactoryMap()).thenReturn(helperFactoryMap);
-        when(persistenceConfig.getNamedQueryMap()).thenReturn(namedQueryMap);
-        when(persistenceConfig.getNativeQueryMap()).thenReturn(namedSqlQueryMap);
+        when(persistenceConfig.getHelperFactory(RecordCategory.class)).thenReturn(ormDaoHelperFactory);
         entityManagerImpl = new EntityManagerImpl(connectionSource, persistenceConfig);
         onPrecommit = entityManagerImpl.onTransactionPreCommitCallback;
         entityManagerImpl.entityTransaction = transaction;
@@ -149,8 +143,8 @@ public class EntityManagerImplTest
     public void test_persist_primary_key_create_error() throws Exception
     { 
         RecordCategory entity = prepareHelperMap();
-        Integer id = null;
-        when(ormDaoHelper.extractId(entity)).thenReturn(id);
+        Integer id = Integer.valueOf(0);
+        when(ormDaoHelper.extractId(entity)).thenReturn(0);
         when(objectMonitor.startManagingEntity(entity, id, PersistOp.persist)).thenReturn(null);
         when(ormDaoHelper.entityExists(entity)).thenReturn(false);
         when(transaction.isActive()).thenReturn(false);
@@ -210,7 +204,7 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
-        when(ormDaoHelper.extractId(entity)).thenReturn(null);
+        when(ormDaoHelper.extractId(entity)).thenReturn(0);
         when(objectMonitor.startManagingEntity(entity, id, PersistOp.contains)).thenReturn(null);
         assertThat(entityManagerImpl.contains(entity)).isEqualTo(false);
         verifyNoInteractions(transaction);
@@ -531,7 +525,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_persist_unregistered_class() throws Exception
     { 
-        when(helperFactoryMap.get(RecordCategory.class.getName())).thenReturn(null);
+        when(persistenceConfig.getHelperFactory(RecordCategory.class)).thenReturn(null);
         try
         {
             entityManagerImpl.persist(new RecordCategory());
@@ -743,7 +737,7 @@ public class EntityManagerImplTest
     {
         EntityManagerDelegate delegate = (EntityManagerDelegate) entityManagerImpl.getDelegate();
         assertThat(delegate.connectionSource).isEqualTo(connectionSource);
-        assertThat(delegate.helperFactoryMap).isEqualTo(helperFactoryMap);
+        //assertThat(delegate.helperFactoryMap).isEqualTo(helperFactoryMap);
         assertThat(delegate.getTransaction()).isEqualTo(transaction);
     }
 
@@ -776,14 +770,14 @@ public class EntityManagerImplTest
         assertThat(entityManagerImpl.getTransaction()).isEqualTo(transaction);
     }
     
-    @Test
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
     public void test_create_named_query() 
     {
         String QUERY_NAME = "my_query";
         NamedDaoQuery namedDaoQuery = mock(NamedDaoQuery.class);
-        when(namedQueryMap.get(QUERY_NAME)).thenReturn(namedDaoQuery);
+        when(persistenceConfig.getNamedQuery(QUERY_NAME)).thenReturn(namedDaoQuery);
         Mockito.<Class<?>>when(namedDaoQuery.getEntityClass()).thenReturn(RecordCategory.class);
-        @SuppressWarnings("rawtypes")
         EntityQuery entityQuery = mock(EntityQuery.class);
         when(namedDaoQuery.createQuery(dao)).thenReturn(entityQuery);
         Query result = entityManagerImpl.createNamedQuery(QUERY_NAME);
@@ -796,8 +790,8 @@ public class EntityManagerImplTest
     {
         String QUERY_NAME = "my_sql_query";
         NamedSqlQuery namedSqlQuery = mock(NamedSqlQuery.class);
-        when(namedQueryMap.get(QUERY_NAME)).thenReturn(null);
-        when(namedSqlQueryMap.get(QUERY_NAME)).thenReturn(namedSqlQuery);
+        when(persistenceConfig.getNamedQuery(QUERY_NAME)).thenReturn(null);
+        when(persistenceConfig.getNativeQuery(QUERY_NAME)).thenReturn(namedSqlQuery);
         Query query = mock(Query.class);
         when(namedSqlQuery.createQuery()).thenReturn(query);
         Query result = entityManagerImpl.createNamedQuery(QUERY_NAME);
@@ -809,8 +803,8 @@ public class EntityManagerImplTest
     public void test_create_named_query_not_found() 
     {
         String QUERY_NAME = "my_query";
-        when(namedQueryMap.get(QUERY_NAME)).thenReturn(null);
-        try
+        when(persistenceConfig.getNamedQuery(QUERY_NAME)).thenReturn(null);
+       try
         {
             entityManagerImpl.createNamedQuery(QUERY_NAME);
             failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
@@ -900,7 +894,7 @@ public class EntityManagerImplTest
   
     private void prepareDoUpdates(RecordCategory entity, int resultCode) throws Exception
     {
-        ArrayList<Object> objects = new ArrayList<Object>();
+        ArrayList<OrmEntity> objects = new ArrayList<>();
         objects.add(entity);
         when(objectMonitor.getObjectsToUpdate()).thenReturn(objects);
         when(ormDaoHelper.update(entity)).thenReturn(resultCode);
@@ -916,7 +910,7 @@ public class EntityManagerImplTest
     private RecordCategory populateManagedObjects()
     {
         RecordCategory entity = new RecordCategory();
-        ArrayList<Object> objects = new ArrayList<Object>();
+        ArrayList<Object> objects = new ArrayList<>();
         objects.add(entity);
         when(objectMonitor.getManagedObjects()).thenReturn(objects);
         return entity;

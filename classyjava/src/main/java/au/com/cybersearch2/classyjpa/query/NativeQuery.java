@@ -36,7 +36,7 @@ public class NativeQuery extends QueryBase
 {
     public static final String TAG = "NativeQuery";
     protected static Log log = JavaLogger.getLogger(TAG);
-
+    /** Query invoked using Android SQLite interface */
     protected SqlQuery sqlQuery;
   
     /**
@@ -68,7 +68,7 @@ public class NativeQuery extends QueryBase
     public List<Object> getResultList() 
     {
         if (isClosed) // Only perform query once
-            return new ArrayList<Object>();
+            return new ArrayList<>();
         try
         {
             return (List<Object>) sqlQuery.getResultObjectList(startPosition, maxResults);

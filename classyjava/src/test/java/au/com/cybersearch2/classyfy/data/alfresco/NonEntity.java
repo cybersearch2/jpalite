@@ -15,12 +15,14 @@ package au.com.cybersearch2.classyfy.data.alfresco;
 
 import java.util.Date;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+
 /**
  * NonEntity
  * @author Andrew Bowley
  * 12/05/2014
  */
-public class NonEntity
+public class NonEntity implements OrmEntity
 {
     protected int _id;
     

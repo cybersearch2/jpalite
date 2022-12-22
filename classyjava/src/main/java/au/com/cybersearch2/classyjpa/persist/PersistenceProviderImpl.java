@@ -28,11 +28,11 @@ import au.com.cybersearch2.classyjpa.PersistenceProvider;
  */
 public class PersistenceProviderImpl implements PersistenceProvider
 {
-
+    /** PersistenceUnitAdmin Unit configuration information */
     protected PersistenceConfig persistenceConfig;
-
+    /** Connection source factory */
     protected ConnectionSourceFactory connectionSourceFactory;
-
+    /** PersistenceUnitAdmin Unit name */
     public final String puName;
 
     /**

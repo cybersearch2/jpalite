@@ -77,7 +77,7 @@ public class BeanMapTest
         catch (UnsupportedOperationException e)
         {
         }
-        Map<String,Object> shadowMap = new HashMap<String,Object>();
+        Map<String,Object> shadowMap = new HashMap<>();
         Iterator<Entry<String, Object>> iterator = entrySet.iterator();
         while (iterator.hasNext())
         {

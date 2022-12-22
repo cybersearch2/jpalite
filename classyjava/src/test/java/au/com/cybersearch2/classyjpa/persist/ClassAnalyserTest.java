@@ -31,6 +31,7 @@ import au.com.cybersearch2.classyfy.data.alfresco.NoNameEntity;
 import au.com.cybersearch2.classyfy.data.alfresco.NonEntity;
 import au.com.cybersearch2.classyfy.data.alfresco.NonIdEntity;
 import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.classyjpa.persist.ClassAnalyser.ClassRegistry;
 import au.com.cybersearch2.classyjpa.persist.ClassAnalyser.ForeignFieldData;
 
@@ -52,11 +53,9 @@ public class ClassAnalyserTest
         
         @SuppressWarnings("unchecked")
         @Override
-        public <T, ID> void registerEntityClass(Class<T> entityClass,
-                Class<ID> primaryKeyClass) 
+        public <T extends OrmEntity> void registerEntityClass(Class<T> entityClass) 
         {
             assertThat(entityClass).isEqualTo((Class<T>) this.entityClass);
-            assertThat(primaryKeyClass).isEqualTo((Class<ID>) int.class);
        }
     }
  
@@ -102,7 +101,7 @@ public class ClassAnalyserTest
     public void test_getTableConfiguration_no_name()
     {
         ClassAnalyser classAnalyser = new ClassAnalyser(new SqliteDatabaseType(), new TestClassRegistry(NoNameEntity.class));
-        DatabaseTableConfig<?> config = classAnalyser.getTableConfiguration(NoNameEntity.class, foreignFieldData);
+        DatabaseTableConfig<? extends OrmEntity> config = classAnalyser.getTableConfiguration(NoNameEntity.class, foreignFieldData);
         assertThat(config).isNotNull();
         assertThat(config.getTableName().equals("tableNoNameEntity"));
         assertThat(config.getFieldConfigs().size()).isGreaterThan(0);
@@ -112,14 +111,14 @@ public class ClassAnalyserTest
     public void test_getTableConfiguration_non_entity()
     {
         ClassAnalyser classAnalyser = new ClassAnalyser(new SqliteDatabaseType(), new TestClassRegistry(NonEntity.class));
-        DatabaseTableConfig<?> config = classAnalyser.getTableConfiguration(NonEntity.class, foreignFieldData);
+        DatabaseTableConfig<? extends OrmEntity> config = classAnalyser.getTableConfiguration(NonEntity.class, foreignFieldData);
         assertThat(config).isNull();
     }
     
     @Test
     public void test_getDatabaseTableConfigList()
     {
-        List<String> managedClassNames = new ArrayList<String>();
+        List<String> managedClassNames = new ArrayList<>();
         managedClassNames.add(RecordCategory.class.getName());
         ClassAnalyser classAnalyser = new ClassAnalyser(new SqliteDatabaseType(), new TestClassRegistry(RecordCategory.class));
         List<DatabaseTableConfig<?>> configList = classAnalyser.getDatabaseTableConfigList(managedClassNames);
@@ -131,7 +130,7 @@ public class ClassAnalyserTest
     @Test
     public void test_getDatabaseTableConfigList_non_id_entity()
     {
-        List<String> managedClassNames = new ArrayList<String>();
+        List<String> managedClassNames = new ArrayList<>();
         managedClassNames.add(RecordCategory.class.getName());
         managedClassNames.add(NonIdEntity.class.getName());
         ClassAnalyser classAnalyser = new ClassAnalyser(new SqliteDatabaseType(), new TestClassRegistry(RecordCategory.class));
@@ -150,7 +149,7 @@ public class ClassAnalyserTest
     @Test
     public void test_getDatabaseTableConfigList_class_not_found()
     {
-        List<String> managedClassNames = new ArrayList<String>();
+        List<String> managedClassNames = new ArrayList<>();
         managedClassNames.add("x" + RecordCategory.class.getName());
         managedClassNames.add(NonIdEntity.class.getName());
         ClassAnalyser classAnalyser = new ClassAnalyser(new SqliteDatabaseType(), new TestClassRegistry(RecordCategory.class));
@@ -169,14 +168,13 @@ public class ClassAnalyserTest
     @Test
     public void test_getDatabaseTableConfigList_one_to_many()
     {
-        List<String> managedClassNames = new ArrayList<String>();
+        List<String> managedClassNames = new ArrayList<>();
         managedClassNames.add(Employee.class.getName());
         managedClassNames.add(Department.class.getName());
         ClassAnalyser classAnalyser = new ClassAnalyser(new SqliteDatabaseType(), new ClassRegistry(){
 
             @Override
-            public <T, ID> void registerEntityClass(Class<T> entityClass,
-                    Class<ID> primaryKeyClass) {
+            public <T extends OrmEntity> void registerEntityClass(Class<T> entityClass) {
                 if (!((entityClass == Employee.class) || (entityClass == Department.class)))
                     throw new IllegalArgumentException(entityClass.getName() + " not valid");
             }});
@@ -219,14 +217,13 @@ public class ClassAnalyserTest
     @Test
     public void test_one_to_many_fetch()
     {
-        List<String> managedClassNames = new ArrayList<String>();
+        List<String> managedClassNames = new ArrayList<>();
         managedClassNames.add(EagerEmployee.class.getName());
         managedClassNames.add(EagerDepartment.class.getName());
         ClassAnalyser classAnalyser = new ClassAnalyser(new SqliteDatabaseType(), new ClassRegistry(){
 
             @Override
-            public <T, ID> void registerEntityClass(Class<T> entityClass,
-                    Class<ID> primaryKeyClass) {
+            public <T extends OrmEntity> void registerEntityClass(Class<T> entityClass) {
                 if (!((entityClass == EagerEmployee.class) || (entityClass == EagerDepartment.class)))
                     throw new IllegalArgumentException(entityClass.getName() + " not valid");
             }});
@@ -269,7 +266,7 @@ public class ClassAnalyserTest
     @Test
     public void test_one_to_many_no_foreign_collection()
     {
-        List<String> managedClassNames = new ArrayList<String>();
+        List<String> managedClassNames = new ArrayList<>();
         managedClassNames.add(Employee.class.getName());
         ClassAnalyser classAnalyser = new ClassAnalyser(new SqliteDatabaseType(), new TestClassRegistry(Employee.class));
         try
@@ -286,7 +283,7 @@ public class ClassAnalyserTest
     @Test
     public void test_getDatabaseTableConfigList_non_entity()
     {
-        List<String> managedClassNames = new ArrayList<String>();
+        List<String> managedClassNames = new ArrayList<>();
         managedClassNames.add(RecordCategory.class.getName());
         managedClassNames.add(NonEntity.class.getName());
         managedClassNames.add(NonIdEntity.class.getName());

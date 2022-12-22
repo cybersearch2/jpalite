@@ -31,6 +31,8 @@ package au.com.cybersearch2.pp;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
+import java.io.FilenameFilter;
+import java.util.Arrays;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -176,7 +178,7 @@ public class PeopleAndPetsTest
             thread1.start();
             thread2.start();
             thread1.join(5000);
-            thread1.join(5000);
+            thread2.join(5000);
             assertThat(finalStates[0] == WorkStatus.FINISHED);
             assertThat(finalStates[1] == WorkStatus.FINISHED);
         }
@@ -202,12 +204,24 @@ public class PeopleAndPetsTest
     }
     
     private void deleteDatabaseFile() throws InterruptedException {
-    	File defaultDatabaseFile = new File(DatabaseSupportBase.DEFAULT_FILE_LOCATION, "people-and-pets.db");
-    	if (defaultDatabaseFile.isFile())
-    	{
-    		defaultDatabaseFile.delete();
-    		Thread.sleep(1000);
-    	}
+    	
+    	File defaultDatabaseFile = new File(DatabaseSupportBase.DEFAULT_FILE_LOCATION);
+    	FilenameFilter filter = new FilenameFilter() {
+
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.startsWith("people-and-pets");
+			}
+    		
+    	};
+    	File[] files = defaultDatabaseFile.listFiles(filter);
+    	Arrays.asList(files).forEach(file -> {
+    		try {
+    			file.delete();
+    		} catch (Throwable t) {
+    			t.printStackTrace();
+    		}
+    	});
     }
 }
 

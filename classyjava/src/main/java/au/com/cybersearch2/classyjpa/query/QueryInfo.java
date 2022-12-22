@@ -72,11 +72,11 @@ public class QueryInfo
         Object mapRow(ResultRow resultRow);
     }
     
-
+    /** Mandatory. Maps a Cursor position to an object to be returned by the query */
     protected RowMapper rowMapper;
-
+    /** Mandatory. The table name to compile the query against. */
     protected String table;
-
+    /** Mandatory. A list of which columns to return. */
     protected String[] columns;
     /** Optional. A filter declaring which rows to return, formatted as an
      *  SQL WHERE clause (excluding the WHERE itself). 

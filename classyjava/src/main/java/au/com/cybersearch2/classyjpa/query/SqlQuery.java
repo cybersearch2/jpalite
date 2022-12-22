@@ -34,13 +34,13 @@ public class SqlQuery
 {
     public static final String TAG = "SqlQuery";
     protected static Log log = JavaLogger.getLogger(TAG);
-
+    /** Date format to suite SQLite database */
     protected final static String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
-
+    /** JPA Support */
     protected PersistenceAdmin persistenceAdmin;
-
+    /** Native query information */
     protected QueryInfo queryInfo;
-
+    /** Selection arguments */
     protected List<String> selectionArgs;
 
     /**
@@ -52,7 +52,7 @@ public class SqlQuery
     {
         this.persistenceAdmin = persistenceAdmin;
         this.queryInfo = queryInfo;
-        selectionArgs = new ArrayList<String>();
+        selectionArgs = new ArrayList<>();
      }
 
     /**

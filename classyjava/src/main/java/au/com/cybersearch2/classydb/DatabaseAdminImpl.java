@@ -44,13 +44,13 @@ public class DatabaseAdminImpl implements DatabaseAdmin
 {
     private static final String TAG = "DatabaseAdminImpl";
     private static Log log = JavaLogger.getLogger(TAG);
-
+    /** Default filename template for upgrade */
     protected String DEFAULT_FILENAME_TEMPLATE = "{2}-upgrade-v{0}-v{1}.sql";
-
+    /** PersistenceUnitAdmin unit name*/
     protected String puName;
-
+    /** PersistenceUnitAdmin control and configuration implementation */
     protected PersistenceAdmin persistenceAdmin;
-
+    /** Resource environment provides system-specific file open method. */
     protected ResourceEnvironment resourceEnvironment;
     protected OpenHelperCallbacks openHelperCallbacks;
     

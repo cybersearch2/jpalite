@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class TaskMonitor<Progress,Result> {
 
-
+	/** Enumerates tupes of monitor message */
     protected enum MonitorType {
         result,
         progress
@@ -41,7 +41,7 @@ public abstract class TaskMonitor<Progress,Result> {
     	
     	private MonitorType monitorType;
     	private TaskMonitor<?,?> taskMonitor;
-
+    	/** Payload is Progress or Result object according to monitor type */
     	private Object payload;
     	
     	public EventHandler(TaskMonitor<?,?> taskMonitor, MonitorType monitorType) {
@@ -81,14 +81,14 @@ public abstract class TaskMonitor<Progress,Result> {
         }
     }
 
-
+    /** Execution cancelled flag */
     protected final AtomicBoolean cancelled;
-
+    /** Exception thrown when the worker task fails due to a uncaught RuntimeException */
     protected ExecutionException executionException;
-
+    /** Future to return result and perform cancel operation - set only for async execution only */
     private volatile Future<Result> futureResult;
 
-
+    /** Work status PENDING, RUNNING, FINISHED, FAILED */
     protected volatile WorkStatus workStatus;
  
     /**

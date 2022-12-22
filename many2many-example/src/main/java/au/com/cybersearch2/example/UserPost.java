@@ -19,6 +19,8 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+
 /**
  * Join table which links users to their posts.
  * 
@@ -27,7 +29,7 @@ import javax.persistence.OneToOne;
  * </p>
  */
 @Entity(name="tableUserPost")
-public class UserPost 
+public class UserPost implements OrmEntity
 {
 
 	public final static String USER_ID_FIELD_NAME = "user_id";

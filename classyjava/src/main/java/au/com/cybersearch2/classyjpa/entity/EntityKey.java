@@ -21,11 +21,11 @@ package au.com.cybersearch2.classyjpa.entity;
  */
 public class EntityKey implements Comparable<EntityKey>
 {
-
+    /** Entity class hashcode */
     int entityClassHash;
-
+    /** Primary key hashcode */
     int primaryKeyHash;
-
+    /** Flag set true if updates need to be persisted on the entity identifed by this key */
     boolean dirty;
   
     /**
@@ -33,10 +33,10 @@ public class EntityKey implements Comparable<EntityKey>
      * @param entityClass Class of entity object
      * @param primaryKey Primary key of object
      */
-    public EntityKey(Class<?> entityClass, Object primaryKey)
+    public EntityKey(Class<?> entityClass, int primaryKey)
     {
         entityClassHash = entityClass.hashCode();
-        primaryKeyHash = primaryKey.hashCode();
+        primaryKeyHash = primaryKey;
     }
 
     /**

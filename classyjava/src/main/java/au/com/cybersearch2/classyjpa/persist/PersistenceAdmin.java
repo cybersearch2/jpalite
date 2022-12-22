@@ -21,6 +21,7 @@ import com.j256.ormlite.support.ConnectionSource;
 
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.EntityManagerLiteFactory;
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.classyjpa.query.DaoQueryFactory;
 import au.com.cybersearch2.classyjpa.query.QueryInfo;
 import au.com.cybersearch2.classyjpa.query.SqlQueryFactory;
@@ -39,7 +40,7 @@ public interface PersistenceAdmin extends ConnectionSourceFactory
      * @param name Query name
      * @param daoQueryFactory Query generator
      */
-    void addNamedQuery(Class<?> clazz, String name, DaoQueryFactory daoQueryFactory);
+    void addNamedQuery(Class<? extends OrmEntity> clazz, String name, DaoQueryFactory daoQueryFactory);
     
     /**
      * Add native named query to persistence unit context

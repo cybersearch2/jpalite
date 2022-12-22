@@ -44,7 +44,7 @@ public class PersistenceUnitInfoImpl implements PersistenceUnitInfo
     public PersistenceUnitInfoImpl(String persistenceUnitName)
     {
         this.persistenceUnitName = persistenceUnitName;
-        managedClassNames = new ArrayList<String>();
+        managedClassNames = new ArrayList<>();
         properties = new Properties();
         properties.setProperty(PU_NAME_PROPERTY, persistenceUnitName);
         

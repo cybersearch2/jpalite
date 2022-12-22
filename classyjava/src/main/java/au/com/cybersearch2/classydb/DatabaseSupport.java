@@ -29,7 +29,7 @@ import com.j256.ormlite.support.ConnectionSource;
  */
 public interface DatabaseSupport
 {
-
+    /** Connection type is implementation-specific */
     public enum ConnectionType
     {
         memory,

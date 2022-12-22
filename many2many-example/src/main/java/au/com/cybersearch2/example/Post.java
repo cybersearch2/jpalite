@@ -18,12 +18,14 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+
 
 /**
  * Post to some blog with String content.
  */
 @Entity(name="tablePost")
-public class Post 
+public class Post implements OrmEntity
 {
 
 

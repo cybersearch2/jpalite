@@ -21,6 +21,7 @@ import javax.persistence.PersistenceException;
 import com.j256.ormlite.stmt.PreparedQuery;
 import com.j256.ormlite.stmt.QueryBuilder;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
 import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 import au.com.cybersearch2.classyjpa.query.DaoQueryFactory;
@@ -39,15 +40,15 @@ import au.com.cybersearch2.classyjpa.query.SqlQuery;
  */
 public class ManyToManyGenerator implements DaoQueryFactory
 {
- 
+    /** The name of the join table which has 2 foreign key columns to associate 2 entity classes in a many to many relationship */ 
     String table;
-
+    /** Column name in join table to match on */
     String joinColumn;
-
+    /** Column name for foreign key to retrieve on */
     String foreignKeyColumn;
-
+    /** Column name in foreign table which foreignKeyColumn points to */
     String primaryKeyColumn;
-
+    /** Interface for JPA Support */
     PersistenceAdmin persistenceAdmin;
 
     /**
@@ -56,11 +57,11 @@ public class ManyToManyGenerator implements DaoQueryFactory
      * @author Andrew Bowley
      * 23 Sep 2014
      */
-    class ManyToManyQuery<T> extends DaoQuery<T>
+    class ManyToManyQuery<T extends OrmEntity> extends DaoQuery<T>
     {
-
+        /** Prepared statement to perform query */
         protected PreparedQuery<T> preparedStatement;
-
+        /** Single primary key argument required to perform query */
         protected SimpleSelectArg primaryKeyArg;
         
         /**
@@ -69,7 +70,7 @@ public class ManyToManyGenerator implements DaoQueryFactory
          * @param primaryKey The ID to match on the join table join column, placed in an array to support the DaoQuery interface
          * @throws SQLException
          */
-        public ManyToManyQuery(PersistenceDao<T, ?> dao, SimpleSelectArg... primaryKey) throws SQLException
+        public ManyToManyQuery(PersistenceDao<T> dao, SimpleSelectArg... primaryKey) throws SQLException
         {
             // The super class populates the primary key selection argument with a value and executes the prepared statement
             super(dao, primaryKey);
@@ -82,8 +83,8 @@ public class ManyToManyGenerator implements DaoQueryFactory
          * @see au.com.cybersearch2.classyjpa.query.DaoQuery#buildQuery(com.j256.ormlite.stmt.QueryBuilder)
          */
         @Override
-        protected QueryBuilder<T, ?> buildQuery(
-                QueryBuilder<T, ?> statementBuilder) throws SQLException 
+        protected QueryBuilder<T, Integer> buildQuery(
+                QueryBuilder<T, Integer> statementBuilder) throws SQLException 
         {
             // Validate primary key selection argument
             Object value = primaryKeyArg.getValue();
@@ -152,7 +153,7 @@ public class ManyToManyGenerator implements DaoQueryFactory
      * @see au.com.cybersearch2.classyjpa.query.DaoQueryFactory#generateQuery(au.com.cybersearch2.classyjpa.entity.PersistenceDao)
      */
     @Override
-    public <T> DaoQuery<T> generateQuery(PersistenceDao<T, ?> dao)
+    public <T extends OrmEntity> DaoQuery<T> generateQuery(PersistenceDao<T> dao)
             throws SQLException 
     {
         // Create The selection argument to contain the ID to match on the join table join column

@@ -17,14 +17,14 @@ import au.com.cybersearch2.classyjpa.transaction.TransactionInfo;
 import au.com.cybersearch2.classytask.TaskMonitor;
 
 /**
- * Implements most of the details to execute a peristence WorkerTask. To complete, override base class method executeInBackground().
+ * Implements most of the details to execute a persistence WorkerTask. To complete, override base class method executeInBackground().
  */
 public abstract class TaskBase<Progress> extends TaskMonitor<Progress, Boolean>
 {
     //private static final String TAG = "TaskBase";
     //private Log log = JavaLogger.getLogger(TAG);
     
-
+    /** Task to be performed */
     protected JavaPersistenceContext persistenceContext;
 
     /**

@@ -13,7 +13,9 @@
     limitations under the License. */
 package au.com.cybersearch2.pp.api;
 
-public interface Pet {
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+
+public interface Pet extends OrmEntity {
 
 	String getName();
 

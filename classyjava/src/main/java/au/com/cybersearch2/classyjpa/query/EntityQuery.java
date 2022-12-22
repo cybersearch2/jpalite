@@ -25,6 +25,7 @@ import javax.persistence.TemporalType;
 
 import com.j256.ormlite.stmt.SelectArg;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.classylog.*;
 
 /**
@@ -33,11 +34,11 @@ import au.com.cybersearch2.classylog.*;
  * @author Andrew Bowley
  * 13/05/2014
  */
-public class EntityQuery<T> extends QueryBase
+public class EntityQuery<T extends OrmEntity> extends QueryBase
 {
     private static final String TAG = "EntityQuery";
     private static Log log = JavaLogger.getLogger(TAG);
-
+    /** OrmLite query for generic entity class */
     protected DaoQuery<T> daoQuery;
 
     public EntityQuery(DaoQuery<T> daoQuery)

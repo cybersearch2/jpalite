@@ -19,11 +19,11 @@ package au.com.cybersearch2.classyjpa.entity;
  * @author Andrew Bowley
  * 02/05/2014
  */
-public class OrmDaoHelper<T,ID>
+public class OrmDaoHelper<T extends OrmEntity>
 {
-    protected PersistenceDao<T, ID> entityDao; 
+    protected PersistenceDao<T> entityDao; 
     
-    public OrmDaoHelper(PersistenceDao<T, ID> entityDao)
+    public OrmDaoHelper(PersistenceDao<T> entityDao)
     {
         this.entityDao = entityDao;
     }
@@ -53,11 +53,9 @@ public class OrmDaoHelper<T,ID>
      * @return The object that has the ID field which equals id or null if no matches.
      * @throws RuntimeException on any SQL problems or if more than 1 item with the id are found in the database.
      */
-    public T queryForId(Object primaryKey)
+    public T queryForId(int primaryKey)
     {
-        @SuppressWarnings("unchecked")
-        ID id = (ID)primaryKey;
-        return entityDao.queryForId(id);
+         return entityDao.queryForId(primaryKey);
     }
 
     /**
@@ -78,7 +76,7 @@ public class OrmDaoHelper<T,ID>
      * @param object Object
      * @return id
      */
-     public ID extractId(Object object)
+     public int extractId(Object object)
      {
          @SuppressWarnings("unchecked")
          T entity = (T)object;
@@ -94,7 +92,7 @@ public class OrmDaoHelper<T,ID>
      {
          @SuppressWarnings("unchecked")
          T entity = (T)object;
-         ID id = entityDao.extractId(entity);
+         int id = entityDao.extractId(entity);
          return entityDao.idExists(id);
      }
 

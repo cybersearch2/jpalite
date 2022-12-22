@@ -11,6 +11,22 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License. */
+// Originally com.j256.ormlite.daoRuntimeExceptionDao, globally edited 
+// PersistenceException to PerisistenceException to allow the EntityManger
+// to catch these exceptions
+// Original copyright license:
+/*
+Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby
+granted, provided that this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING
+ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL,
+DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
+USE OR PERFORMANCE OF THIS SOFTWARE.
+
+The author may be contacted via http://ormlite.com/ 
+*/
 package au.com.cybersearch2.classyjpa.entity;
 
 import java.sql.SQLException;
@@ -61,7 +77,7 @@ import com.j256.ormlite.table.TableInfo;
  * 
  * @author graywatson
  */
-public class PersistenceDao<T, ID> implements Dao<T, ID> {
+public class PersistenceDao<T extends OrmEntity> implements Dao<T, Integer> {
 
 	/*
 	 * We use debug here because we don't want these messages to be logged by default. The user will need to turn on
@@ -71,13 +87,13 @@ public class PersistenceDao<T, ID> implements Dao<T, ID> {
     private static final String TAG = "PersistenceDao";
     static Log log = JavaLogger.getLogger(TAG);
 
-	private Dao<T, ID> dao;
+	private Dao<T, Integer> dao;
 
-	public PersistenceDao(Dao<T, ID> dao) {
+	public PersistenceDao(Dao<T, Integer> dao) {
 		this.dao = dao;
 	}
 
-	public Dao<T, ID> getDao() {
+	public Dao<T, Integer> getDao() {
 		return dao;
 	}
 	
@@ -87,15 +103,14 @@ public class PersistenceDao<T, ID> implements Dao<T, ID> {
 	 * @param connectionSource Connection source
 	 * @param clazz Entity class
 	 * @param <T> Entity class type
-	 * @param <ID> Id type
 	 * @return PersistenceDao object
 	 * @throws java.sql.SQLException if database operation fails
 	 */
-	public static <T, ID> PersistenceDao<T, ID> createDao(ConnectionSource connectionSource, Class<T> clazz)
+	public static <T extends OrmEntity> PersistenceDao<T> createDao(ConnectionSource connectionSource, Class<T> clazz)
 			throws SQLException {
 		@SuppressWarnings("unchecked")
-		Dao<T, ID> castDao = (Dao<T, ID>) DaoManager.createDao(connectionSource, clazz);
-		return new PersistenceDao<T, ID>(castDao);
+		Dao<T, Integer> castDao = (Dao<T, Integer>) DaoManager.createDao(connectionSource, clazz);
+		return new PersistenceDao<T>(castDao);
 	}
 
 	/**
@@ -104,22 +119,21 @@ public class PersistenceDao<T, ID> implements Dao<T, ID> {
 	 * @param connectionSource Connection source
 	 * @param tableConfig Table configuration
 	 * @param <T> Entity class type
-	 * @param <ID> Id type
 	 * @return PersistenceDao object
 	 * @throws java.sql.SQLException if database operation fails
 	 */
-	public static <T, ID> PersistenceDao<T, ID> createDao(ConnectionSource connectionSource,
+	public static <T extends OrmEntity> PersistenceDao<T> createDao(ConnectionSource connectionSource,
 			DatabaseTableConfig<T> tableConfig) throws SQLException {
 		@SuppressWarnings("unchecked")
-		Dao<T, ID> castDao = (Dao<T, ID>) DaoManager.createDao(connectionSource, tableConfig);
-		return new PersistenceDao<T, ID>(castDao);
+		Dao<T, Integer> castDao = (Dao<T, Integer>) DaoManager.createDao(connectionSource, tableConfig);
+		return new PersistenceDao<T>(castDao);
 	}
 
 	/**
 	 * @see Dao#queryForId(Object)
 	 */
 	@Override
-	public T queryForId(ID id) {
+	public T queryForId(Integer id) {
 		try {
 			return dao.queryForId(id);
 		} catch (SQLException e) {
@@ -249,7 +263,7 @@ public class PersistenceDao<T, ID> implements Dao<T, ID> {
 	 * @see Dao#queryBuilder()
 	 */
 	@Override
-	public QueryBuilder<T, ID> queryBuilder() {
+	public QueryBuilder<T, Integer> queryBuilder() {
 		return dao.queryBuilder();
 	}
 
@@ -257,7 +271,7 @@ public class PersistenceDao<T, ID> implements Dao<T, ID> {
 	 * @see Dao#updateBuilder()
 	 */
 	@Override
-	public UpdateBuilder<T, ID> updateBuilder() {
+	public UpdateBuilder<T, Integer> updateBuilder() {
 		return dao.updateBuilder();
 	}
 
@@ -265,7 +279,7 @@ public class PersistenceDao<T, ID> implements Dao<T, ID> {
 	 * @see Dao#deleteBuilder()
 	 */
 	@Override
-	public DeleteBuilder<T, ID> deleteBuilder() {
+	public DeleteBuilder<T, Integer> deleteBuilder() {
 		return dao.deleteBuilder();
 	}
 
@@ -347,7 +361,7 @@ public class PersistenceDao<T, ID> implements Dao<T, ID> {
 	 * @see Dao#updateId(Object, Object)
 	 */
 	@Override
-	public int updateId(T data, ID newId) {
+	public int updateId(T data, Integer newId) {
 		try {
 			return dao.updateId(data, newId);
 		} catch (SQLException e) {
@@ -399,7 +413,7 @@ public class PersistenceDao<T, ID> implements Dao<T, ID> {
 	 * @see Dao#deleteById(Object)
 	 */
 	@Override
-	public int deleteById(ID id) {
+	public int deleteById(Integer id) {
 		try {
 			return dao.deleteById(id);
 		} catch (SQLException e) {
@@ -425,7 +439,7 @@ public class PersistenceDao<T, ID> implements Dao<T, ID> {
 	 * @see Dao#deleteIds(Collection)
 	 */
 	@Override
-	public int deleteIds(Collection<ID> ids) {
+	public int deleteIds(Collection<Integer> ids) {
 		try {
 			return dao.deleteIds(ids);
 		} catch (SQLException e) {
@@ -678,7 +692,7 @@ public class PersistenceDao<T, ID> implements Dao<T, ID> {
 	 * @see Dao#extractId(Object)
 	 */
 	@Override
-	public ID extractId(T data) {
+	public Integer extractId(T data) {
 		try {
 			return dao.extractId(data);
 		} catch (SQLException e) {
@@ -848,7 +862,7 @@ public class PersistenceDao<T, ID> implements Dao<T, ID> {
 	 * @see Dao#idExists(Object)
 	 */
 	@Override
-	public boolean idExists(ID id) {
+	public boolean idExists(Integer id) {
 		try {
 			return dao.idExists(id);
 		} catch (SQLException e) {
@@ -1009,7 +1023,7 @@ public class PersistenceDao<T, ID> implements Dao<T, ID> {
 	}
 
 	@Override
-	public TableInfo<T, ID> getTableInfo() {
+	public TableInfo<T, Integer> getTableInfo() {
 		return dao.getTableInfo();
 	}
 }

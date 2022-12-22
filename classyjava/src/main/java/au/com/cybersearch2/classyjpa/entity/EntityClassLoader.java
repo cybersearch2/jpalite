@@ -24,6 +24,6 @@ public interface EntityClassLoader {
 	 * @return The Class object for the requested class.
 	 * @throws ClassNotFoundException If no such class can be found 
 	 */
-	Class<?> loadClass(String name) throws ClassNotFoundException;
+	Class<? extends OrmEntity> loadClass(String name) throws ClassNotFoundException;
 
 }

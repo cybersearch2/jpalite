@@ -20,6 +20,7 @@ import java.util.Map;
 
 import javax.persistence.PersistenceException;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
 
 import com.j256.ormlite.stmt.PreparedQuery;
@@ -33,7 +34,7 @@ import com.j256.ormlite.stmt.SelectArg;
  * @author Andrew Bowley
  * 01/06/2014
  */
-public abstract class DaoQuery<T>
+public abstract class DaoQuery<T extends OrmEntity>
 {
     /**
      * SimpleSelectArg
@@ -55,11 +56,11 @@ public abstract class DaoQuery<T>
         }
     }
     
-
-    protected PersistenceDao<T, ?> dao;
-
+    /** Entity DAO, which has open connection source */
+    protected PersistenceDao<T> dao;
+    /** Maps selection argument to name ie. columnName attribute */
     protected Map<String, SelectArg> argumentMap;
-
+    /** Selection arguments which are used to construct the WHERE clause */
     protected SelectArg[] argumentArray;
  
     /**
@@ -67,10 +68,10 @@ public abstract class DaoQuery<T>
      * @param dao Entity DAO, which has open connection sourcev
      * @param selectionArguments Selection arguments which are used to construct the WHERE clause
      */
-    public DaoQuery(PersistenceDao<T, ?> dao, SimpleSelectArg... selectionArguments)
+    public DaoQuery(PersistenceDao<T> dao, SimpleSelectArg... selectionArguments)
     {
         this.dao = dao;
-        argumentMap = new HashMap<String, SelectArg>();
+        argumentMap = new HashMap<>();
         if ((selectionArguments != null) && (selectionArguments.length > 0))
         {
             // Copy arguments to local array
@@ -93,7 +94,7 @@ public abstract class DaoQuery<T>
      * @return QueryBuilder - updated with query to be performed
 	 * @throws java.sql.SQLException if database operation fails
      */
-    abstract protected QueryBuilder<T, ?> buildQuery(QueryBuilder<T, ?> statementBuilder) throws SQLException;
+    abstract protected QueryBuilder<T, Integer> buildQuery(QueryBuilder<T, Integer> statementBuilder) throws SQLException;
 
     /**
      * Returns list of objects from executing prepared query
@@ -126,7 +127,7 @@ public abstract class DaoQuery<T>
         PreparedQuery<T> prepared = null;
         try
         {
-            QueryBuilder<T, ?> statementBuilder = dao.queryBuilder();
+            QueryBuilder<T, Integer> statementBuilder = dao.queryBuilder();
             if (startPosition > 0)
                 statementBuilder.offset(Long.valueOf(startPosition));
             if (maxResults > 0)

@@ -27,7 +27,7 @@ import com.j256.ormlite.table.TableUtils;
  * @author Andrew Bowley
  * 18/08/2014
  */
-public class OrmDaoHelperFactory<T,ID>
+public class OrmDaoHelperFactory<T extends OrmEntity>
 {
     private Class<T> entityClass;
 
@@ -36,18 +36,18 @@ public class OrmDaoHelperFactory<T,ID>
         this.entityClass = entityClass;
     }
 
-    OrmDaoHelper<T,ID> getOrmDaoHelper(ConnectionSource connectionSource)
+    OrmDaoHelper<T>getOrmDaoHelper(ConnectionSource connectionSource)
     {
-        PersistenceDao<T, ID> entityDao = getDao(connectionSource);
+        PersistenceDao<T> entityDao = getDao(connectionSource);
         checkTableExists(connectionSource, entityDao);
-        return new OrmDaoHelper<T,ID>(entityDao);
+        return new OrmDaoHelper<T>(entityDao);
     }
 
-    public PersistenceDao<T, ID> getDao(ConnectionSource connectionSource) 
+    public PersistenceDao<T> getDao(ConnectionSource connectionSource) 
     {
         try
         {
-            PersistenceDao<T, ID> dao = createDao(connectionSource);
+            PersistenceDao<T> dao = createDao(connectionSource);
             dao.setObjectCache(true);
             return dao;
         }
@@ -59,11 +59,11 @@ public class OrmDaoHelperFactory<T,ID>
 
     public boolean checkTableExists(ConnectionSource connectionSource) 
     {
-        PersistenceDao<T, ID> entityDao = getDao(connectionSource);
+        PersistenceDao<T> entityDao = getDao(connectionSource);
         return checkTableExists(connectionSource, entityDao);
     }
     
-    protected boolean checkTableExists(ConnectionSource connectionSource, PersistenceDao<T, ID> entityDao) 
+    protected boolean checkTableExists(ConnectionSource connectionSource, PersistenceDao<T> entityDao) 
     {
         try
         {
@@ -81,9 +81,9 @@ public class OrmDaoHelperFactory<T,ID>
     }
 
     @SuppressWarnings("unchecked")
-    protected PersistenceDao<T, ID> createDao(ConnectionSource connectionSource) throws SQLException
+    protected PersistenceDao<T> createDao(ConnectionSource connectionSource) throws SQLException
     {
-        return new PersistenceDao<T, ID>((Dao<T, ID>) DaoManager.createDao(connectionSource, entityClass));
+        return new PersistenceDao<T>((Dao<T, Integer>) DaoManager.createDao(connectionSource, entityClass));
     }
     
     protected void createTable(ConnectionSource connectionSource) throws SQLException

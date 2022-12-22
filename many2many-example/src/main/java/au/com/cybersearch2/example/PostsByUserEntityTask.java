@@ -55,7 +55,7 @@ public class PostsByUserEntityTask implements PersistenceWork
         post1.id = post1_id;
         post2 = new Post();
         post2.id = post2_id;
-        posts = new ArrayList<Post>();
+        posts = new ArrayList<>();
     }
 
 

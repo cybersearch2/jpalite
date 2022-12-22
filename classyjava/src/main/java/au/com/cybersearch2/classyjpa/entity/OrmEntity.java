@@ -11,16 +11,12 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License. */
-package au.com.cybersearch2.pp.api;
+package au.com.cybersearch2.classyjpa.entity;
 
-import au.com.cybersearch2.classyjpa.entity.OrmEntity;
-
-public interface Person extends OrmEntity {
-
-	String getName();
-
-	long getTimestamp();
-
-	int getId();
+/**
+ * Marks a class as an entity class for use in Object-Relational Mapping. It exists to distinguish an entity type from any type.
+ * It cannot be called "Entity" because it clashes with javax.persistence.Entity,
+ */
+public interface OrmEntity {
 
 }

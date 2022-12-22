@@ -25,6 +25,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+
 /**
  * NodeEntity
  * Persistent anchor for a component of a graph. 
@@ -35,7 +37,7 @@ import javax.persistence.OneToOne;
  * 05/09/2014
  */
 @Entity(name = "nodes")
-public class NodeEntity implements Serializable
+public class NodeEntity implements OrmEntity, Serializable
 {
     private static final long serialVersionUID = -5476538034094591968L;
     

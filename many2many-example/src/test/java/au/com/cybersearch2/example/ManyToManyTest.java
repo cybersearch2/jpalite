@@ -31,7 +31,6 @@ package au.com.cybersearch2.example;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import au.com.cybersearch2.classytask.WorkStatus;
 
@@ -48,7 +47,7 @@ public class ManyToManyTest
     {
     } 
     
-    @Test @Ignore
+    @Test 
     public void test_many_to_many_jpa() throws Exception
     {
         ManyToManyMain manyToManyMain = new ManyToManyMain();

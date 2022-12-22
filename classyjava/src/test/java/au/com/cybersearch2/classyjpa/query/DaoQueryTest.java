@@ -41,7 +41,7 @@ public class DaoQueryTest
 {
     private static final int OFFSET = 17;
     private static final int LIMIT = 100;
-    protected PersistenceDao<RecordCategory, Integer> persistenceDao;
+    protected PersistenceDao<RecordCategory> persistenceDao;
     protected PreparedQuery<RecordCategory> preparedQuery;
     protected QueryBuilder<RecordCategory, Integer> statementBuilder;
 
@@ -60,8 +60,8 @@ public class DaoQueryTest
         DaoQuery<RecordCategory> daoQuery = new DaoQuery<RecordCategory>(persistenceDao){
 
             @Override
-            protected QueryBuilder<RecordCategory, ?> buildQuery(
-                    QueryBuilder<RecordCategory, ?> statementBuilder)
+            protected QueryBuilder<RecordCategory,Integer> buildQuery(
+                    QueryBuilder<RecordCategory, Integer> statementBuilder)
                     throws SQLException {
                 return statementBuilder;
             }};
@@ -83,8 +83,8 @@ public class DaoQueryTest
         DaoQuery<RecordCategory> daoQuery = new DaoQuery<RecordCategory>(persistenceDao){
 
             @Override
-            protected QueryBuilder<RecordCategory, ?> buildQuery(
-                    QueryBuilder<RecordCategory, ?> statementBuilder)
+            protected QueryBuilder<RecordCategory, Integer> buildQuery(
+                    QueryBuilder<RecordCategory, Integer> statementBuilder)
                     throws SQLException {
                 return statementBuilder;
             }};
@@ -145,8 +145,8 @@ public class DaoQueryTest
         DaoQuery<RecordCategory> daoQuery = new DaoQuery<RecordCategory>(persistenceDao){
 
             @Override
-            protected QueryBuilder<RecordCategory, ?> buildQuery(
-                    QueryBuilder<RecordCategory, ?> statementBuilder)
+            protected QueryBuilder<RecordCategory, Integer> buildQuery(
+                    QueryBuilder<RecordCategory, Integer> statementBuilder)
                     throws SQLException {
                 return statementBuilder;
             }};

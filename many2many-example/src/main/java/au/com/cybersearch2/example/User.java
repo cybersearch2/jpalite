@@ -22,11 +22,13 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+
 /**
  * A user object with a name.
  */
 @Entity(name="tableUser")
-public class User 
+public class User implements OrmEntity
 {
 
 	public final static String ID_FIELD_NAME = "id";

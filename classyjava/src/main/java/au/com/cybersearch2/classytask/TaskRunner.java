@@ -27,7 +27,7 @@ import com.google.common.util.concurrent.MoreExecutors;
  */
 public class TaskRunner<Progress>
 {
-
+    /** Manages the worker thread pool */
 	private final TaskExecutor taskExecutor; 
 	/** Executor service which returns a ListenableFuture when a task is submitted.
 	    This provides an effective cancel capability. Recommended by Jesper de Jong */

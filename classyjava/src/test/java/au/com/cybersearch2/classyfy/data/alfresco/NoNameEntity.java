@@ -20,13 +20,15 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+
 /**
  * NoNameEntity
  * @author Andrew Bowley
  * 12/05/2014
  */
 @Entity
-public class NoNameEntity
+public class NoNameEntity implements OrmEntity
 {
         @Id @GeneratedValue
         protected int _id;

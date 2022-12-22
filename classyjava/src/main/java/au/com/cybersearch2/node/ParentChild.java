@@ -28,9 +28,9 @@ import javax.persistence.OneToOne;
  */
 @Entity(name="child_nodes")
 public class ParentChild {
-
+    /** Column name in join table for user foreign key */
 	public final static String CHILD_ID_FIELD_NAME = "_child_id";
-
+    /** Column name in join table for post foreign key */
 	public final static String PARENT_ID_FIELD_NAME = "_parent_id";
 
 	/**
@@ -40,12 +40,12 @@ public class ParentChild {
     @Id @GeneratedValue
 	int id;
 
-
+	/** This is a foreign object which just stores the id from the User object in this table. */
     @OneToOne
     @JoinColumn(name=CHILD_ID_FIELD_NAME, referencedColumnName="_id")
     NodeBean child;
 
-
+	/** This is a foreign object which just stores the id from the Post object in this table. */
     @OneToOne
     @JoinColumn(name=PARENT_ID_FIELD_NAME, referencedColumnName="_id")
     NodeBean parent;

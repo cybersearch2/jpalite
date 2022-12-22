@@ -42,15 +42,15 @@ public class JavaPersistenceContext
     private static final String TAG = "PersistenceTaskImpl";
     private Log log = JavaLogger.getLogger(TAG);
     
- 
+    /** Enclosing transaction and associated information */ 
     protected TransactionInfo transactionInfo;
-
+    /** Work to be performed */
     protected PersistenceWork persistenceWork;
-
+    /** JPA EntityManager "lite" provider hides special case where a reserved ConnectionSource must be employed */
     protected EntityManagerProvider entityManagerProvider;
-
+    /** Unexpected RunTimeException caught in process execution */
     protected ExecutionException executionException;
-
+    /** Execution status - final state will be FINISHED or FAILED */
     protected WorkStatus status;
 
     /**

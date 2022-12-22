@@ -30,7 +30,7 @@ public class OrmDaoHelperTest
 {
 /*    
     // TODO Reinstate tests if worthy
-    // Overide internal methods which create concrete objects to replace them with mocks 
+    // Override internal methods which create concrete objects to replace them with mocks 
     class OrmDaoHelper<T,ID> extends OrmDaoHelper<T,ID>
     {
         @SuppressWarnings("unchecked")
@@ -62,7 +62,7 @@ public class OrmDaoHelperTest
     @Test 
     public void test_create_for_no_entity_table_case() throws Exception
     {
-        OrmDaoHelper<RecordCategory, Integer> helper = new OrmDaoHelper<RecordCategory, Integer>(RecordCategory.class);
+        OrmDaoHelper<RecordCategory> helper = new OrmDaoHelper<RecordCategory>(RecordCategory.class);
         when(dao.isTableExists()).thenReturn(false);
         RecordCategory entity = new RecordCategory();
         ConnectionSource connectionSource = mock(ConnectionSource.class);
@@ -75,7 +75,7 @@ public class OrmDaoHelperTest
     @Test 
     public void test_create_for_entity_table_exists_case() throws Exception
     {
-        OrmDaoHelper<RecordCategory, Integer> helper = new OrmDaoHelper<RecordCategory, Integer>(RecordCategory.class);
+        OrmDaoHelper<RecordCategory> helper = new OrmDaoHelper<RecordCategory>(RecordCategory.class);
         when(dao.isTableExists()).thenReturn(true);
         RecordCategory entity = new RecordCategory();
         ConnectionSource connectionSource = mock(ConnectionSource.class);
@@ -90,7 +90,7 @@ public class OrmDaoHelperTest
     {
         RecordCategory entity = new RecordCategory();
         ConnectionSource connectionSource = mock(ConnectionSource.class);
-        OrmDaoHelper<RecordCategory, Integer> helper = new OrmDaoHelper<RecordCategory, Integer>(RecordCategory.class);
+        OrmDaoHelper<RecordCategory> helper = new OrmDaoHelper<RecordCategory>(RecordCategory.class);
         when(dao.isTableExists()).thenReturn(false);
         SQLException exception = new SQLException();
         Mockito.doThrow(exception).when(helper.tableCreator).createTable(RecordCategory.class, connectionSource);
@@ -106,7 +106,7 @@ public class OrmDaoHelperTest
         }
     }
 */
-    PersistenceDao<RecordCategory, Integer> dao;
+    PersistenceDao<RecordCategory> dao;
 
     @SuppressWarnings("unchecked")
     @Before
@@ -118,7 +118,7 @@ public class OrmDaoHelperTest
     @Test
     public void test_query_for_id() throws Exception
     {
-        OrmDaoHelper<RecordCategory, Integer> helper = new OrmDaoHelper<RecordCategory, Integer>(dao);
+        OrmDaoHelper<RecordCategory> helper = new OrmDaoHelper<RecordCategory>(dao);
         RecordCategory entity = new RecordCategory();
         Integer id = Integer.valueOf(1);
         when(dao.queryForId(id)).thenReturn(entity);
@@ -128,7 +128,7 @@ public class OrmDaoHelperTest
     @Test
     public void test_query_for_same_id() throws Exception
     {
-        OrmDaoHelper<RecordCategory, Integer> helper = new OrmDaoHelper<RecordCategory, Integer>(dao);
+        OrmDaoHelper<RecordCategory> helper = new OrmDaoHelper<RecordCategory>(dao);
         RecordCategory entity1 = new RecordCategory();
         RecordCategory entity2 = new RecordCategory();
         when(dao.queryForSameId(entity1)).thenReturn(entity2);
@@ -138,7 +138,7 @@ public class OrmDaoHelperTest
     @Test
     public void test_extract_id() throws Exception
     {
-        OrmDaoHelper<RecordCategory, Integer> helper = new OrmDaoHelper<RecordCategory, Integer>(dao);
+        OrmDaoHelper<RecordCategory> helper = new OrmDaoHelper<RecordCategory>(dao);
         RecordCategory entity1 = new RecordCategory();
         Integer id = Integer.valueOf(1);
         when(dao.extractId(entity1)).thenReturn(id);
@@ -148,7 +148,7 @@ public class OrmDaoHelperTest
     @Test
     public void test_entity_exists() throws Exception
     {
-        OrmDaoHelper<RecordCategory, Integer> helper = new OrmDaoHelper<RecordCategory, Integer>(dao);
+        OrmDaoHelper<RecordCategory> helper = new OrmDaoHelper<RecordCategory>(dao);
         RecordCategory entity1 = new RecordCategory();
         Integer id = Integer.valueOf(1);
         when(dao.extractId(entity1)).thenReturn(id);
@@ -160,7 +160,7 @@ public class OrmDaoHelperTest
     @Test
     public void test_update() throws Exception
     {
-        OrmDaoHelper<RecordCategory, Integer> helper = new OrmDaoHelper<RecordCategory, Integer>(dao);
+        OrmDaoHelper<RecordCategory> helper = new OrmDaoHelper<RecordCategory>(dao);
         RecordCategory entity1 = new RecordCategory();
         when(dao.update(entity1)).thenReturn(1);
         assertThat(helper.update(entity1)).isEqualTo(1);
@@ -169,7 +169,7 @@ public class OrmDaoHelperTest
     @Test
     public void test_delete() throws Exception
     {
-        OrmDaoHelper<RecordCategory, Integer> helper = new OrmDaoHelper<RecordCategory, Integer>(dao);
+        OrmDaoHelper<RecordCategory> helper = new OrmDaoHelper<RecordCategory>(dao);
         RecordCategory entity1 = new RecordCategory();
         when(dao.delete(entity1)).thenReturn(1);
         assertThat(helper.delete(entity1)).isEqualTo(1);

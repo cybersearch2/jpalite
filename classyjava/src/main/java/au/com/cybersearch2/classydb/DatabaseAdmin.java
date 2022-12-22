@@ -22,17 +22,17 @@ import com.j256.ormlite.support.ConnectionSource;
  */
 public interface DatabaseAdmin
 {
-
+    /** Property key for create database */
     public final static String SCHEMA_FILENAME = "schema-filename";
-
+    /** Property key for drop database */
     public final static String DROP_SCHEMA_FILENAME = "drop-schema-filename";
-
+    /** Property key for populate database */
     public final static String DATA_FILENAME = "data-filename";
-
+    /** Property key for update database. Use Java MessageFormat with %1 = old version and %2 = new version - see java.text.MessageFormat */
     public final static String UPGRADE_FILENAME_FORMAT = "upgrade-filename-format";
-
+    /** Property key for database version */
     public final static String DATABASE_VERSION = "database-version";
-
+    /** Property key for database name */
     public final static String DATABASE_NAME = "database-name";
 
     /**

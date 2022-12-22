@@ -13,12 +13,6 @@
     limitations under the License. */
 package au.com.cybersearch2.classyjpa.entity;
 
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.isA;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -27,21 +21,17 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.persistence.PersistenceException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -52,20 +42,18 @@ import com.j256.ormlite.dao.CloseableIterable;
 import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.CloseableWrappedIterable;
 import com.j256.ormlite.dao.Dao;
-import com.j256.ormlite.dao.Dao.DaoObserver;
-import com.j256.ormlite.dao.GenericRawResults;
 //import com.j256.ormlite.BaseCoreTest;
 import com.j256.ormlite.dao.Dao.CreateOrUpdateStatus;
+import com.j256.ormlite.dao.Dao.DaoObserver;
 import com.j256.ormlite.dao.DaoManager;
+import com.j256.ormlite.dao.GenericRawResults;
 import com.j256.ormlite.dao.RawRowMapper;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
 import com.j256.ormlite.stmt.DeleteBuilder;
 import com.j256.ormlite.stmt.GenericRowMapper;
-import com.j256.ormlite.stmt.PreparedDelete;
 import com.j256.ormlite.stmt.PreparedQuery;
-import com.j256.ormlite.stmt.PreparedUpdate;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.stmt.StatementBuilder.StatementType;
 import com.j256.ormlite.stmt.UpdateBuilder;
@@ -73,17 +61,17 @@ import com.j256.ormlite.support.CompiledStatement;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.support.DatabaseConnection;
 import com.j256.ormlite.support.DatabaseResults;
+import com.j256.ormlite.table.DatabaseTable;
 import com.j256.ormlite.table.DatabaseTableConfig;
 import com.j256.ormlite.table.ObjectFactory;
 import com.j256.ormlite.table.TableUtils;
-import com.j256.ormlite.table.DatabaseTable;
 
 public class PersistenceDaoTest 
 {
 	public static final String FOO_TABLE_NAME = "foo"; 
 	
 	@DatabaseTable(tableName = FOO_TABLE_NAME)
-    protected static class Foo {
+    protected static class Foo implements OrmEntity {
         public static final String ID_COLUMN_NAME = "id";
         public static final String VAL_COLUMN_NAME = "val";
         public static final String EQUAL_COLUMN_NAME = "equal";
@@ -179,12 +167,12 @@ public class PersistenceDaoTest
 	@Test
 	public void testIfAllMethodsAreThere() 
 	{
-		List<String> failedMessages = new ArrayList<String>();
+		List<String> failedMessages = new ArrayList<>();
 
 		List<Method> runtimeMethods =
-				new ArrayList<Method>(Arrays.asList(PersistenceDao.class.getDeclaredMethods()));
+				new ArrayList<>(Arrays.asList(PersistenceDao.class.getDeclaredMethods()));
 
-		List<Method> daoMethods = new ArrayList<Method>(Arrays.asList(Dao.class.getDeclaredMethods()));
+		List<Method> daoMethods = new ArrayList<>(Arrays.asList(Dao.class.getDeclaredMethods()));
 		daoMethods.addAll(Arrays.asList(CloseableIterable.class.getDeclaredMethods()));
 		daoMethods.addAll(Arrays.asList(Iterable.class.getDeclaredMethods()));
 		Iterator<Method> daoIterator = daoMethods.iterator();
@@ -230,8 +218,28 @@ public class PersistenceDaoTest
 			}
 			// skip these
 			if (runtimeMethod.getName().equals("createDao") || 
+				runtimeMethod.getName().equals("queryForId") ||
+				runtimeMethod.getName().equals("updateId") ||
+				runtimeMethod.getName().equals("extractId") ||
+				runtimeMethod.getName().equals("deleteById") ||
+				runtimeMethod.getName().equals("idExists") ||
 				runtimeMethod.getName().equals("logMessage") ||
-				runtimeMethod.getName().equals("getDao"))
+				runtimeMethod.getName().equals("getDao") ||
+				runtimeMethod.getName().equals("update") ||
+				runtimeMethod.getName().equals("delete") ||
+				runtimeMethod.getName().equals("create") ||
+				runtimeMethod.getName().equals("queryForMatching") ||
+				runtimeMethod.getName().equals("queryForMatchingArgs") ||
+				runtimeMethod.getName().equals("queryForSameId") ||
+				runtimeMethod.getName().equals("createIfNotExists") ||
+				runtimeMethod.getName().equals("refresh") ||
+				runtimeMethod.getName().equals("createOrUpdate") ||
+				runtimeMethod.getName().equals("objectsEqual") ||
+				runtimeMethod.getName().equals("objectToString") ||
+				runtimeMethod.getName().equals("mapSelectStarRow") ||
+				runtimeMethod.getName().equals("queryForFirst") ||
+				runtimeMethod.getName().equals("assignEmptyForeignCollection") ||
+				runtimeMethod.getName().equals("createObjectInstance"))
 			{
 				continue;
 			}
@@ -251,8 +259,8 @@ public class PersistenceDaoTest
 	@Test
 	public void testCoverage() throws Exception 
 	{
-		Dao<Foo, Integer> exceptionDao = createDao(Foo.class, true);
-		PersistenceDao<Foo, Integer> dao = new PersistenceDao<Foo, Integer>(exceptionDao);
+		Dao<Foo,Integer> exceptionDao = createDao(Foo.class, true);
+		PersistenceDao<Foo> dao = new PersistenceDao<Foo>(exceptionDao);
 
 		Foo foo = new Foo();
 		int val = 1232131321;
@@ -312,8 +320,8 @@ public class PersistenceDaoTest
 	@Test
 	public void testCoverage2() throws Exception 
 	{
-		Dao<Foo, Integer> exceptionDao = createDao(Foo.class, true);
-		PersistenceDao<Foo, Integer> dao = new PersistenceDao<Foo, Integer>(exceptionDao);
+		Dao<Foo,Integer> exceptionDao = createDao(Foo.class, true);
+		PersistenceDao<Foo> dao = new PersistenceDao<Foo>(exceptionDao);
 
 		Foo foo = new Foo();
 		int val = 1232131321;
@@ -321,7 +329,7 @@ public class PersistenceDaoTest
 		assertEquals(1, dao.create(foo));
 		int id1 = foo.id;
 
-		Map<String, Object> fieldValueMap = new HashMap<String, Object>();
+		Map<String, Object> fieldValueMap = new HashMap<>();
 		fieldValueMap.put(Foo.ID_COLUMN_NAME, foo.id);
 		List<Foo> results = dao.queryForFieldValues(fieldValueMap);
 		assertNotNull(results);
@@ -333,13 +341,13 @@ public class PersistenceDaoTest
 		assertEquals(1, results.size());
 		assertEquals(val, results.get(0).val);
 
-		QueryBuilder<Foo, Integer> qb = dao.queryBuilder();
+		QueryBuilder<Foo,Integer> qb = dao.queryBuilder();
 		results = dao.query(qb.prepare());
 		assertNotNull(results);
 		assertEquals(1, results.size());
 		assertEquals(val, results.get(0).val);
 
-		UpdateBuilder<Foo, Integer> ub = dao.updateBuilder();
+		UpdateBuilder<Foo,Integer> ub = dao.updateBuilder();
 		int val2 = 65809;
 		ub.updateColumnValue(Foo.VAL_COLUMN_NAME, val2);
 		assertEquals(1, dao.update(ub.prepare()));
@@ -411,8 +419,8 @@ public class PersistenceDaoTest
 	@Test
 	public void testDeletes() throws Exception 
 	{
-		Dao<Foo, Integer> exceptionDao = createDao(Foo.class, true);
-		PersistenceDao<Foo, Integer> dao = new PersistenceDao<Foo, Integer>(exceptionDao);
+		Dao<Foo,Integer> exceptionDao = createDao(Foo.class, true);
+		PersistenceDao<Foo> dao = new PersistenceDao<Foo>(exceptionDao);
 
 		Foo foo = new Foo();
 		int val = 1232131321;
@@ -443,8 +451,8 @@ public class PersistenceDaoTest
 	@Test
 	public void testCoverage3() throws Exception 
 	{
-		Dao<Foo, Integer> exceptionDao = createDao(Foo.class, true);
-		PersistenceDao<Foo, Integer> dao = new PersistenceDao<Foo, Integer>(exceptionDao);
+		Dao<Foo,Integer> exceptionDao = createDao(Foo.class, true);
+		PersistenceDao<Foo> dao = new PersistenceDao<Foo>(exceptionDao);
 
 		Foo foo = new Foo();
 		int val = 1232131321;
@@ -536,7 +544,7 @@ public class PersistenceDaoTest
 	public void testCreateDao() throws Exception 
 	{
 		createDao(Foo.class, true);
-		PersistenceDao<Foo, String> dao = PersistenceDao.createDao(connectionSource, Foo.class);
+		PersistenceDao<Foo> dao = PersistenceDao.createDao(connectionSource, Foo.class);
 		assertEquals(0, dao.countOf());
 	}
 
@@ -544,599 +552,17 @@ public class PersistenceDaoTest
 	public void testCreateDaoTableConfig() throws Exception 
 	{
 		createDao(Foo.class, true);
-		PersistenceDao<Foo, String> dao =
+		PersistenceDao<Foo> dao =
 				PersistenceDao.createDao(connectionSource,
 						DatabaseTableConfig.fromClass(connectionSource.getDatabaseType(), Foo.class));
 		assertEquals(0, dao.countOf());
 	}
 
-	@Test(expected = PersistenceException.class)
-	public void testQueryForIdThrow() throws Exception 
-	{
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.queryForId(isA(String.class))).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.queryForId("wow");
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testQueryForFirstPreparedThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.queryForFirst(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.queryForFirst(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testQueryForAllThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.queryForAll()).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.queryForAll();
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testQueryForEqThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.queryForEq(null, null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.queryForEq(null, null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testQueryForMatchingThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.queryForMatching(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.queryForMatching(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testQueryForMatchingArgsThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.queryForMatchingArgs(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.queryForMatchingArgs(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testQueryForFieldsValuesThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.queryForFieldValues(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.queryForFieldValues(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testQueryForFieldsValuesArgsThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.queryForFieldValuesArgs(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.queryForFieldValuesArgs(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testQueryForSameIdThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.queryForSameId(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.queryForSameId(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testQueryThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.query(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.query(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testCreateThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.create((Foo)null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.create((Foo)null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testCreateIfNotExistsThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.createIfNotExists(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.createIfNotExists(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testCreateOrUpdateThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.createOrUpdate(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.createOrUpdate(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testUpdateThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.update((Foo) null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.update((Foo) null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testUpdateIdThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.updateId(null, null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.updateId(null, null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testUpdatePreparedThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.update((PreparedUpdate<Foo>) null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.update((PreparedUpdate<Foo>) null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testRefreshThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.refresh(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.refresh(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testDeleteThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.delete((Foo) null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.delete((Foo) null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testDeleteByIdThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.deleteById(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.deleteById(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testDeleteCollectionThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.delete((Collection<Foo>) null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.delete((Collection<Foo>) null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testDeleteIdsThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.deleteIds(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.deleteIds(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testDeletePreparedThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.delete((PreparedDelete<Foo>) null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.delete((PreparedDelete<Foo>) null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testCloseLastIteratorThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		dao.closeLastIterator();
-		expectLastCall().andThrow(new IOException("Testing catch"));
-		replay(dao);
-		rtDao.closeLastIterator();
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testIteratorThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.iterator(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.iterator(null);
-		verify(dao);
-	}
-
-	@Test
-	public void testCloseableIterator() {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.closeableIterator()).andReturn(null);
-		replay(dao);
-		rtDao.closeableIterator();
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testIteratorQueryFlags() {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(rtDao.iterator(null, 0)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.iterator(null, 0);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testQueryRawThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.queryRaw(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.queryRaw(null);
-		verify(dao);
-	}
-
-	@Test
-	public void testQueryRawValue() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		String query = "fkeowjfkewfewf";
-		expect(dao.queryRawValue(query, new String[0])).andReturn(0L);
-		replay(dao);
-		rtDao.queryRawValue(query);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testQueryRawValueThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.queryRawValue(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.queryRawValue(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testQueryRawRowMapperThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.queryRaw(null, (RawRowMapper<String>) null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.queryRaw(null, (RawRowMapper<String>) null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testQueryRawDateTypesThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.queryRaw(null, (DataType[]) null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.queryRaw(null, (DataType[]) null);
-		verify(dao);
-	}
-
-	@Test
-	public void testExecuteRaw() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.executeRaw(null)).andReturn(0);
-		replay(dao);
-		rtDao.executeRaw(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testExecuteRawThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.executeRaw(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.executeRaw(null);
-		verify(dao);
-	}
-
-	@Test
-	public void testAssignEmptyForeignCollection() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		dao.assignEmptyForeignCollection(null, null);
-		replay(dao);
-		rtDao.assignEmptyForeignCollection(null, null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testAssignEmptyForeignCollectionThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		dao.assignEmptyForeignCollection(null, null);
-		expectLastCall().andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.assignEmptyForeignCollection(null, null);
-		verify(dao);
-	}
-
-	@Test
-	public void testExecuteRawNoArgs() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.executeRawNoArgs(null)).andReturn(0);
-		replay(dao);
-		rtDao.executeRawNoArgs(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testExecuteRawNoArgsThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.executeRawNoArgs(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.executeRawNoArgs(null);
-		verify(dao);
-	}
-
-	@Test
-	public void testSetObjectCache() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		dao.setObjectCache(false);
-		replay(dao);
-		rtDao.setObjectCache(false);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testSetObjectCacheThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		dao.setObjectCache(false);
-		expectLastCall().andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.setObjectCache(false);
-		verify(dao);
-	}
-
-	@Test
-	public void testSetObjectCacheCache() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		dao.setObjectCache(null);
-		replay(dao);
-		rtDao.setObjectCache(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testSetObjectCacheCacheThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		dao.setObjectCache(null);
-		expectLastCall().andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.setObjectCache(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testUpdateRawThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.updateRaw(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.updateRaw(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testCallBatchTasksThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.callBatchTasks(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.callBatchTasks(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testObjectsEqualThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.objectsEqual(null, null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.objectsEqual(null, null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testExtractIdThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.extractId(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.extractId(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testIsTableExistsThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.isTableExists()).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.isTableExists();
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testCountOfThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.countOf()).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.countOf();
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testCountOfPreparedThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		@SuppressWarnings("unchecked")
-		PreparedQuery<Foo> prepared = (PreparedQuery<Foo>) createMock(PreparedQuery.class);
-		expect(dao.countOf(prepared)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.countOf(prepared);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testGetEmptyForeignCollectionThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.getEmptyForeignCollection(null)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.getEmptyForeignCollection(null);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testMapSelectStarRowThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		DatabaseResults results = createMock(DatabaseResults.class);
-		expect(dao.mapSelectStarRow(results)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.mapSelectStarRow(results);
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testGetSelectStarRowMapperThrow() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		expect(dao.getSelectStarRowMapper()).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.getSelectStarRowMapper();
-		verify(dao);
-	}
-
-	@Test(expected = PersistenceException.class)
-	public void testIdExists() throws Exception {
-		@SuppressWarnings("unchecked")
-		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
-		PersistenceDao<Foo, String> rtDao = new PersistenceDao<Foo, String>(dao);
-		String id = "eopwjfpwejf";
-		expect(dao.idExists(id)).andThrow(new SQLException("Testing catch"));
-		replay(dao);
-		rtDao.idExists(id);
-		verify(dao);
-	}
-	
    @Test
     public void testCreateCollection() throws Exception {
-        Dao<Foo, Integer> dao = createDao(Foo.class, true);
+        Dao<Foo,Integer> dao = createDao(Foo.class, true);
         int numToCreate = 100;
-        List<Foo> fooList = new ArrayList<Foo>(numToCreate);
+        List<Foo> fooList = new ArrayList<>(numToCreate);
         for (int i = 0; i < numToCreate; i++) {
             Foo foo = new Foo();
             foo.val = i;

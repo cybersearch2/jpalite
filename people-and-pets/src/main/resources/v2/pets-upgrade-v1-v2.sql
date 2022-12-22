@@ -1,2 +1,2 @@
 UPDATE `pets_info` SET `version` = 2;
-ALTER TABLE `Pets` ADD COLUMN `quote` VARCHAR DEFAULT ``;
+ALTER TABLE `People` ADD quote VARCHAR NOT NULL DEFAULT '';

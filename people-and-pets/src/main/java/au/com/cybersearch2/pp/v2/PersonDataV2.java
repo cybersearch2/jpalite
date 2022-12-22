@@ -16,6 +16,7 @@ package au.com.cybersearch2.pp.v2;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.pp.PersonData;
 
 
@@ -23,7 +24,7 @@ import au.com.cybersearch2.pp.PersonData;
  * Another demonstration object we are creating and persisting to the database.
  */
 @Entity(name="People")
-public class PersonDataV2 extends PersonData
+public class PersonDataV2 extends PersonData implements OrmEntity
 {
 	@Column 
 	String quote;

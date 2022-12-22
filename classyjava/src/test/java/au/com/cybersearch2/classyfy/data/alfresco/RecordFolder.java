@@ -18,13 +18,15 @@ import java.util.Date;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+
 /**
  * RecordFolder
  * @author Andrew Bowley
  * 12/05/2014
  */
 @Entity(name = "folders")
-public class RecordFolder extends ManagedRecord
+public class RecordFolder extends ManagedRecord implements OrmEntity
 {
 
     private static final long serialVersionUID = -116543269110722658L;

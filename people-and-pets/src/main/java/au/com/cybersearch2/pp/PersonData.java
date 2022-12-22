@@ -18,6 +18,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.pp.api.Person;
 
 
@@ -25,7 +26,7 @@ import au.com.cybersearch2.pp.api.Person;
  * Another demonstration object we are creating and persisting to the database.
  */
 @Entity(name="People")
-public class PersonData implements Person 
+public class PersonData implements Person, OrmEntity
 {
 
     @Id @GeneratedValue

@@ -27,11 +27,11 @@ import com.j256.ormlite.support.DatabaseConnection;
  */
 public class PreCommit
 {
-
+    /** Caught Exception or RuntimeException declared in EntityManager interface  */
     protected Throwable preCommitException;
-
+    /** Flags rollback only */
     protected boolean doRollback;
-
+    /** The Callable object */
     protected TransactionCallable onPreCommit;
     
     /**

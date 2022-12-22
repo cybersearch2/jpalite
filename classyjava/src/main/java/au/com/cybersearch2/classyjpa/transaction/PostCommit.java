@@ -28,11 +28,11 @@ import javax.persistence.PersistenceException;
  */
 public class PostCommit
 {
-
+    /** Caught Exception or RuntimeException declared in EntityManager interface  */
     protected Throwable postCommitException;
-
+    /** Error message for unexpected RuntimeException, ie. not declared in EntityManager interface. */
     protected String error;
-
+    /** The Callable object */
     protected Callable<Boolean> onPostCommit;
    
     /**

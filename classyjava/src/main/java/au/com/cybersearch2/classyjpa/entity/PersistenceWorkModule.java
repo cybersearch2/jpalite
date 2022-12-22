@@ -34,19 +34,19 @@ import au.com.cybersearch2.classytask.WorkStatus;
  */
 public class PersistenceWorkModule
 {
-
+	/** Persistence unit name */
     private final String puName;
-
+    /** Flag set true if execution is asynchronous */
     private final boolean async;
-
+    /** Persistence work unit to be performed */
     private final PersistenceWork persistenceWork;
-
+    /** Communications between execution thread and monitor thread */
     private final TaskMessenger<Void,Boolean> taskMessenger;
-
+    /** Execution service with thread pool */
     private final TaskExecutor taskExecutor;
-
+    /** Database connection source or null if not provided */
     private ConnectionSource connectionSource;
-
+    /** Flag set true if user transactions apply */
     private boolean isUserTransactions;
 
     /**

@@ -36,11 +36,11 @@ abstract public class QueryBase implements Query
 {    
     private static final String GET_PARAM_NO_SUPPORT = "getParameter() not supported";
     private static final String PARAM_NO_SUPPORT = "Parameter not supported";
-
+    /** Maximum number of objects to return */
     protected int maxResults;
-
+    /** The start position of the first result, numbered from 0 */
     protected int startPosition;
-
+    /** Flag for query closed */
     protected volatile boolean isClosed;
 
     /**

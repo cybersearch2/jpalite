@@ -33,13 +33,13 @@ public class PersistenceContainer
 
     private static final String TAG = "PersistenceContainer";
     static Log log = JavaLogger.getLogger(TAG);
-
+    /** Flag to indicate user transaction. If false, then only transaction method supported is setRollbackOnly() */
     protected volatile boolean isUserTransactionMode;
-
+    /** JPA EntityManager "lite" factory ie. only API v1 supported. */
     protected EntityManagerLiteFactory entityManagerFactory;
-
+    /** Flag set if executes asynchronously (default = false if only single connection ) */
     protected boolean async;
-
+    /** PersistenceUnitAdmin Unit name */
     protected String puName;
 
     /**
@@ -50,7 +50,7 @@ public class PersistenceContainer
     public PersistenceContainer(PersistenceAdmin persistenceAdmin, boolean async)
     {
         this.puName = persistenceAdmin.getPuName();
-
+        /** Reference PersistenceUnitAdmin Unit specified by name to extract EntityManagerFactory object */
         //if (persistenceAdmin == null) 
 		//{
 		//	throw new PersistenceException("Persistence Unit \"" + puName + "\" is invalid");
@@ -71,7 +71,7 @@ public class PersistenceContainer
     }
  
     /**
-     * Returns object which creates a persistence context and executes a task in that contex
+     * Returns object which creates a persistence context and executes a task in that context
      * @param persistenceWork Persistence work
      * @return JavaPersistenceContext object
      */
@@ -87,7 +87,7 @@ public class PersistenceContainer
     }
     
     /**
-     * Returns object which creates a persistence context and executes a task in that contex
+     * Returns object which creates a persistence context and executes a task in that context
      * @param persistenceWork Persistence work
      * @param entityManagerProvider Custom entity manager provider
      * @return JavaPersistenceContext object

@@ -47,24 +47,48 @@ import au.com.cybersearch2.classylog.Log;
  */
 public abstract class DatabaseSupportBase implements DatabaseSupport, ConnectionSourceFactory 
 {
-
+    /** Table to hold database version */
     public static final String INFO_SUFFIX = "_info";
-
+    /** Limit clause validation */
     protected static final Pattern LIMIT_PATTERN =
             Pattern.compile("\\s*\\d+\\s*(,\\s*\\d+\\s*)?");
 	public static final boolean CACHE_STORE = true;
-
+    /** Default location for file database. Intended only for testing purposes. */
     public static final String DEFAULT_FILE_LOCATION = System.getProperty("user.home") + "/.c2/resources/db";
-    
 
-    protected ConnectionType connectionType;
+    public static final class ConnectionPair {
+        
+    	private final ConnectionSource connectionSource;
+        /** Connection created on datasource creation */
+        private final DatabaseConnection databaseConnection;
+        
+        public ConnectionPair(ConnectionSource connectionSource, DatabaseConnection databaseConnection) {
+        	this.connectionSource = connectionSource;
+        	this.databaseConnection = databaseConnection;
+        }
 
+		public ConnectionSource getCnnectionSource() {
+			return connectionSource;
+		}
+
+		public DatabaseConnection getDatabaseConnection() {
+			return databaseConnection;
+		}
+        
+		public void close() throws Exception {
+			connectionSource.releaseConnection(getDatabaseConnection());
+			connectionSource.close();
+		}
+    }
+    /** Connection type: memory, file or pooled */
+    protected final ConnectionType connectionType;
+    /** ORMLite databaseType */
     protected final DatabaseType databaseType;
-
-    protected Map<String, ConnectionSource> connectionSourceMap;
+    /** Map connectionSource to database name */
+    protected Map<String, ConnectionPair> connectionSourceMap;
     protected List<OpenHelperCallbacks> openHelperCallbacksList;
-    protected Log log;
-    protected String tag;
+    private Log log;
+    private String tag;
 
     /**
      * Construct DatabaseSupportBase object
@@ -79,7 +103,7 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
         this.databaseType = databaseType;
         this.log = log;
         this.tag = tag;
-        connectionSourceMap = new HashMap<String, ConnectionSource>();
+        connectionSourceMap = new HashMap<>();
         openHelperCallbacksList = Collections.emptyList();
 	}
 
@@ -111,17 +135,17 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
     @Override
     public ConnectionSource getConnectionSource(String databaseName, Properties properties)
     {
-        ConnectionSource connectionSource = connectionSourceMap.get(databaseName);
-        if (connectionSource == null)
+       	ConnectionSource connectionSource = null;
+        ConnectionPair connectionPair = connectionSourceMap.get(databaseName);
+        if (connectionPair != null)
+        	connectionSource = connectionPair.getCnnectionSource();
+        else
         {
-            try
-            {
+            try {
                 connectionSource = getConnectionSourceForType(databaseName, properties);
-                connectionSourceMap.put(databaseName, connectionSource);
-                connectionSource.getReadWriteConnection(getInfoTable(properties));
-            }
-            catch (SQLException e)
-            {
+                DatabaseConnection databaseConnection = connectionSource.getReadWriteConnection(getInfoTable(properties));
+                connectionSourceMap.put(databaseName, new ConnectionPair(connectionSource, databaseConnection));
+            } catch (SQLException e) {
                 throw new PersistenceException("Cannot create connectionSource for database " + databaseName, e);
             }
         }
@@ -134,12 +158,11 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
     @Override
     public synchronized void close()
     {   // Close all ConnectionSource objects and clear ConnectionSource map
-        for (Entry<String, ConnectionSource> entry: connectionSourceMap.entrySet())
+        for (Entry<String, ConnectionPair> entry: connectionSourceMap.entrySet())
         {
-            ConnectionSource connectionSource = entry.getValue();
             try
             {
-                connectionSource.close();
+            	entry.getValue().close();
             }
             catch (Exception e)
             {
@@ -163,7 +186,7 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
     public void registerOpenHelperCallbacks(OpenHelperCallbacks openHelperCallbacks)
     {
         if (openHelperCallbacksList.isEmpty())
-            openHelperCallbacksList = new ArrayList<OpenHelperCallbacks>();
+            openHelperCallbacksList = new ArrayList<>();
         openHelperCallbacksList.add(openHelperCallbacks);
     }
     
@@ -263,7 +286,7 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
     @Override
     public List<Object> getResultList(ConnectionSource connectionSource, QueryInfo queryInfo, int startPosition, int maxResults) 
     {
-        List<Object> resultList = new ArrayList<Object>();
+        List<Object> resultList = new ArrayList<>();
         DatabaseConnection connection = null;
         String databaseName = databaseType.getDatabaseName();
         try

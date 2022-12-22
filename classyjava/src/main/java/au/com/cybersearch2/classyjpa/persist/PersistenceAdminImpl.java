@@ -26,6 +26,7 @@ import au.com.cybersearch2.classydb.DatabaseAdmin;
 import au.com.cybersearch2.classydb.DatabaseSupport;
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.EntityManagerLiteFactory;
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.classyjpa.entity.EntityManagerImpl;
 import au.com.cybersearch2.classyjpa.query.DaoQueryFactory;
 import au.com.cybersearch2.classyjpa.query.QueryInfo;
@@ -92,7 +93,7 @@ public class PersistenceAdminImpl implements PersistenceAdmin
      * @param daoQueryFactory Query generator
      */
     @Override
-    public void addNamedQuery(Class<?> clazz, String name,
+    public void addNamedQuery(Class<? extends OrmEntity> clazz, String name,
             DaoQueryFactory daoQueryFactory) 
     {
         config.addNamedQuery(clazz, name, daoQueryFactory);

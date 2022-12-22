@@ -89,8 +89,8 @@ public class EntityQueryTest
         }
 
         @Override
-        protected QueryBuilder<RecordCategory, ?> buildQuery(
-                QueryBuilder<RecordCategory, ?> statementBuilder)
+        protected QueryBuilder<RecordCategory, Integer> buildQuery(
+                QueryBuilder<RecordCategory, Integer> statementBuilder)
                 throws SQLException 
         {
             return null;
@@ -103,7 +103,7 @@ public class EntityQueryTest
     }
     protected EntityQuery<RecordCategory> entityQuery;
     protected DaoQuery<RecordCategory> daoQuery;
-    protected static PersistenceDao<RecordCategory, Integer> persistenceDao;
+    protected static PersistenceDao<RecordCategory> persistenceDao;
     protected static List<RecordCategory> results;
     protected static RecordCategory testItem;
 
@@ -115,7 +115,7 @@ public class EntityQueryTest
         if (results == null)
         {
             testItem = new RecordCategory();
-            results = new ArrayList<RecordCategory>();
+            results = new ArrayList<>();
             results.add(testItem);
             CREATED_CALENDAR = GregorianCalendar.getInstance();
             CREATED_CALENDAR.setTime(CREATED);

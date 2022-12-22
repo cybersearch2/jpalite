@@ -27,12 +27,12 @@ import com.j256.ormlite.support.ConnectionSource;
  */
 public class EntityManagerDelegate
 {
-
+    /** Connection Source to use for all database connections */
     protected final ConnectionSource connectionSource;
- 
+    /** Enclosing transaction object */ 
     protected final EntityTransaction entityTransaction;
-
-    protected final Map<String,OrmDaoHelperFactory<?,?>> helperFactoryMap;
+    /** Maps entity class name to ORMLite DAO helper */
+    protected final Map<String,OrmDaoHelperFactory<? extends OrmEntity>> helperFactoryMap;
     
     /**
      * Constructor.
@@ -40,7 +40,7 @@ public class EntityManagerDelegate
      * @param entityTransaction Enclosing transaction object
      * @param helperFactoryMap Maps entity class name to ORMLite DAO helper
      */
-    public EntityManagerDelegate(ConnectionSource connectionSource, EntityTransaction entityTransaction, Map<String,OrmDaoHelperFactory<?,?>> helperFactoryMap)
+    public EntityManagerDelegate(ConnectionSource connectionSource, EntityTransaction entityTransaction, Map<String,OrmDaoHelperFactory<? extends OrmEntity>> helperFactoryMap)
     {
         this.connectionSource = connectionSource;
         this.entityTransaction = entityTransaction;
@@ -53,9 +53,9 @@ public class EntityManagerDelegate
      * @return PersistenceDao
      * @throws UnsupportedOperationException if class is unknown for this persistence unit
      */
-    public PersistenceDao<?, ?> getDaoForClass(Class<?> clazz)
+    public PersistenceDao<?> getDaoForClass(Class<?> clazz)
     {
-        OrmDaoHelperFactory<?,?> ormDaoHelperFactory = (OrmDaoHelperFactory<?, ?>) helperFactoryMap.get(clazz.getName());
+        OrmDaoHelperFactory<? extends OrmEntity> ormDaoHelperFactory = (OrmDaoHelperFactory<? extends OrmEntity>) helperFactoryMap.get(clazz.getName());
         if (ormDaoHelperFactory == null)
             throw new UnsupportedOperationException("DAO for entity class " + clazz.getName() + " not supported because ormDaoHelper is not set");
         return ormDaoHelperFactory.getDao(connectionSource);

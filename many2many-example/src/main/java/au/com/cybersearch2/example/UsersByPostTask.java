@@ -51,7 +51,7 @@ public class UsersByPostTask implements PersistenceWork
         post1.id = post1_id;
         post2 = new Post();
         post2.id = post2_id;
-        resultsList = new ArrayList<List<User>>(2);
+        resultsList = new ArrayList<>(2);
     }
 
     /**
@@ -60,7 +60,7 @@ public class UsersByPostTask implements PersistenceWork
      */
     public List<User> getUsersByPost1()
     {
-        return resultsList.size() == 2 ? resultsList.get(0) : new ArrayList<User>();
+        return resultsList.size() == 2 ? resultsList.get(0) : new ArrayList<>();
     }
     
     /**
@@ -69,7 +69,7 @@ public class UsersByPostTask implements PersistenceWork
      */
     public List<User> getUsersByPost2()
     {
-        return resultsList.size() == 2 ? resultsList.get(1) : new ArrayList<User>();
+        return resultsList.size() == 2 ? resultsList.get(1) : new ArrayList<>();
     }
     
     /**

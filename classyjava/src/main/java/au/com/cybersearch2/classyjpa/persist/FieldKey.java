@@ -21,9 +21,9 @@ package au.com.cybersearch2.classyjpa.persist;
  */
 public class FieldKey implements Comparable<FieldKey>
 {
-
+    /** Class of entity with one or more OneToMany or ManyToOne annotations */
     protected Class<?> entityClass;
-
+    /** Name of "mappedBy" field */
     protected String columnName;
  
     /**
