@@ -155,7 +155,7 @@ public class ManyToManyMain
                 // have the 2nd user also say the 2nd post
                 UserPost user2Post1 = new UserPost(user2, post2);
                 entityManager.persist(user2Post1);
-                // Database updates commited upon exit
+                // Database updates committed upon exit
             }
 
             @Override

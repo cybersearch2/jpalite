@@ -23,8 +23,8 @@ import javax.persistence.FlushModeType;
 import javax.persistence.LockModeType;
 import javax.persistence.Parameter;
 import javax.persistence.PersistenceException;
-import javax.persistence.Query;
 import javax.persistence.TemporalType;
+import javax.persistence.TypedQuery;
 
 /**
  * QueryBase
@@ -32,7 +32,7 @@ import javax.persistence.TemporalType;
  * @author Andrew Bowley
  * 08/07/2014
  */
-abstract public class QueryBase implements Query
+abstract public class QueryBase<T> implements TypedQuery<T>
 {    
     private static final String GET_PARAM_NO_SUPPORT = "getParameter() not supported";
     private static final String PARAM_NO_SUPPORT = "Parameter not supported";
@@ -50,7 +50,7 @@ abstract public class QueryBase implements Query
      * @throws IllegalArgumentException if argument is negative
      */
     @Override
-    public Query setMaxResults(int maxResults) 
+    public TypedQuery<T> setMaxResults(int maxResults) 
     {
         if (maxResults < 0)
             throw new IllegalArgumentException("Parameter \"maxResults\" is negative: " + maxResults);
@@ -65,7 +65,7 @@ abstract public class QueryBase implements Query
      * @throws IllegalArgumentException if argument is negative
      */
      @Override
-     public Query setFirstResult(int startPosition) 
+     public TypedQuery<T> setFirstResult(int startPosition) 
      {
          if (startPosition < 0)
              throw new IllegalArgumentException("Parameter \"startPosition\" is negative: " + startPosition);
@@ -79,7 +79,7 @@ abstract public class QueryBase implements Query
      * @return The same query instance
      */
     @Override
-    public Query setFlushMode(FlushModeType type) 
+    public TypedQuery<T> setFlushMode(FlushModeType type) 
     {
         return this;
     }
@@ -91,7 +91,7 @@ abstract public class QueryBase implements Query
      * @return The same query instance
      */
     @Override
-    public Query setHint(String hintName, Object value) 
+    public TypedQuery<T> setHint(String hintName, Object value) 
     {
         return this;
     }
@@ -245,7 +245,7 @@ abstract public class QueryBase implements Query
      * @param lockMode Lock mode
      */
     @Override
-    public Query setLockMode(LockModeType lockMode) {
+    public TypedQuery<T> setLockMode(LockModeType lockMode) {
         throw new UnsupportedOperationException("LockMode not supported");
     }
 
@@ -255,7 +255,7 @@ abstract public class QueryBase implements Query
      * @param value Value
      */
     @Override
-    public <X> Query setParameter(Parameter<X> param, X value) {
+    public <X> TypedQuery<T> setParameter(Parameter<X> param, X value) {
         throw new UnsupportedOperationException(PARAM_NO_SUPPORT);
     }
 
@@ -266,7 +266,7 @@ abstract public class QueryBase implements Query
      * @param temporalType Temporal type
      */
     @Override
-    public Query setParameter(Parameter<Calendar> param, Calendar value, TemporalType temporalType) {
+    public TypedQuery<T> setParameter(Parameter<Calendar> param, Calendar value, TemporalType temporalType) {
         throw new UnsupportedOperationException(PARAM_NO_SUPPORT);
     }
 
@@ -277,7 +277,7 @@ abstract public class QueryBase implements Query
      * @param temporalType Temporal type
      */
     @Override
-    public Query setParameter(Parameter<Date> param, Date value, TemporalType temporalType) {
+    public TypedQuery<T> setParameter(Parameter<Date> param, Date value, TemporalType temporalType) {
         throw new UnsupportedOperationException(PARAM_NO_SUPPORT);
     }
 

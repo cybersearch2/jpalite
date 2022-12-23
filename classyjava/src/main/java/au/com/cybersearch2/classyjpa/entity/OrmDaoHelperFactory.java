@@ -36,7 +36,7 @@ public class OrmDaoHelperFactory<T extends OrmEntity>
         this.entityClass = entityClass;
     }
 
-    OrmDaoHelper<T>getOrmDaoHelper(ConnectionSource connectionSource)
+    public OrmDaoHelper<T>getOrmDaoHelper(ConnectionSource connectionSource)
     {
         PersistenceDao<T> entityDao = getDao(connectionSource);
         checkTableExists(connectionSource, entityDao);

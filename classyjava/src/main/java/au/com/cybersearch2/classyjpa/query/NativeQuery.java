@@ -21,8 +21,8 @@ import java.util.List;
 
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceException;
-import javax.persistence.Query;
 import javax.persistence.TemporalType;
+import javax.persistence.TypedQuery;
 
 import au.com.cybersearch2.classylog.*;
 
@@ -32,7 +32,7 @@ import au.com.cybersearch2.classylog.*;
  * @author Andrew Bowley
  * 30/05/2014
  */
-public class NativeQuery extends QueryBase
+public class NativeQuery<T> extends QueryBase<T>
 {
     public static final String TAG = "NativeQuery";
     protected static Log log = JavaLogger.getLogger(TAG);
@@ -65,13 +65,13 @@ public class NativeQuery extends QueryBase
      */   
     @SuppressWarnings("unchecked")
     @Override
-    public List<Object> getResultList() 
+    public List<T> getResultList() 
     {
         if (isClosed) // Only perform query once
             return new ArrayList<>();
         try
         {
-            return (List<Object>) sqlQuery.getResultObjectList(startPosition, maxResults);
+            return (List<T>) sqlQuery.getResultObjectList(startPosition, maxResults);
         }
         finally
         {
@@ -84,16 +84,17 @@ public class NativeQuery extends QueryBase
      * @return Object
      * @throws NoResultException if there is no result
      */
-    @Override
-    public Object getSingleResult() 
+    @SuppressWarnings("unchecked")
+	@Override
+    public T getSingleResult() 
     {
-        Object result = null;
+        T result = null;
         if (isClosed) // Only perform query once
             throw new NoResultException("getSingleResult() called when query already executed");
         String message = sqlQuery.toString();
         try
         {
-             result = sqlQuery.getResultObject();
+             result = (T) sqlQuery.getResultObject();
         }
         catch (PersistenceException e)
         {
@@ -121,7 +122,7 @@ public class NativeQuery extends QueryBase
      *    correspond to parameter in query string
      */
     @Override
-    public Query setParameter(String param, Object value) 
+    public TypedQuery<T> setParameter(String param, Object value) 
     {
         if (!sqlQuery.setParam(param, value))
             throw new IllegalArgumentException("Parameter \"" + param + "\" is invalid");
@@ -137,7 +138,7 @@ public class NativeQuery extends QueryBase
      *    correspond to positional parameter of query
      */
     @Override
-    public Query setParameter(int position, Object value) 
+    public TypedQuery<T> setParameter(int position, Object value) 
     {
         if (!sqlQuery.setParam(position, value))
             throw new IllegalArgumentException("Position \"" + position + "\" is invalid");
@@ -154,7 +155,7 @@ public class NativeQuery extends QueryBase
      *    correspond to parameter in query string
      */
     @Override
-    public Query setParameter(String param, Date value, TemporalType type) 
+    public TypedQuery<T> setParameter(String param, Date value, TemporalType type) 
     {
         if (!sqlQuery.setParam(param, value))
             throw new IllegalArgumentException("Parameter \"" + param + "\" is invalid");
@@ -171,7 +172,7 @@ public class NativeQuery extends QueryBase
      *    correspond to parameter in query string
      */
     @Override
-    public Query setParameter(String param, Calendar value, TemporalType type) 
+    public TypedQuery<T> setParameter(String param, Calendar value, TemporalType type) 
     {
         if (!sqlQuery.setParam(param, value.getTime()))
             throw new IllegalArgumentException("Parameter \"" + param + "\" is invalid");
@@ -188,7 +189,7 @@ public class NativeQuery extends QueryBase
      *    correspond to positional parameter of query
      */
     @Override
-    public Query setParameter(int position, Date value, TemporalType type) 
+    public TypedQuery<T> setParameter(int position, Date value, TemporalType type) 
     {
         if (!sqlQuery.setParam(position, value))
             throw new IllegalArgumentException("Position \"" + position + "\" is invalid");
@@ -205,7 +206,7 @@ public class NativeQuery extends QueryBase
      *    correspond to positional parameter of query
      */
     @Override
-    public Query setParameter(int position, Calendar value, TemporalType type) 
+    public TypedQuery<T> setParameter(int position, Calendar value, TemporalType type) 
     {
         if (!sqlQuery.setParam(position, value.getTime()))
             throw new IllegalArgumentException("Position \"" + position + "\" is invalid");

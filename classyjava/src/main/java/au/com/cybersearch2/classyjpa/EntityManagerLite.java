@@ -19,6 +19,7 @@ import javax.persistence.FlushModeType;
 import javax.persistence.LockModeType;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 
@@ -62,15 +63,25 @@ public interface EntityManagerLite
 	public boolean contains(OrmEntity entity);
 
 	/**
-	 * Create an instance of Query for executing a named query (in the Java PersistenceUnitAdmin query language or in native SQL).
+	 * Create an instance of Query for executing a named query (using a Custom Statement Builder or in native SQL).
 	 * 
-	 * @param name
-	 *            the name of a query defined in metadata
+	 * @param name The name of a query defined in metadata
 	 * @return the new query instance
 	 * @throws IllegalArgumentException
 	 *             if a query has not been defined with the given name or if the query string is found to be invalid
 	 */
 	public Query createNamedQuery(String name);
+
+	/**
+	 * Create an instance of TypedQuery for executing a named query using a Custom Statement Builder or in native SQL).
+	 * 
+	 * @param name The name of a query defined in metadata
+	 * @param resultClass The type of the query result 
+	 * @return the new query instance
+	 * @throws IllegalArgumentException
+	 *             if a query has not been defined with the given name or if the query string is found to be invalid
+	 */
+	public <T> TypedQuery<T> createNamedQuery(String name, Class<T> resultClass);
 
 	/**
 	 * Synchronize the persistence context to the underlying database.

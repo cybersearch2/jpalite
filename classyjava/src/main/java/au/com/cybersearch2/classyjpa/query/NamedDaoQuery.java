@@ -16,7 +16,7 @@ package au.com.cybersearch2.classyjpa.query;
 import java.sql.SQLException;
 
 import javax.persistence.PersistenceException;
-import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
@@ -54,13 +54,13 @@ public class NamedDaoQuery<T extends OrmEntity> implements Comparable<NamedDaoQu
      * @param dao Entity DAO containing open ConnectionSource
      * @return Query
      */
-    public Query createQuery(PersistenceDao<?> dao)
+    public TypedQuery<? extends OrmEntity> createQuery(PersistenceDao<? extends OrmEntity> dao)
     {
         try
         {
         	if (!dao.getDataClass().isAssignableFrom(getEntityClass()))
                 throw new PersistenceException(String.format("Named query \"%s\" cannot be created with dao of class %x", name, getEntityClass().getName()));
-            @SuppressWarnings("unchecked")
+			@SuppressWarnings("unchecked")
 			DaoQuery<T> daoQuery = (DaoQuery<T>) daoQueryFactory.generateQuery(dao);
             return new EntityQuery<T>(daoQuery);
         }

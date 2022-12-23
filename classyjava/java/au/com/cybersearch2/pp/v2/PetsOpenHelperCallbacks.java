@@ -13,9 +13,7 @@
     limitations under the License. */
 package au.com.cybersearch2.pp.v2;
 
-import java.util.List;
-
-import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 
 import com.j256.ormlite.support.ConnectionSource;
 
@@ -102,7 +100,6 @@ public class PetsOpenHelperCallbacks extends OpenHelperCallbacksImpl
     }
     
     
-	@SuppressWarnings("unchecked")
 	protected PersistenceTask getUpgradeTask1()
 	{
 		return new PersistenceTask(){
@@ -111,11 +108,10 @@ public class PetsOpenHelperCallbacks extends OpenHelperCallbacksImpl
 			public void doTask(EntityManagerLite entityManager) 
 			{
 		    	// Query for all of the data objects in the database
-		        Query query = entityManager.createNamedQuery(PeopleAndPets.ALL_PET_DATA);
-		        List<PetDataV2> list = (List<PetDataV2>) query.getResultList();
-		
+		        TypedQuery<PetDataV2> query = 
+		        	entityManager.createNamedQuery(PeopleAndPets.ALL_PET_DATA, PetDataV2.class);
 				// If we already have items in the database
-				for (PetDataV2 simple : list) 
+				for (PetDataV2 simple : query.getResultList()) 
 				{
 					simple.setQuote(QuoteSource.getQuote());
 					entityManager.merge(simple);

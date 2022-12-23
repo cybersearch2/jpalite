@@ -15,7 +15,7 @@ package au.com.cybersearch2.pp.jpa;
 
 import java.util.List;
 
-import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.entity.PersistenceTask;
@@ -63,7 +63,6 @@ public class PeopleUpdate implements PersistenceTask
     /**
      * @see au.com.cybersearch2.classyjpa.entity.PersistenceWork#doTask(au.com.cybersearch2.classyjpa.EntityManagerLite)
      */
-    @SuppressWarnings("unchecked")
     @Override
     public void doTask(EntityManagerLite entityManager) 
     {
@@ -73,8 +72,8 @@ public class PeopleUpdate implements PersistenceTask
     	/// EntityManagerDelegate delegate = (EntityManagerDelegate) entityManager.getDelegate();
     	/// PersistenceDao<Person, Integer> personDao = (PersistenceDao<Person, Integer>) delegate.getDaoForClass(Person.class);
 		/// List<Person> list = personDao.queryForAll();
-        Query query = entityManager.createNamedQuery(PeopleAndPets.ALL_PERSON_DATA);
-        List<Person> list = (List<Person>) query.getResultList();
+        TypedQuery<Person> query = entityManager.createNamedQuery(PeopleAndPets.ALL_PERSON_DATA, Person.class);
+        List<Person> list = query.getResultList();
 
 		transcript.add("Got " + list.size() + " Person entries in " + context);
 		transcript.add("------------------------------------------");

@@ -13,7 +13,7 @@
     limitations under the License. */
 package au.com.cybersearch2.classyjpa.query;
 
-import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 
 /**
  * NamedSqlQuery
@@ -47,9 +47,10 @@ public class NamedSqlQuery implements Comparable<NamedSqlQuery>
      * Returns native query
      * @return Query
      */
-    public Query createQuery()
+    @SuppressWarnings("unchecked")
+	public <T> TypedQuery<T> createQuery(Class<T> clazz)
     {
-        return sqlQueryFactory.createSqlQuery(queryInfo);
+        return (TypedQuery<T>) sqlQueryFactory.createSqlQuery(queryInfo);
     }
 
     /**

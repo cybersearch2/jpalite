@@ -20,13 +20,14 @@ import java.util.List;
 
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceException;
-import javax.persistence.Query;
 import javax.persistence.TemporalType;
+import javax.persistence.TypedQuery;
 
 import com.j256.ormlite.stmt.SelectArg;
 
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
-import au.com.cybersearch2.classylog.*;
+import au.com.cybersearch2.classylog.JavaLogger;
+import au.com.cybersearch2.classylog.Log;
 
 /**
  * EntityQuery
@@ -34,7 +35,7 @@ import au.com.cybersearch2.classylog.*;
  * @author Andrew Bowley
  * 13/05/2014
  */
-public class EntityQuery<T extends OrmEntity> extends QueryBase
+public class EntityQuery<T extends OrmEntity> extends QueryBase<T> 
 {
     private static final String TAG = "EntityQuery";
     private static Log log = JavaLogger.getLogger(TAG);
@@ -82,9 +83,9 @@ public class EntityQuery<T extends OrmEntity> extends QueryBase
      * @throws NoResultException if there is no result
      */
    @Override
-    public Object getSingleResult() 
+    public T getSingleResult() 
     {
-        Object result = null;
+        T result = null;
         if (isClosed) // Only perform query once
             throw new NoResultException("getSingleResult() called when query already executed");
         try
@@ -116,7 +117,7 @@ public class EntityQuery<T extends OrmEntity> extends QueryBase
      *    correspond to parameter in query string
      */
     @Override
-    public Query setParameter(String param, Object value) 
+    public TypedQuery<T> setParameter(String param, Object value) 
     {
         SelectArg selectArg = validateParam(param);
         if (selectArg != null)
@@ -135,7 +136,7 @@ public class EntityQuery<T extends OrmEntity> extends QueryBase
      *    correspond to positional parameter of query
      */
     @Override
-    public Query setParameter(int position, Object value) 
+    public TypedQuery<T> setParameter(int position, Object value) 
     {
         if (daoQuery.isValidPosition(position))
         {
@@ -157,7 +158,7 @@ public class EntityQuery<T extends OrmEntity> extends QueryBase
      *    correspond to parameter in query string
      */
     @Override
-    public Query setParameter(String param, Date value, TemporalType type) 
+    public TypedQuery<T> setParameter(String param, Date value, TemporalType type) 
     {
         SelectArg selectArg = validateParam(param);
         if (selectArg != null)
@@ -177,7 +178,7 @@ public class EntityQuery<T extends OrmEntity> extends QueryBase
      *    correspond to parameter in query string
      */
     @Override
-    public Query setParameter(String param, Calendar value, TemporalType type) 
+    public TypedQuery<T> setParameter(String param, Calendar value, TemporalType type) 
     {
         SelectArg selectArg = validateParam(param);
         if (selectArg != null)
@@ -197,7 +198,7 @@ public class EntityQuery<T extends OrmEntity> extends QueryBase
      *    correspond to positional parameter of query
      */
     @Override
-    public Query setParameter(int position, Date value, TemporalType type) 
+    public TypedQuery<T> setParameter(int position, Date value, TemporalType type) 
     {
         if (daoQuery.isValidPosition(position))
         {
@@ -219,7 +220,7 @@ public class EntityQuery<T extends OrmEntity> extends QueryBase
      *    correspond to positional parameter of query
      */
     @Override
-    public Query setParameter(int position, Calendar value, TemporalType type) 
+    public TypedQuery<T> setParameter(int position, Calendar value, TemporalType type) 
     {
         if (daoQuery.isValidPosition(position))
         {

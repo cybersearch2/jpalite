@@ -13,7 +13,8 @@
     limitations under the License. */
 package au.com.cybersearch2.classyjpa.entity;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -34,6 +35,7 @@ import javax.persistence.FlushModeType;
 import javax.persistence.LockModeType;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -45,8 +47,6 @@ import com.j256.ormlite.support.DatabaseConnection;
 import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
 import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
 import au.com.cybersearch2.classyjpa.query.EntityQuery;
-import au.com.cybersearch2.classyjpa.query.NamedDaoQuery;
-import au.com.cybersearch2.classyjpa.query.NamedSqlQuery;
 import au.com.cybersearch2.classyjpa.transaction.EntityTransactionImpl;
 import au.com.cybersearch2.classyjpa.transaction.TransactionCallable;
 
@@ -58,6 +58,10 @@ import au.com.cybersearch2.classyjpa.transaction.TransactionCallable;
 public class EntityManagerImplTest
 {
 	private static String DATABASE_INFO_NAME = "";
+
+	private static class TestReturnType {
+		
+	}
 	
     private ConnectionSource connectionSource;
     private Map<String,OrmDaoHelperFactory<? extends OrmEntity>> helperFactoryMap;
@@ -775,12 +779,9 @@ public class EntityManagerImplTest
     public void test_create_named_query() 
     {
         String QUERY_NAME = "my_query";
-        NamedDaoQuery namedDaoQuery = mock(NamedDaoQuery.class);
-        when(persistenceConfig.getNamedQuery(QUERY_NAME)).thenReturn(namedDaoQuery);
-        Mockito.<Class<?>>when(namedDaoQuery.getEntityClass()).thenReturn(RecordCategory.class);
         EntityQuery entityQuery = mock(EntityQuery.class);
-        when(namedDaoQuery.createQuery(dao)).thenReturn(entityQuery);
-        Query result = entityManagerImpl.createNamedQuery(QUERY_NAME);
+        when(persistenceConfig.createNamedQuery(QUERY_NAME, RecordCategory.class, connectionSource)).thenReturn(entityQuery);
+        Query result = entityManagerImpl.createNamedQuery(QUERY_NAME, RecordCategory.class);
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(entityQuery);
     }
@@ -789,12 +790,10 @@ public class EntityManagerImplTest
     public void test_create_sql_named_query() 
     {
         String QUERY_NAME = "my_sql_query";
-        NamedSqlQuery namedSqlQuery = mock(NamedSqlQuery.class);
-        when(persistenceConfig.getNamedQuery(QUERY_NAME)).thenReturn(null);
-        when(persistenceConfig.getNativeQuery(QUERY_NAME)).thenReturn(namedSqlQuery);
-        Query query = mock(Query.class);
-        when(namedSqlQuery.createQuery()).thenReturn(query);
-        Query result = entityManagerImpl.createNamedQuery(QUERY_NAME);
+		@SuppressWarnings("unchecked")
+		TypedQuery<TestReturnType> query = mock(TypedQuery.class);
+        when(persistenceConfig.createNamedQuery(QUERY_NAME, TestReturnType.class, connectionSource)).thenReturn(query);
+        Query result = entityManagerImpl.createNamedQuery(QUERY_NAME, TestReturnType.class);
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(query);
     }
@@ -803,10 +802,11 @@ public class EntityManagerImplTest
     public void test_create_named_query_not_found() 
     {
         String QUERY_NAME = "my_query";
-        when(persistenceConfig.getNamedQuery(QUERY_NAME)).thenReturn(null);
-       try
+        when(persistenceConfig.createNamedQuery(QUERY_NAME, RecordCategory.class, connectionSource)).thenThrow(
+        	new IllegalArgumentException("Named query '" + QUERY_NAME + "' not found"));
+        try
         {
-            entityManagerImpl.createNamedQuery(QUERY_NAME);
+            entityManagerImpl.createNamedQuery(QUERY_NAME, RecordCategory.class);
             failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
         }
         catch(IllegalArgumentException e)

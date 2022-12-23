@@ -21,19 +21,17 @@ import javax.persistence.EntityTransaction;
 import javax.persistence.FlushModeType;
 import javax.persistence.LockModeType;
 import javax.persistence.PersistenceException;
-import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+
+import com.j256.ormlite.support.ConnectionSource;
+import com.j256.ormlite.support.DatabaseConnection;
 
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
-import au.com.cybersearch2.classyjpa.query.NamedDaoQuery;
-import au.com.cybersearch2.classyjpa.query.NamedSqlQuery;
 import au.com.cybersearch2.classyjpa.transaction.EntityTransactionImpl;
 import au.com.cybersearch2.classyjpa.transaction.SetRollbackTransaction;
 import au.com.cybersearch2.classyjpa.transaction.TransactionCallable;
 import au.com.cybersearch2.classyjpa.transaction.UserTransactionSupport;
-
-import com.j256.ormlite.support.ConnectionSource;
-import com.j256.ormlite.support.DatabaseConnection;
 
 /**
  * EntityManagerImpl
@@ -344,25 +342,25 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
      * @throws IllegalStateException if this EntityManager has been closed.
      */
     @Override
-    public Query createNamedQuery(String name) 
+    public TypedQuery<?> createNamedQuery(String name) 
     {
-        checkEntityManagerClosed("createNamedQuery()");
-        NamedDaoQuery<?> namedDaoQuery = persistenceConfig.getNamedQuery(name);
-        if (namedDaoQuery != null) {
-        	Class<? extends OrmEntity> clazz = namedDaoQuery.getEntityClass();
-            return namedDaoQuery.createQuery(daoInstance(clazz));
-        } else {
-            NamedSqlQuery namedSqlQuery = persistenceConfig.getNativeQuery(name);
-            if (namedSqlQuery == null)
-                throw new IllegalArgumentException("Named query '" + name + "' not found");
-            return namedSqlQuery.createQuery();
-        }
+    	return createNamedQuery(name, Object.class);
     }
 
-    private <T extends OrmEntity> PersistenceDao<T> daoInstance(Class<T> clazz ) {
-    	return getOrmDaoHelperFactoryForClass(clazz).getDao(connectionSource);
-    }
-    
+	/**
+	 * Create an instance of TypedQuery for executing a named query using a Custom Statement Builder or in native SQL).
+	 * 
+	 * @param name The name of a query defined in metadata
+	 * @param resultClass The type of the query result 
+	 * @return the new query instance
+	 * @throws IllegalArgumentException
+	 *             if a query has not been defined with the given name or if the query string is found to be invalid
+	 */
+	public <X> TypedQuery<X> createNamedQuery(String name, Class<X> resultClass) {
+        checkEntityManagerClosed("createNamedQuery()");
+        return persistenceConfig.createNamedQuery(name, resultClass, connectionSource);
+	}
+
     /**
      * NOT SUPPORTED
      * Indicate to the EntityManager that a JTA transaction is

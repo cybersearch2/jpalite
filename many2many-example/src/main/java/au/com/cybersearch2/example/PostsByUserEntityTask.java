@@ -14,10 +14,9 @@
 package au.com.cybersearch2.example;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
-import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
@@ -62,7 +61,6 @@ public class PostsByUserEntityTask implements PersistenceWork
     /**
       * @see au.com.cybersearch2.classyjpa.entity.PersistenceWork#doTask(au.com.cybersearch2.classyjpa.EntityManagerLite)
       */
-    @SuppressWarnings("unchecked")
     @Override
     public void doTask(EntityManagerLite entityManager) 
     {
@@ -74,12 +72,12 @@ public class PostsByUserEntityTask implements PersistenceWork
         entityManager.refresh(user2);
         entityManager.refresh(post1);
         entityManager.refresh(post2);
-        /*
-         * Perform query to get all posts by user1
-         */
-        Query query = entityManager.createNamedQuery(ManyToManyMain.POSTS_BY_USER);
+        // Perform query to get all posts by user1
+        TypedQuery<Post> query = 
+        	entityManager.createNamedQuery(
+        		ManyToManyMain.POSTS_BY_USER, Post.class);
         query.setParameter(UserPost.USER_ID_FIELD_NAME, user1.id);
-        posts.addAll((Collection<? extends Post>) query.getResultList());
+        posts.addAll(query.getResultList());
      }
 
     /**

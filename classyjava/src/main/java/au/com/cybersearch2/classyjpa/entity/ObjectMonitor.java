@@ -217,7 +217,7 @@ public class ObjectMonitor
     }
 
     /**
-     * Utilty method to throw PersistenceException for reflection error
+     * Utility method to throw PersistenceException for reflection error
      *@param method Name of method to report
      *@param details Error details
      *@return PersistenceException
