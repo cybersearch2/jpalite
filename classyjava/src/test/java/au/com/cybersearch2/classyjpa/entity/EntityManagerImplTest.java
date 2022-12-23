@@ -70,7 +70,7 @@ public class EntityManagerImplTest
     private OrmDaoHelper ormDaoHelper;
     private EntityTransaction transaction;
     private EntityManagerImpl entityManagerImpl;
-    private ObjectMonitor objectMonitor;
+    private OrmEntityMonitor objectMonitor;
     private TransactionCallable onPrecommit;
     private DatabaseConnection connection;
     private PersistenceDao<? extends OrmEntity> dao;
@@ -89,7 +89,7 @@ public class EntityManagerImplTest
         ormDaoHelper = mock(OrmDaoHelper.class);
         when(ormDaoHelperFactory.getOrmDaoHelper(connectionSource)).thenReturn(ormDaoHelper);
         transaction = mock(EntityTransactionImpl.class);
-        objectMonitor = mock(ObjectMonitor.class);
+        objectMonitor = mock(OrmEntityMonitor.class);
         connection = mock(DatabaseConnection.class);
         when(connectionSource.getReadWriteConnection(DATABASE_INFO_NAME)).thenReturn(connection);
         when(connection.isAutoCommitSupported()).thenReturn(true);

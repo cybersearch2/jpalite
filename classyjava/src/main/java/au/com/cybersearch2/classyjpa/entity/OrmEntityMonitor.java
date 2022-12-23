@@ -30,7 +30,7 @@ import org.apache.commons.beanutils.PropertyUtils;
  * @author Andrew Bowley
  * 06/05/2014
  */
-public class ObjectMonitor
+public class OrmEntityMonitor
 {
     /** Map managed entity objects by key */
     protected Map<EntityKey, OrmEntity> managedObjects;
@@ -40,7 +40,7 @@ public class ObjectMonitor
     /**
      * Create ObjectMonitor object
      */
-    public ObjectMonitor()
+    public OrmEntityMonitor()
     {
     }
 

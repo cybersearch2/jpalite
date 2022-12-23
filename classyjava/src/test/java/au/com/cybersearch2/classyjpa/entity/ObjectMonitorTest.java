@@ -57,7 +57,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_persist()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id = Integer.valueOf(1);
         assertThat(monitor.startManagingEntity(entity1, id, PersistOp.persist) == null);
         verifyEntity1(monitor, id, false);
@@ -67,7 +67,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_merge()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id = Integer.valueOf(1);
         assertThat(monitor.startManagingEntity(entity1, id, PersistOp.merge) == null);
         verifyEntity1(monitor, id, true);
@@ -77,7 +77,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_refresh()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id = Integer.valueOf(1);
         assertThat(monitor.startManagingEntity(entity1, id, PersistOp.refresh) == null);
         assertThat(monitor.managedObjects.isEmpty()).isTrue();
@@ -87,7 +87,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_contains()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id = Integer.valueOf(1);
         assertThat(monitor.startManagingEntity(entity1, id, PersistOp.contains) == null);
         assertThat(monitor.removedObjects).isNull();
@@ -98,7 +98,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_persist_already_managed()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         monitor.managedObjects = mock(HashMap.class);
         when(monitor.managedObjects.containsKey(any())).thenReturn(true);
@@ -117,7 +117,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_merge_already_managed()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         prepareMerge();
         monitor.managedObjects = mock(HashMap.class);
@@ -140,7 +140,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_refresh_already_managed()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         monitor.managedObjects = mock(HashMap.class);
         when(monitor.managedObjects.containsKey(any())).thenReturn(true);
@@ -160,7 +160,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_contains_already_managed()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         monitor.managedObjects = mock(HashMap.class);
         when(monitor.managedObjects.containsKey(any())).thenReturn(true);
@@ -179,7 +179,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_persist_removed_objects_populated()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         monitor.removedObjects = mock(HashMap.class);
         when(monitor.removedObjects.containsKey(any())).thenReturn(false);
@@ -195,7 +195,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_merge_removed_objects_populated()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         monitor.removedObjects = mock(HashMap.class);
         when(monitor.removedObjects.containsKey(any())).thenReturn(false);
@@ -211,7 +211,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_refesh_removed_objects_populated()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         monitor.removedObjects = mock(HashMap.class);
         when(monitor.removedObjects.containsKey(any())).thenReturn(false);
@@ -226,7 +226,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_persist_removed_object_match()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         monitor.removedObjects = mock(HashMap.class);
         when(monitor.removedObjects.containsKey(any())).thenReturn(true);
@@ -243,7 +243,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_merge_removed_object_match()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         monitor.removedObjects = mock(HashMap.class);
         when(monitor.removedObjects.containsKey(any())).thenReturn(true);
@@ -263,7 +263,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_refresh_removed_object_match()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         monitor.removedObjects = mock(HashMap.class);
         when(monitor.removedObjects.containsKey(any())).thenReturn(true);
@@ -283,7 +283,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_consists_removed_object_match()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         monitor.removedObjects = mock(HashMap.class);
         when(monitor.removedObjects.containsKey(any())).thenReturn(true);
@@ -299,7 +299,7 @@ public class ObjectMonitorTest
     @Test
     public void test_monitor_new_entity()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         assertThat(monitor.monitorNewEntity(entity1, id1, id1)).isTrue();
     }
@@ -308,7 +308,7 @@ public class ObjectMonitorTest
     @Test
     public void test_monitor_new_entity_primary_key_different()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         Integer id2 = Integer.valueOf(2);
         monitor.managedObjects = mock(HashMap.class);
@@ -327,7 +327,7 @@ public class ObjectMonitorTest
     @Test
     public void test_monitor_new_entity_primary_key_already_managed()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         Integer id2 = Integer.valueOf(2);
         monitor.managedObjects = mock(HashMap.class);
@@ -346,7 +346,7 @@ public class ObjectMonitorTest
     @Test
     public void test_monitor_new_entity_primary_key1_Null()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = Integer.valueOf(1);
         assertThat(monitor.monitorNewEntity(entity1, null, id1)).isTrue();
         verifyEntity1(monitor, id1, false);
@@ -355,7 +355,7 @@ public class ObjectMonitorTest
     @Test
     public void test_monitor_new_entity_no_primary_key()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         Integer id1 = null;
         assertThat(monitor.monitorNewEntity(entity1, id1, id1)).isFalse();
     }
@@ -364,7 +364,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_mark_for_removal()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         monitor.managedObjects = mock(HashMap.class);
         monitor.removedObjects = mock(HashMap.class);
         Integer id1 = Integer.valueOf(1);
@@ -381,7 +381,7 @@ public class ObjectMonitorTest
     @Test 
     public void test_mark_for_removal_unmanaged()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         monitor.managedObjects = mock(HashMap.class);
         monitor.removedObjects = mock(HashMap.class);
         Integer id1 = Integer.valueOf(1);
@@ -406,7 +406,7 @@ public class ObjectMonitorTest
     @Test
     public void test_release()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         monitor.managedObjects = mock(HashMap.class);
         monitor.removedObjects = mock(HashMap.class);
         monitor.release();
@@ -417,7 +417,7 @@ public class ObjectMonitorTest
     @Test
     public void test_get_objects_to_update()
     {
-        ObjectMonitor monitor = new ObjectMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor();
         monitor.managedObjects = new  HashMap<EntityKey, OrmEntity>();
         Integer id1 = Integer.valueOf(1);
         Integer id2 = Integer.valueOf(2);
@@ -433,7 +433,7 @@ public class ObjectMonitorTest
         assertThat(key2.isDirty()).isFalse();
     }
     
-    private void verifyEntity1(ObjectMonitor monitor, Integer id, boolean expectedDirtyFlag)
+    private void verifyEntity1(OrmEntityMonitor monitor, Integer id, boolean expectedDirtyFlag)
     {
         assertThat(monitor.managedObjects).isNotNull();
         assertThat(monitor.managedObjects.size()).isEqualTo(1);

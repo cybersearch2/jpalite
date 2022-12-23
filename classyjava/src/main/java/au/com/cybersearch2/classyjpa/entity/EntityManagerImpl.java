@@ -66,7 +66,7 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
     /** Flag for user transaction mode. If true, getTransaction() returns rollbackonly transaction otherwise it returns the actual entityTransaction */
     protected boolean isUserTransaction; 
     /** Delegate management of entity objects */ 
-    protected ObjectMonitor objectMonitor;
+    protected OrmEntityMonitor objectMonitor;
  
     /**
      * Create ClassyEntityManager object
@@ -81,7 +81,7 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
         this.persistenceConfig = persistenceConfig;
         onTransactionPreCommitCallback = new OnTransactionPreCommitCallback();
         entityTransaction = new EntityTransactionImpl(connectionSource, onTransactionPreCommitCallback);
-        objectMonitor = new ObjectMonitor();
+        objectMonitor = new OrmEntityMonitor();
         isOpen = true;
     }
 
