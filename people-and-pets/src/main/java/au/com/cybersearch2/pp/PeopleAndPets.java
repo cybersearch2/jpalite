@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 import au.com.cybersearch2.classydb.DatabaseSupport.ConnectionType;
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
+import au.com.cybersearch2.classyjpa.QueryForAllGenerator;
 import au.com.cybersearch2.classyjpa.entity.PersistenceTask;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWorkModule;
@@ -34,7 +35,6 @@ import au.com.cybersearch2.pp.api.Pet;
 import au.com.cybersearch2.pp.jpa.PeopleAndPetsModule;
 import au.com.cybersearch2.pp.jpa.PeopleUpdate;
 import au.com.cybersearch2.pp.jpa.PetsUpdate;
-import au.com.cybersearch2.pp.jpa.QueryForAllGenerator;
 
 
 public class PeopleAndPets {
@@ -179,7 +179,7 @@ public class PeopleAndPets {
             public void doTask(EntityManagerLite entityManager)
             {
             	persistenceTask.doTask(entityManager);
-                // Database updates commited upon exit
+                // Database updates committed upon exit
             }
 
             @Override
@@ -213,13 +213,13 @@ public class PeopleAndPets {
         PersistenceAdmin persistenceAdmin1 = persistenceContext.getPersistenceAdmin(PETS_PU);
         // Create named queries to find all objects of an entity class.
         // Note QueryForAllGenerator class is reuseable as it allows any Many to Many association to be queried.
-        QueryForAllGenerator allPetDataObjects = 
-                new QueryForAllGenerator(persistenceAdmin1);
+        QueryForAllGenerator<PetData> allPetDataObjects = 
+                new QueryForAllGenerator<PetData>(PetData.class, persistenceAdmin1);
         persistenceAdmin1.addNamedQuery(PetData.class, ALL_PET_DATA, allPetDataObjects);
         // Get Interface for JPA Support, required to create named queries
         PersistenceAdmin persistenceAdmin2 = persistenceContext.getPersistenceAdmin(PEOPLE_PU);
-        QueryForAllGenerator allPersonDataObjects = 
-                new QueryForAllGenerator(persistenceAdmin2);
+        QueryForAllGenerator<PersonData> allPersonDataObjects = 
+                new QueryForAllGenerator<PersonData>(PersonData.class, persistenceAdmin2);
         persistenceAdmin2.addNamedQuery(PersonData.class, ALL_PERSON_DATA, allPersonDataObjects);
        	populateDatabases();
     }

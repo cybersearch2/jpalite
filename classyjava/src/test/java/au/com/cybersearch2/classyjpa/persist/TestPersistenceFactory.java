@@ -35,9 +35,10 @@ public class TestPersistenceFactory
     {
         this.persistenceContext = persistenceContext;
         PersistenceAdmin persistenceAdmin = persistenceContext.getPersistenceAdmin(TestClassyApplication.PU_NAME);
-        EntityByNodeIdGenerator entityByNodeIdGenerator = new EntityByNodeIdGenerator();
-        persistenceAdmin.addNamedQuery(RecordCategory.class, TestClassyApplication.CATEGORY_BY_NODE_ID, entityByNodeIdGenerator);
-        persistenceAdmin.addNamedQuery(RecordFolder.class, TestClassyApplication.FOLDER_BY_NODE_ID, entityByNodeIdGenerator);
+        EntityByNodeIdGenerator<RecordCategory> recordCategoryGenerator = new EntityByNodeIdGenerator<>(RecordCategory.class, persistenceAdmin);
+        EntityByNodeIdGenerator<RecordFolder> recordFolderyGenerator = new EntityByNodeIdGenerator<>(RecordFolder.class, persistenceAdmin);
+        persistenceAdmin.addNamedQuery(RecordCategory.class, TestClassyApplication.CATEGORY_BY_NODE_ID, recordCategoryGenerator);
+        persistenceAdmin.addNamedQuery(RecordFolder.class, TestClassyApplication.FOLDER_BY_NODE_ID, recordFolderyGenerator);
     }
     
     public ConnectionSource setUpDatabase() throws SQLException 

@@ -34,7 +34,6 @@ import org.junit.Test;
 import com.j256.ormlite.stmt.QueryBuilder;
 
 import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
-import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
 import au.com.cybersearch2.classyjpa.query.DaoQuery.SimpleSelectArg;
 
 /**
@@ -62,14 +61,16 @@ public class EntityQueryTest
         RuntimeException doThrowException;
         RecordCategory recordCategory;
         
+        @SuppressWarnings({ "unchecked" })
         public TestReadyQuery()
         {
-            super(persistenceDao, getSelectionArguments());
+            super(mock(OrmQuery.class), getSelectionArguments());
         }
 
-        public TestReadyQuery(SimpleSelectArg[] selectionArguments)
+        @SuppressWarnings({ "unchecked" })
+		public TestReadyQuery(SimpleSelectArg[] selectionArguments)
         {
-            super(persistenceDao, selectionArguments);
+            super(mock(OrmQuery.class), selectionArguments);
         }
 
         @Override
@@ -89,7 +90,7 @@ public class EntityQueryTest
         }
 
         @Override
-        protected QueryBuilder<RecordCategory, Integer> buildQuery(
+        public QueryBuilder<RecordCategory, Integer> buildQuery(
                 QueryBuilder<RecordCategory, Integer> statementBuilder)
                 throws SQLException 
         {
@@ -103,12 +104,10 @@ public class EntityQueryTest
     }
     protected EntityQuery<RecordCategory> entityQuery;
     protected DaoQuery<RecordCategory> daoQuery;
-    protected static PersistenceDao<RecordCategory> persistenceDao;
     protected static List<RecordCategory> results;
     protected static RecordCategory testItem;
 
     
-    @SuppressWarnings("unchecked")
     @Before
     public void setUp()
     {
@@ -119,7 +118,6 @@ public class EntityQueryTest
             results.add(testItem);
             CREATED_CALENDAR = GregorianCalendar.getInstance();
             CREATED_CALENDAR.setTime(CREATED);
-            persistenceDao = mock(PersistenceDao.class);
         }
         TestReadyQuery testReadyQuery = new TestReadyQuery();
         testReadyQuery.setRecordCategory(testItem);

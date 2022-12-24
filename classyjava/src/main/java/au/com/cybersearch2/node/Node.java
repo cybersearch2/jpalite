@@ -26,9 +26,9 @@ import java.util.Map;
 import com.j256.ormlite.stmt.QueryBuilder;
 
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
-import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
 import au.com.cybersearch2.classyjpa.query.DaoQuery;
 import au.com.cybersearch2.classyjpa.query.DaoQuery.SimpleSelectArg;
+import au.com.cybersearch2.classyjpa.query.OrmQuery;
 
 /**
  * Node
@@ -338,21 +338,21 @@ public class Node implements Serializable
         return node;
     }
 
-    public <T extends OrmEntity> DaoQuery<T> generateQuery(PersistenceDao<T> dao, Integer parentId)
+    public <T extends OrmEntity> DaoQuery<T> generateQuery(OrmQuery<T> ormQuery, Integer parentId)
             throws SQLException 
     {   // Only one select argument required for primary key 
         final SimpleSelectArg nodeIdArg = new SimpleSelectArg();
         nodeIdArg.setValue(parentId);
         // Set primary key column name
         nodeIdArg.setMetaInfo("_parent_id");
-        return new DaoQuery<T>(dao, nodeIdArg){
+        return new DaoQuery<T>(ormQuery, nodeIdArg){
 
             /**
              * Update supplied QueryBuilder object to add where clause
              * @see au.com.cybersearch2.classyjpa.query.DaoQuery#buildQuery(com.j256.ormlite.stmt.QueryBuilder)
              */
             @Override
-            protected QueryBuilder<T, Integer> buildQuery(QueryBuilder<T, Integer> queryBuilder)
+            public QueryBuilder<T, Integer> buildQuery(QueryBuilder<T, Integer> queryBuilder)
                     throws SQLException {
                 // build a query with the WHERE clause set to 'node_id = ?'
                 queryBuilder.where().eq("_parent_id", nodeIdArg);

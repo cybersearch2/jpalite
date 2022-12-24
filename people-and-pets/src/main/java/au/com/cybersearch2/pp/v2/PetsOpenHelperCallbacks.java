@@ -19,9 +19,9 @@ import com.j256.ormlite.support.ConnectionSource;
 
 import au.com.cybersearch2.classydb.OpenHelperCallbacksImpl;
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
+import au.com.cybersearch2.classyjpa.QueryForAllGenerator;
 import au.com.cybersearch2.classyjpa.entity.PersistenceTask;
 import au.com.cybersearch2.pp.PeopleAndPets;
-import au.com.cybersearch2.pp.jpa.QueryForAllGenerator;
 
 /**
  * PetsOpenHelperCallbacks
@@ -93,8 +93,8 @@ public class PetsOpenHelperCallbacks extends OpenHelperCallbacksImpl
             ConnectionSource connectionSource, int oldVersion, int newVersion) 
     {
     	super.onUpgrade(connectionSource, oldVersion, newVersion);
-        QueryForAllGenerator allSimpleDataObjects = 
-                new QueryForAllGenerator(persistenceAdmin);
+        QueryForAllGenerator<PetDataV2> allSimpleDataObjects = 
+                new QueryForAllGenerator<>(PetDataV2.class, persistenceAdmin);
         persistenceAdmin.addNamedQuery(PetDataV2.class, PeopleAndPets.ALL_PET_DATA, allSimpleDataObjects);
     	doWork(connectionSource, getUpgradeTask1());
     }

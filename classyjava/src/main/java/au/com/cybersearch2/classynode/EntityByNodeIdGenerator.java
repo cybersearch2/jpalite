@@ -16,9 +16,10 @@ package au.com.cybersearch2.classynode;
 import java.sql.SQLException;
 
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
-import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
+import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 import au.com.cybersearch2.classyjpa.query.DaoQuery;
 import au.com.cybersearch2.classyjpa.query.DaoQueryFactory;
+import au.com.cybersearch2.classyjpa.query.OrmQuery;
 import au.com.cybersearch2.classyjpa.query.DaoQuery.SimpleSelectArg;
 
 import com.j256.ormlite.stmt.QueryBuilder;
@@ -29,27 +30,36 @@ import com.j256.ormlite.stmt.QueryBuilder;
  * @author Andrew Bowley
  * 09/06/2014
  */
-public class EntityByNodeIdGenerator implements DaoQueryFactory
+public class EntityByNodeIdGenerator<T extends OrmEntity> extends DaoQueryFactory<T>
 {
-    @Override
-    /**
+	/**
+	 * Generates query to get a Node object by node id
+	 * @param entityClass Entity class
+	 * @param persistenceAdmin Persistence unif
+	 */
+    public EntityByNodeIdGenerator(Class<T> entityClass, PersistenceAdmin persistenceAdmin) {
+		super(entityClass, persistenceAdmin);
+	}
+
+	/**
      * Generate query to find Node by primary key
-     * @see au.com.cybersearch2.classyjpa.query.DaoQueryFactory#generateQuery(au.com.cybersearch2.classyjpa.entity.PersistenceDao)
+     * @param ormQuery Wraps OrmList QueryBuilder
      */
-    public <T extends OrmEntity> DaoQuery<T> generateQuery(PersistenceDao<T> dao)
+    @Override
+    public  DaoQuery<T> generateQuery(OrmQuery<T> ormQuery)
             throws SQLException 
     {   // Only one select argument required for primary key 
         final SimpleSelectArg nodeIdArg = new SimpleSelectArg();
         // Set primary key column name
         nodeIdArg.setMetaInfo("node_id");
-        return new DaoQuery<T>(dao, nodeIdArg){
+        return new DaoQuery<T>(ormQuery, nodeIdArg){
 
             /**
              * Update supplied QueryBuilder object to add where clause
              * @see au.com.cybersearch2.classyjpa.query.DaoQuery#buildQuery(com.j256.ormlite.stmt.QueryBuilder)
              */
             @Override
-            protected QueryBuilder<T, Integer> buildQuery(QueryBuilder<T, Integer> queryBuilder)
+            public QueryBuilder<T, Integer> buildQuery(QueryBuilder<T, Integer> queryBuilder)
                     throws SQLException {
                 // build a query with the WHERE clause set to 'node_id = ?'
                 queryBuilder.where().eq("node_id", nodeIdArg);

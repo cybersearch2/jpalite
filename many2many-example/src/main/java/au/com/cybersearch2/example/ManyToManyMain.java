@@ -96,10 +96,10 @@ public class ManyToManyMain
         PersistenceAdmin persistenceAdmin = persistenceContext.getPersistenceAdmin(PU_NAME);
         // Create named queries to exploit UserPost join table.
         // Note ManyToManyGenerator class is reuseable as it allows any Many to Many association to be queried.
-        ManyToManyGenerator manyToManyPostsByUser = 
-                new ManyToManyGenerator(persistenceAdmin, "tableUserPost", UserPost.USER_ID_FIELD_NAME, UserPost.POST_ID_FIELD_NAME, Post.ID_FIELD_NAME);
-        ManyToManyGenerator manyToManyUsersByPost = 
-                new ManyToManyGenerator(persistenceAdmin, "tableUserPost", UserPost.POST_ID_FIELD_NAME, UserPost.USER_ID_FIELD_NAME, User.ID_FIELD_NAME);
+        ManyToManyGenerator<Post> manyToManyPostsByUser = 
+                new ManyToManyGenerator<>(Post.class, persistenceAdmin, "tableUserPost", UserPost.USER_ID_FIELD_NAME, UserPost.POST_ID_FIELD_NAME, Post.ID_FIELD_NAME);
+        ManyToManyGenerator<User> manyToManyUsersByPost = 
+                new ManyToManyGenerator<>(User.class, persistenceAdmin, "tableUserPost", UserPost.POST_ID_FIELD_NAME, UserPost.USER_ID_FIELD_NAME, User.ID_FIELD_NAME);
         persistenceAdmin.addNamedQuery(Post.class, POSTS_BY_USER, manyToManyPostsByUser);
         persistenceAdmin.addNamedQuery(User.class, USERS_BY_POST, manyToManyUsersByPost);
     }

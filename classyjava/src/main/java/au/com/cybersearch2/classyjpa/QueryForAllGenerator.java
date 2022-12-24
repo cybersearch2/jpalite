@@ -15,13 +15,13 @@ package au.com.cybersearch2.classyjpa;
 
 import java.sql.SQLException;
 
+import com.j256.ormlite.stmt.QueryBuilder;
+
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
-import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
 import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 import au.com.cybersearch2.classyjpa.query.DaoQuery;
 import au.com.cybersearch2.classyjpa.query.DaoQueryFactory;
-
-import com.j256.ormlite.stmt.QueryBuilder;
+import au.com.cybersearch2.classyjpa.query.OrmQuery;
 
 /**
  * QueryForAllGenerator
@@ -29,28 +29,25 @@ import com.j256.ormlite.stmt.QueryBuilder;
  * @author Andrew Bowley
  * 01/06/2014
  */
-public class QueryForAllGenerator implements DaoQueryFactory
+public class QueryForAllGenerator<T extends OrmEntity> extends DaoQueryFactory<T>
 {
-    /** Interface for JPA Support */
-    PersistenceAdmin persistenceAdmin;
-
     /**
      * ForAllQuery
      * The query object produced each time generateQuery() is called on containing class
      * @author Andrew Bowley
      * 23 Sep 2014
      */
-    class ForAllQuery<T extends OrmEntity> extends DaoQuery<T>
+    class ForAllQuery extends DaoQuery<T>
     {
         /**
          * Create ForAllQuery object
-         * @param dao OrmLite data access object of generic type matching Entity class to be retrieved
+         * @param ormQuery Wraps OrmList QueryBuilder
          * @throws SQLException
          */
-        public ForAllQuery(PersistenceDao<T> dao) throws SQLException
+        public ForAllQuery(OrmQuery<T> ormQuery) throws SQLException
         {
             // The super class executes the prepared statement
-            super(dao);
+            super(ormQuery);
         }
 
         /**
@@ -58,7 +55,7 @@ public class QueryForAllGenerator implements DaoQueryFactory
          * @see au.com.cybersearch2.classyjpa.query.DaoQuery#buildQuery(com.j256.ormlite.stmt.QueryBuilder)
          */
         @Override
-        protected QueryBuilder<T, Integer> buildQuery(
+        public QueryBuilder<T, Integer> buildQuery(
                 QueryBuilder<T, Integer> statementBuilder) throws SQLException 
         {
             // Query for all objects in database by leaving out where clause
@@ -69,22 +66,22 @@ public class QueryForAllGenerator implements DaoQueryFactory
 
     /**
      * Create QueryForAllGenerator object
+     * @param entityClass Entity class
      * @param persistenceAdmin Interface for JPA Support
      */
-    public QueryForAllGenerator(PersistenceAdmin persistenceAdmin)
+    public QueryForAllGenerator(Class<T> entityClass, PersistenceAdmin persistenceAdmin)
     {
-        this.persistenceAdmin = persistenceAdmin;
+        super(entityClass, persistenceAdmin);
     }
     
     /**
-     * Returns query object which will execute a prepared statement with a primary key selection argument
-     * @see au.com.cybersearch2.classyjpa.query.DaoQueryFactory#generateQuery(au.com.cybersearch2.classyjpa.entity.PersistenceDao)
+     * Returns query object which will execute a prepared statement with no selection argument
+     * @param ormQuery Wrapper for OrmLite QueryBuilder
      */
     @Override
-    public <T extends OrmEntity> DaoQuery<T> generateQuery(PersistenceDao<T> dao)
+    public DaoQuery<T> generateQuery(OrmQuery<T> ormQuery)
             throws SQLException 
     {
-        return new ForAllQuery<T>(dao);
+        return new ForAllQuery(ormQuery);
     }
-
 }

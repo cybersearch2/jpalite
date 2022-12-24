@@ -22,13 +22,14 @@ import com.j256.ormlite.support.ConnectionSource;
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.EntityManagerLiteFactory;
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
 import au.com.cybersearch2.classyjpa.query.DaoQueryFactory;
 import au.com.cybersearch2.classyjpa.query.QueryInfo;
 import au.com.cybersearch2.classyjpa.query.SqlQueryFactory;
 
 /**
  * PersistenceAdmin
- * Interface for JPA Support
+ * Persistence unit interface
  * @author Andrew Bowley
  * 05/07/2014
  */
@@ -36,11 +37,11 @@ public interface PersistenceAdmin extends ConnectionSourceFactory
 {
     /**
      * Add named query to persistence unit context
-     * @param clazz Entity class
+     * @param entityClass Entity class
      * @param name Query name
      * @param daoQueryFactory Query generator
      */
-    void addNamedQuery(Class<? extends OrmEntity> clazz, String name, DaoQueryFactory daoQueryFactory);
+     <T extends OrmEntity> void addNamedQuery(Class<T> entityClass, String name, DaoQueryFactory<T> daoQueryFactory);
     
     /**
      * Add native named query to persistence unit context
@@ -51,7 +52,7 @@ public interface PersistenceAdmin extends ConnectionSourceFactory
     void addNamedQuery(String name, QueryInfo queryInfo, SqlQueryFactory queryGenerator);
     
     /**
-     * Returns EntityManager Factory for this perisistence unit
+     * Returns EntityManager Factory for this persistence unit
      * @return EntityManagerLiteFactory
      */
     EntityManagerLiteFactory getEntityManagerFactory();
@@ -112,7 +113,7 @@ public interface PersistenceAdmin extends ConnectionSourceFactory
     /**
      * Create a EntityManager bound to an existing connectionSource. Use only for special case of database creation or update.
      * @param connectionSource The existing ConnectionSource object 
-     * @return Eentity manager instance
+     * @return Entity manager instance
      */
     EntityManagerLite createEntityManager(ConnectionSource connectionSource);
     
@@ -121,5 +122,13 @@ public interface PersistenceAdmin extends ConnectionSourceFactory
      * @return boolean
      */
     boolean isSingleConnection();
+
+    /**
+     * Returns DAO for given entity class
+     * @param entityClass Entity class
+     * @return PersistenceDao object
+     */
+    //PersistenceDao<?> getDao(Class<? extends OrmEntity> entityClass, ConnectionSource connectionSource);
+    <T extends OrmEntity> PersistenceDao<T> getDao(Class<T> entityClass, ConnectionSource connectionSource);
 
  }

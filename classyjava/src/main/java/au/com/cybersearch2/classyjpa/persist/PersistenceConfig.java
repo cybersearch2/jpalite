@@ -45,6 +45,7 @@ import com.j256.ormlite.table.DatabaseTableConfig;
 import au.com.cybersearch2.classyjpa.entity.EntityClassLoader;
 import au.com.cybersearch2.classyjpa.entity.OrmDaoHelperFactory;
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
 import au.com.cybersearch2.classyjpa.persist.ClassAnalyser.ClassRegistry;
 import au.com.cybersearch2.classyjpa.query.DaoQueryFactory;
 import au.com.cybersearch2.classyjpa.query.NamedDaoQuery;
@@ -94,22 +95,18 @@ public class PersistenceConfig
 
 	/**
      * Create a named query and store it in namedQueryMap. The query is implemented using OrmLite rather than JPA query language.
-     * @param clazz Class&lt;?&gt; class of entity to which the query applies. This must be included in persistence.xml PersistenceUnitAdmin Unit class list.
+     * @param clazz entityClass Entity class. This must be included in persistence.xml entity class list.
      * @param name Query name
      * @param daoQueryFactory Query generator which uses supplied DAO for entity class
      */
-    public void addNamedQuery(Class<? extends OrmEntity> clazz, String name, DaoQueryFactory daoQueryFactory)
+    public <T extends OrmEntity> void addNamedQuery(Class<T> entityClass, String name, DaoQueryFactory<T> daoQueryFactory) 
     {
         if (existsName(name))
             log.warn(TAG, NAME_EXISTS_MESSAGE + name);
         else
-            namedQueryMap.put(name,namedDaoQueryInstance(clazz, name, daoQueryFactory));
+            namedQueryMap.put(name, new NamedDaoQuery<T>(entityClass, name, daoQueryFactory));
     }
 
-    private <T extends OrmEntity> NamedDaoQuery<T>  namedDaoQueryInstance(Class<T> clazz, String name, DaoQueryFactory daoQueryFactory) {
-    	return new NamedDaoQuery<T>(clazz, name, daoQueryFactory);
-    }
-    
     /**
      * Add native named query to persistence unit context
      * @param name Query name
@@ -125,15 +122,15 @@ public class PersistenceConfig
     }
 
     /**
-     * Returns true in query of specified name exists
-     * @param name Query name
-     * @return boolean
+     * Returns DAO for given entity class
+     * @param entityClass Entity class
+     * @param connectionSource Open connection source
+     * @return PersistenceDao object
      */
-    protected boolean existsName(String name)
-    {
-        return namedQueryMap.containsKey(name) || nativeQueryMap.containsKey(name);
-    }
-    
+	public <T extends OrmEntity> PersistenceDao<T> getDao(Class<T> entityClass, ConnectionSource connectionSource) {
+		return getOrmDaoHelperFactoryForClass(entityClass).getDao(connectionSource);
+	}
+
     /**
      * Returns NamedDaoQuery objects mapped by name
      * @return Map&lt;String, NamedDaoQuery&gt;
@@ -215,8 +212,7 @@ public class PersistenceConfig
                 throw new IllegalArgumentException(
                 	String.format("Named query \"%s\" result class %s is not assignable from entity class %s", 
                 			      name, resultClass.getSimpleName(), entityClass.getSimpleName()));
-            return (TypedQuery<X>) namedDaoQuery.createQuery(
-            	getOrmDaoHelperFactoryForClass(entityClass).getDao(connectionSource));
+            return (TypedQuery<X>) namedDaoQuery.createQuery(connectionSource);
         } else {
             NamedSqlQuery namedSqlQuery = getNativeQuery(name);
             if (namedSqlQuery == null)
@@ -226,20 +222,15 @@ public class PersistenceConfig
 	}
 
     /**
-     * Returns ORMLite DAO helper for specified class 
-     * @param clazz Entity class
-     * @return OrmDaoHelper
-     * @throws IllegalStateException if class is unknown to the current PersistenceUnitAdmin Unit.
+     * Returns true in query of specified name exists
+     * @param name Query name
+     * @return boolean
      */
-    private OrmDaoHelperFactory<? extends OrmEntity> getOrmDaoHelperFactoryForClass(Class<? extends OrmEntity> clazz)
+    protected boolean existsName(String name)
     {
-        OrmDaoHelperFactory<? extends OrmEntity> ormDaoHelperFactory = getHelperFactory(clazz);
-        if (ormDaoHelperFactory == null)
-            throw new IllegalArgumentException("Class " + clazz.getName() + " not an entity in this persistence context");
-        return ormDaoHelperFactory;
+        return namedQueryMap.containsKey(name) || nativeQueryMap.containsKey(name);
     }
-
-
+    
     protected void registerClasses(List<String> managedClassNames)
     {
         ClassRegistry classRegistry = new ClassRegistry(){
@@ -254,6 +245,20 @@ public class PersistenceConfig
         List<DatabaseTableConfig<?>> configs = classAnlyser.getDatabaseTableConfigList(managedClassNames);
         if (!configs.isEmpty())
             DaoManager.addCachedDatabaseConfigs(configs);
+    }
+
+    /**
+     * Returns ORMLite DAO helper for specified class 
+     * @param entityClass Entity class
+     * @return OrmDaoHelper
+     * @throws IllegalStateException if class is unknown to the current PersistenceUnitAdmin Unit.
+     */
+    private <T extends OrmEntity> OrmDaoHelperFactory<T> getOrmDaoHelperFactoryForClass(Class<T> entityClass)
+    {
+    	OrmDaoHelperFactory<T> ormDaoHelperFactory = getHelperFactory(entityClass);
+        if (ormDaoHelperFactory == null)
+            throw new IllegalArgumentException("Class " + entityClass.getName() + " not an entity in this persistence context");
+        return ormDaoHelperFactory;
     }
 
 }

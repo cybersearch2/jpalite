@@ -13,28 +13,22 @@
     limitations under the License. */
 package au.com.cybersearch2.classyjpa.query;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.persistence.PersistenceException;
+import com.j256.ormlite.stmt.SelectArg;
 
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
-import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
-
-import com.j256.ormlite.stmt.PreparedQuery;
-import com.j256.ormlite.stmt.QueryBuilder;
-import com.j256.ormlite.stmt.SelectArg;
 
 /**
  * DaoQuery
- * OrmLite query for generic entity class. This is an abstract class as it contains abstract method buildQuery() to  
- * construct a query using an object of class com.j256.ormlite.stmt.QueryBuilder. 
+ * OrmLite query returning an entity class. This is an abstract class as it contains abstract method buildQuery() 
+ * for derived class to construct a query using an object of class com.j256.ormlite.stmt.QueryBuilder. 
  * @author Andrew Bowley
  * 01/06/2014
  */
-public abstract class DaoQuery<T extends OrmEntity>
+public abstract class DaoQuery<T extends OrmEntity> implements OrmQueryBuilder<T>
 {
     /**
      * SimpleSelectArg
@@ -56,8 +50,8 @@ public abstract class DaoQuery<T extends OrmEntity>
         }
     }
     
-    /** Entity DAO, which has open connection source */
-    protected PersistenceDao<T> dao;
+    /** Wraps OrmLite QueryBuilder */
+    protected OrmQuery<T> ormQuery;
     /** Maps selection argument to name ie. columnName attribute */
     protected Map<String, SelectArg> argumentMap;
     /** Selection arguments which are used to construct the WHERE clause */
@@ -65,12 +59,12 @@ public abstract class DaoQuery<T extends OrmEntity>
  
     /**
      * Create new DaoQuery object
-     * @param dao Entity DAO, which has open connection sourcev
+     * @param ormQuery Wraps OrmLite QueryBuilder
      * @param selectionArguments Selection arguments which are used to construct the WHERE clause
      */
-    public DaoQuery(PersistenceDao<T> dao, SimpleSelectArg... selectionArguments)
+    public DaoQuery(OrmQuery<T> ormQuery, SimpleSelectArg... selectionArguments)
     {
-        this.dao = dao;
+        this.ormQuery = ormQuery;
         argumentMap = new HashMap<>();
         if ((selectionArguments != null) && (selectionArguments.length > 0))
         {
@@ -89,14 +83,6 @@ public abstract class DaoQuery<T extends OrmEntity>
     }
 
     /**
-     * Construct a query using supplied QueryBuilder
-     * @param statementBuilder QueryBuilder of Entity generic type
-     * @return QueryBuilder - updated with query to be performed
-	 * @throws java.sql.SQLException if database operation fails
-     */
-    abstract protected QueryBuilder<T, Integer> buildQuery(QueryBuilder<T, Integer> statementBuilder) throws SQLException;
-
-    /**
      * Returns list of objects from executing prepared query
      * @param startPosition The start position of the first result, numbered from 0
      * @param maxResults Maximum number of results to retrieve, or 0 for no limit
@@ -104,7 +90,7 @@ public abstract class DaoQuery<T extends OrmEntity>
      */
     protected List<T> getResultList(int startPosition, int maxResults) 
     {
-        return dao.query(prepare(startPosition, maxResults));
+        return ormQuery.getResultList(startPosition, maxResults, this);
     }
 
     /**
@@ -113,32 +99,7 @@ public abstract class DaoQuery<T extends OrmEntity>
      */
     protected T getSingleResult() 
     {
-        return dao.queryForFirst(prepare(0, 1));
-    }
-
-    /**
-     * Returns prepared query
-     * @param startPosition The start position of the first result, numbered from 0
-     * @param maxResults Maximum number of results to retrieve, or 0 for no limit
-     * @return PreparedQuery
-     */
-    protected PreparedQuery<T> prepare(int startPosition, int maxResults)
-    {
-        PreparedQuery<T> prepared = null;
-        try
-        {
-            QueryBuilder<T, Integer> statementBuilder = dao.queryBuilder();
-            if (startPosition > 0)
-                statementBuilder.offset(Long.valueOf(startPosition));
-            if (maxResults > 0)
-                statementBuilder.limit(Long.valueOf(maxResults));
-            prepared = buildQuery(statementBuilder).prepare();
-        }
-        catch (SQLException e)
-        {
-            throw new PersistenceException("Error preparing query", e);
-        }
-        return prepared;
+        return ormQuery.getSingleResult(this);
     }
 
     /**

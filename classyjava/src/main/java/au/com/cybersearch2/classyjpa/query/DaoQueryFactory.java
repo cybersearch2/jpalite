@@ -15,8 +15,11 @@ package au.com.cybersearch2.classyjpa.query;
 
 import java.sql.SQLException;
 
+import com.j256.ormlite.support.ConnectionSource;
+
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
+import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 
 /**
  * QueryGenerator
@@ -25,14 +28,41 @@ import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
  * @author Andrew Bowley
  * 13/05/2014
  */
-public interface DaoQueryFactory
+public abstract class DaoQueryFactory<T extends OrmEntity>
 {
+	/** Entity class */
+	protected final Class<T>  entityClass;
+    /** Persistence unit */
+    protected final PersistenceAdmin persistenceAdmin;
+
+    /**
+     * Create DaoQueryFactory object
+     * @param entityClass Entity class
+     * @param persistenceAdmin Persistence unit
+     */
+	protected DaoQueryFactory(Class<T> entityClass, PersistenceAdmin persistenceAdmin) {
+		this.entityClass = entityClass;
+		this.persistenceAdmin = persistenceAdmin;
+	}
+
+    /**
+     * Returns query object which will execute a prepared statement when required selection arguments are provided
+     * @param ormQuery Wraps OrmLite QueryBuilder
+     * @return DaoQuery object
+     * @throws SQLException if database operation fails
+     */
+    protected abstract DaoQuery<T> generateQuery(OrmQuery<T> ormQuery) throws SQLException;
+
     /**
      * Returns query object which will execute a prepared statement when required selection arguments are provided
      * @param dao OrmLite data access object of generic type matching Entity class to be retrieved
-     * @param <T> Dao type
-     * @return DaoQuery
+     * @param <T> Entity type
+     * @param connectionSource Open connection source
+     * @return DaoQuery object
      * @throws SQLException if database operation fails
      */
-    <T extends OrmEntity> DaoQuery<T> generateQuery(PersistenceDao<T> dao) throws SQLException;
+    public DaoQuery<T> generateQuery(ConnectionSource connectionSource) throws SQLException {
+		PersistenceDao<T> dao = (PersistenceDao<T>) persistenceAdmin.getDao(entityClass, connectionSource);
+   	    return generateQuery(new OrmQuery<T>(dao));
+    }
 }

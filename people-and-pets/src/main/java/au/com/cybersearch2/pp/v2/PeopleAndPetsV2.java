@@ -14,12 +14,12 @@
 package au.com.cybersearch2.pp.v2;
 
 import au.com.cybersearch2.classydb.DatabaseSupport;
+import au.com.cybersearch2.classyjpa.QueryForAllGenerator;
 import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
 import au.com.cybersearch2.classytask.TaskExecutor;
 import au.com.cybersearch2.pp.PeopleAndPets;
 import au.com.cybersearch2.pp.jpa.PeopleAndPetsModule;
-import au.com.cybersearch2.pp.jpa.QueryForAllGenerator;
 
 public class PeopleAndPetsV2 extends PeopleAndPets {
 
@@ -55,13 +55,13 @@ public class PeopleAndPetsV2 extends PeopleAndPets {
         PersistenceAdmin persistenceAdmin1 = persistenceContext.getPersistenceAdmin(PETS_PU);
         // Create named queries to find all objects of an entity class.
         // Note QueryForAllGenerator class is reuseable as it allows any Many to Many association to be queried.
-        QueryForAllGenerator allSimpleDataObjects = 
-                new QueryForAllGenerator(persistenceAdmin1);
+        QueryForAllGenerator<PetDataV2> allSimpleDataObjects = 
+                new QueryForAllGenerator<>(PetDataV2.class, persistenceAdmin1);
         persistenceAdmin1.addNamedQuery(PetDataV2.class, ALL_PET_DATA, allSimpleDataObjects);
         // Get Interface for JPA Support, required to create named queries
         PersistenceAdmin persistenceAdmin2 = persistenceContext.getPersistenceAdmin(PEOPLE_PU);
-        QueryForAllGenerator allComplexDataObjects = 
-                new QueryForAllGenerator(persistenceAdmin2);
+        QueryForAllGenerator<PersonDataV2> allComplexDataObjects = 
+                new QueryForAllGenerator<>(PersonDataV2.class, persistenceAdmin2);
         persistenceAdmin2.addNamedQuery(PersonDataV2.class, ALL_PERSON_DATA, allComplexDataObjects);
     }
 }

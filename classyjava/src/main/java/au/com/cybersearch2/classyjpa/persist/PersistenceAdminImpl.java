@@ -27,6 +27,7 @@ import au.com.cybersearch2.classydb.DatabaseSupport;
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.EntityManagerLiteFactory;
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
 import au.com.cybersearch2.classyjpa.entity.EntityManagerImpl;
 import au.com.cybersearch2.classyjpa.query.DaoQueryFactory;
 import au.com.cybersearch2.classyjpa.query.QueryInfo;
@@ -36,7 +37,7 @@ import au.com.cybersearch2.classylog.Log;
 
 /**
  * PersistenceAdminImpl
- * JPA Support implementation
+ * Persistence unit implementation
  * @author Andrew Bowley
  * 29/07/2014
  */
@@ -46,20 +47,28 @@ public class PersistenceAdminImpl implements PersistenceAdmin
 	private static final String DATABASE_INFO_NAME = "";
     private static Log log = JavaLogger.getLogger(TAG);
 
+    /** Persistence unit name */
     protected String puName;
+    /** Persistence unit configuration */
     protected PersistenceConfig config;
+    /** Implementation of javax.persistence.PersistenceUnitInfo */
     protected PersistenceUnitInfo puInfo;
+    /** Implementation of PersistenceProvider interface */
     protected PersistenceProviderImpl provider;
+    /** Direct database access to allow native operations to be performed */
     protected DatabaseSupport databaseSupport;
+    /** Database name */
     protected String databaseName;
+    /** Flag set true if connection source uses a single connection */
     protected Boolean singleConnection;
+    /** Persistence unit connection source */
     protected ConnectionSource connectionSource;
     
     /**
      * Create PersistenceAdminImpl object
-     * @param puName PersistenceUnitAdmin Unit (PU) name
+     * @param puName Persistence Unit (PU) name
      * @param databaseSupport Native support
-     * @param config PersistenceUnitAdmin Unit configuration
+     * @param config Persistence unit configuration
      */
     public PersistenceAdminImpl(String puName, DatabaseSupport databaseSupport, PersistenceConfig config)
     {
@@ -71,6 +80,12 @@ public class PersistenceAdminImpl implements PersistenceAdmin
         provider = new PersistenceProviderImpl(puName, config, this);
     }
 
+	public void setSingleConnection()
+	{
+		ConnectionSource connectionSource = getConnectionSource();
+		singleConnection = Boolean.valueOf(connectionSource.isSingleConnection(DATABASE_INFO_NAME));
+	}
+
     /**
      * Returns connection source
      * @return com.j256.ormlite.support.ConnectionSource
@@ -81,22 +96,16 @@ public class PersistenceAdminImpl implements PersistenceAdmin
         return connectionSource;
     }
 
-    protected void setConnectionSource(ConnectionSource connectionSource)
-    {
-        this.connectionSource = connectionSource;
-    }
-    
     /**
      * Add named query to persistence unit context
-     * @param clazz Entity class
+     * @param entityClass Entity class
      * @param name Query name
      * @param daoQueryFactory Query generator
      */
     @Override
-    public void addNamedQuery(Class<? extends OrmEntity> clazz, String name,
-            DaoQueryFactory daoQueryFactory) 
+    public <T extends OrmEntity> void addNamedQuery(Class<T> entityClass, String name, DaoQueryFactory<T> daoQueryFactory)
     {
-        config.addNamedQuery(clazz, name, daoQueryFactory);
+        config.addNamedQuery(entityClass, name, daoQueryFactory);
     }
 
     /**
@@ -124,7 +133,7 @@ public class PersistenceAdminImpl implements PersistenceAdmin
     /**
      * Create a EntityManager bound to an existing connectionSource. Use only for special case of database creation or update.
      * @param connectionSource The existing ConnectionSource object 
-     * @return Eentity manager instance
+     * @return Entity manager instance
      */
     @Override
     public EntityManagerLite createEntityManager(ConnectionSource connectionSource) 
@@ -139,7 +148,7 @@ public class PersistenceAdminImpl implements PersistenceAdmin
      * @param queryInfo Native query details
      * @param startPosition The start position of the first result, numbered from 0
      * @param maxResults Maximum number of results to retrieve, or 0 for no limit
-     * @return List&lt;Object&gt;
+     * @return Object list
      */
     @Override
     public List<Object> getResultList(QueryInfo queryInfo, int startPosition,
@@ -180,32 +189,7 @@ public class PersistenceAdminImpl implements PersistenceAdmin
         return getDatabaseVersion(puInfo.getProperties());
     }
     
-    /**
-     * Returns database version, which is defined as PU property "database-version". Defaults to 1 if not defined
-     * @param properties Database properties
-     * @return int
-     */
-    public static int getDatabaseVersion(Properties properties)
-    {
-        // Database version defaults to 1
-        int databaseVersion = 1;
-        if (properties != null)
-        {
-        	String textVersion = properties.getProperty(DatabaseAdmin.DATABASE_VERSION);
-	        try
-	        {
-	        	if (textVersion != null)
-	        	    databaseVersion = Integer.parseInt(textVersion);
-	        }
-	        catch (NumberFormatException e)
-	        {
-	        	log.error(TAG, "Invalid " + DatabaseAdmin.DATABASE_VERSION + " value: \"" + textVersion);
-	        }
-        }
-    	return databaseVersion;
-    }
-    
-    /**
+     /**
      * Close all database connections
      */
     @Override
@@ -234,6 +218,70 @@ public class PersistenceAdminImpl implements PersistenceAdmin
         return puInfo.getProperties();
     }
 
+	@Override
+	public boolean isSingleConnection() 
+	{
+		// Default to true until setSingleConnection() is called
+		return singleConnection == null ? true : singleConnection;
+	}
+	
+	@Override
+	public void registerClasses(List<String> managedClassNames) 
+	{
+		config.registerClasses(managedClassNames);
+	}
+
+    /**
+     * Returns DAO for given entity class
+     * @param <T> Entity type
+     * @param entityClass Entity class
+     * @param connectionSource Open connection source
+     * @return PersistenceDao object
+     */
+	@Override
+	public <T extends OrmEntity> PersistenceDao<T> getDao(Class<T> entityClass, ConnectionSource connectionSource) {
+
+		return config.getDao(entityClass, connectionSource );
+	}
+
+    /**
+     * Returns database version, which is defined as PU property "database-version". Defaults to 1 if not defined
+     * @param properties Database properties
+     * @return int
+     */
+    public static int getDatabaseVersion(Properties properties)
+    {
+        // Database version defaults to 1
+        int databaseVersion = 1;
+        if (properties != null)
+        {
+        	String textVersion = properties.getProperty(DatabaseAdmin.DATABASE_VERSION);
+	        try
+	        {
+	        	if (textVersion != null)
+	        	    databaseVersion = Integer.parseInt(textVersion);
+	        }
+	        catch (NumberFormatException e)
+	        {
+	        	log.error(TAG, "Invalid " + DatabaseAdmin.DATABASE_VERSION + " value: \"" + textVersion);
+	        }
+        }
+    	return databaseVersion;
+    }
+	    
+	public static String getDatabaseName(PersistenceUnitInfo puInfo)
+	{
+        String databaseName = puInfo.getProperties().getProperty(DatabaseAdmin.DATABASE_NAME);
+        if ((databaseName == null) || (databaseName.length() == 0))
+            throw new PersistenceException("\"" + puInfo.getPersistenceUnitName() + "\" does not have property \"" + DatabaseAdmin.DATABASE_NAME + "\"");
+        return databaseName;
+	}
+
+    protected void setConnectionSource(ConnectionSource connectionSource)
+    {
+        this.connectionSource = connectionSource;
+    }
+    
     protected PersistenceConfig getConfig()
     {
     	return config;
@@ -244,30 +292,4 @@ public class PersistenceAdminImpl implements PersistenceAdmin
     	return databaseSupport;
     }
 
-	@Override
-	public boolean isSingleConnection() 
-	{
-		// Default to true until setSingleConnection() is called
-		return singleConnection == null ? true : singleConnection;
-	}
-	
-	public void setSingleConnection()
-	{
-		ConnectionSource connectionSource = getConnectionSource();
-		singleConnection = Boolean.valueOf(connectionSource.isSingleConnection(DATABASE_INFO_NAME));
-	}
-
-	@Override
-	public void registerClasses(List<String> managedClassNames) 
-	{
-		config.registerClasses(managedClassNames);
-	}
-	
-	public static String getDatabaseName(PersistenceUnitInfo puInfo)
-	{
-        String databaseName = puInfo.getProperties().getProperty(DatabaseAdmin.DATABASE_NAME);
-        if ((databaseName == null) || (databaseName.length() == 0))
-            throw new PersistenceException("\"" + puInfo.getPersistenceUnitName() + "\" does not have property \"" + DatabaseAdmin.DATABASE_NAME + "\"");
-        return databaseName;
-	}
 }
