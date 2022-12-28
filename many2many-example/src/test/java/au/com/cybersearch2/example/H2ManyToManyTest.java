@@ -63,16 +63,12 @@ public class H2ManyToManyTest
     {
         manyToManyMain.setUp();
         PostsByUserEntityTask postsByUserEntityTask = new PostsByUserEntityTask(
-                manyToManyMain.getUser1().id,
-                manyToManyMain.getUser2().id,
-                manyToManyMain.getPost1().id,
-                manyToManyMain.getPost2().id);
+                manyToManyMain.getUser1().id);
 
         assertEquals(manyToManyMain.execute(postsByUserEntityTask), WorkStatus.FINISHED);
         manyToManyMain.verifyPostsByUser(postsByUserEntityTask.getPosts());
+        
         UsersByPostTask usersByPostTask= new UsersByPostTask(
-                manyToManyMain.getUser1().id,
-                manyToManyMain.getUser2().id,
                 manyToManyMain.getPost1().id,
                 manyToManyMain.getPost2().id);
         assertEquals(manyToManyMain.execute(usersByPostTask), WorkStatus.FINISHED);

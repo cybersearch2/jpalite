@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
-import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
 import au.com.cybersearch2.classytask.DefaultTaskExecutor;
 import au.com.cybersearch2.classytask.DefaultTaskMessenger;
@@ -39,42 +38,25 @@ import au.com.cybersearch2.classytask.WorkStatus;
  * would have proper error handling.
  * </p>
  * <p>
- * CLASSYTOOLS COMMENTS:
+ * JUPALITE COMMENTS:
  * </p>
  * <p>
- * This example shows JPA in action. The application code exempifies use of a standard persistence interface. 
- * The OrmLite implementation is mostly hidden in library code, but does show up in named queries where, to keep things
- * lightweight, OrmLite QueryBuilder is employed in place of a JQL implementation @see ManyToManyGenerator.
+ * This example shows how a many-to-many table relationship with a join table can be performed in lightweight JPA.
+ * OrmLite does not support the use of @ManyToMany or @JoinTable annotations so a workaround is to have back to back
+ * @OneToMany associations with the join table in the middle.
  * </p>
- * <p>
- * Also notable is dependency injection using Dagger @see ManyToManyModule. If one studies the details, what the
- * dependency inject allows is flexibility in 3 ways:
- * </p>
- * <ol>
- * <li>Choice of database - the PersistenceContext binding</li>
- * <li>Location of resource files such as persistence.xml (and Locale too) - the ResourceEnvironment binding</li>
- * <li>How to reduce background thread priority - the ThreadHelper binding</li>
- * </ol>
  */
 public class ManyToManyMain 
 {
-
-
     static public final String POSTS_BY_USER = "posts_by_user";
-
     static public final String USERS_BY_POST = "users_by_post";
-
     static public final String PU_NAME = "manytomany";
 
     private static TaskExecutor taskExecutor;
 
-
     User user1;
-
     User user2;
-
     Post post1;
-
     Post post2;
 
     protected PersistenceContext persistenceContext;
@@ -85,31 +67,19 @@ public class ManyToManyMain
      * Create ManyToManyMain object
      * This creates and populates the database using JPA, provides verification logic and runs a test from main().
      */
-    public ManyToManyMain() 
-    {
+    public ManyToManyMain() {
         // Set up dependency injection, which creates an ObjectGraph from a ManyToManyModule configuration object
         taskMessenger = new DefaultTaskMessenger<Void>(Void.class);
         persistenceContext = createFactory();
         // Note that the table for each entity class will be created in the following step (assuming database is in memory).
         // To populate these tables, call setUp().
-        // Get Interface for JPA Support, required to create named queries
-        PersistenceAdmin persistenceAdmin = persistenceContext.getPersistenceAdmin(PU_NAME);
-        // Create named queries to exploit UserPost join table.
-        // Note ManyToManyGenerator class is reuseable as it allows any Many to Many association to be queried.
-        ManyToManyGenerator<Post> manyToManyPostsByUser = 
-                new ManyToManyGenerator<>(Post.class, persistenceAdmin, "tableUserPost", UserPost.USER_ID_FIELD_NAME, UserPost.POST_ID_FIELD_NAME, Post.ID_FIELD_NAME);
-        ManyToManyGenerator<User> manyToManyUsersByPost = 
-                new ManyToManyGenerator<>(User.class, persistenceAdmin, "tableUserPost", UserPost.POST_ID_FIELD_NAME, UserPost.USER_ID_FIELD_NAME, User.ID_FIELD_NAME);
-        persistenceAdmin.addNamedQuery(Post.class, POSTS_BY_USER, manyToManyPostsByUser);
-        persistenceAdmin.addNamedQuery(User.class, USERS_BY_POST, manyToManyUsersByPost);
     }
 
     /**
      * Test ManyToMany association
      * @param args Not used
      */
-	public static void main(String[] args)
-	{
+	public static void main(String[] args) {
      	taskExecutor = new DefaultTaskExecutor();
      	try {
             new ManyToManyMain().runApplication();
@@ -124,50 +94,42 @@ public class ManyToManyMain
      * Note the calling thread is suspended while the work is performed on a background thread. 
      * @throws InterruptedException if interrupted
      */
-    public void setUp() throws InterruptedException
-    {
+    public void setUp() throws InterruptedException {
         // PersistenceUnitAdmin work adds 2 users and 2 posts to the database using JPA.
         // Hence there will be an enclosing transaction to ensure data consistency.
         // Any failure will result in an IllegalStateExeception being thrown from
         // the calling thread.
-        PersistenceWork setUpWork = new PersistenceWork(){
+        PersistenceWork setUpWork = new PersistenceWork() {
 
             @Override
-            public void doTask(EntityManagerLite entityManager)
-            {
+            public void doTask(EntityManagerLite entityManager) {
                 // create our 1st user
-                user1 = new User("Bilbo Baggins");
+                user1 = new User("Jim Coakley)");
                 entityManager.persist(user1);
                 // have user1 post something
                 post1 = new Post("Wow is it cold outside!!");
                 entityManager.persist(post1);
-                // link the user and the post together in the join table
-                UserPost user1Post1 = new UserPost(user1, post1);
-                entityManager.persist(user1Post1);
+                user1.addPost(post1);
                 // have user1 post a second post
                 post2 = new Post("Now it's a bit warmer thank goodness.");
                 entityManager.persist(post2);
-                UserPost user1Post2 = new UserPost(user1, post2);
-                entityManager.persist(user1Post2);
+                user1.addPost(post2);
                 // create another user
                 user2 = new User("Gandalf Gray");
                 entityManager.persist(user2);
                 // have the 2nd user also say the 2nd post
-                UserPost user2Post1 = new UserPost(user2, post2);
-                entityManager.persist(user2Post1);
+                user2.addPost(post2);
                 // Database updates committed upon exit
             }
 
             @Override
-            public void onPostExecute(boolean success)
-            {
+            public void onPostExecute(boolean success) {
                 if (!success)
                     throw new IllegalStateException("Database set up failed. Check console for error details.");
             }
 
             @Override
-            public void onRollback(Throwable rollbackException)
-            {
+            public void onRollback(Throwable rollbackException) {
                 throw new IllegalStateException("Database set up failed. Check console for stack trace.", rollbackException);
             }
         };
@@ -175,31 +137,27 @@ public class ManyToManyMain
         execute(setUpWork);
     }
 
-    protected PersistenceContext createFactory()
-    {
+    protected PersistenceContext createFactory() {
         manyToManyFactory = new ManyToManyFactory(taskExecutor, taskMessenger);
         return manyToManyFactory.getPersistenceContext();
     }
     
-    protected WorkStatus execute(PersistenceWork persistenceWork) throws InterruptedException
-    {
+    protected WorkStatus execute(PersistenceWork persistenceWork) throws InterruptedException {
         TaskStatus taskStatus = manyToManyFactory.doTask(persistenceWork);
         taskStatus.await(500, TimeUnit.SECONDS);
         return taskStatus.getWorkStatus();
     }
 
-    public void close()
-    {
+    public void close() {
     	taskMessenger.shutdown();
         persistenceContext.close();
     }
 
     /**
-     * Returns Bilbo Baggins' User
+     * Returns Jim Coakley's User
      * @return User
      */
-    public User getUser1()
-    {
+    public User getUser1() {
         return user1;
     }
 
@@ -207,8 +165,7 @@ public class ManyToManyMain
      * Returns Gandalf Gray's User
      * @return User
      */
-    public User getUser2()
-    {
+    public User getUser2() {
         return user2;
     }
 
@@ -216,8 +173,7 @@ public class ManyToManyMain
      * Returns "Wow is it cold outside!" Post
      * @return Post
      */
-    public Post getPost1()
-    {
+    public Post getPost1() {
         return post1;
     }
 
@@ -225,8 +181,7 @@ public class ManyToManyMain
      * Returns "Now it's a bit warmer thank goodness." Post
      * @return Post
      */
-    public Post getPost2()
-    {
+    public Post getPost2() {
         return post2;
     }
  
@@ -234,8 +189,7 @@ public class ManyToManyMain
      * Verify posts retrieved by "posts_by_user" named query
      * @param posts List&lt;Post&gt; retrieved for user1
      */
-    public void verifyPostsByUser(List<Post> posts)
-    {
+    public void verifyPostsByUser(List<Post> posts) {
         // user1 should have 2 posts
         assertEquals(2, posts.size());
         assertEquals(post1.id, posts.get(0).id);
@@ -249,8 +203,7 @@ public class ManyToManyMain
      * @param usersByPost1 List&lt;User&gt; retrieved for post1
      * @param usersByPost2 List&lt;User&gt; retrieved for post2
      */
-    public void verifyUsersByPost(List<User> usersByPost1, List<User> usersByPost2)
-    {
+    public void verifyUsersByPost(List<User> usersByPost1, List<User> usersByPost2) {
         // Examine all of the users that have a post.
         // post1 should only have 1 corresponding user
         assertEquals(1, usersByPost1.size());
@@ -264,28 +217,21 @@ public class ManyToManyMain
         assertEquals(user2.name, usersByPost2.get(1).name);
     }
  
-    protected void runApplication()
-    {
-        try
-        {
+    protected void runApplication() {
+        try {
             setUp();
             User user1 = getUser1();
             User user2 = getUser2();
             Post post1 = getPost1();
             Post post2 = getPost2();
             PostsByUserEntityTask postsByUserEntityTask = new PostsByUserEntityTask(
-                    user1.id,
-                    user2.id,
-                    post1.id,
-                    post2.id);
+                    user1.id);
             execute(postsByUserEntityTask);
             List<Post> posts = postsByUserEntityTask.getPosts();
             verifyPostsByUser(posts);
             System.out.println("PostsByUser: ");
             System.out.println(user1.name + " posted \"" + posts.get(0).contents + "\" & \"" + posts.get(1).contents + "\"");
             UsersByPostTask usersByPostTask= new UsersByPostTask(
-                    user1.id,
-                    user2.id,
                     post1.id,
                     post2.id);
             execute(usersByPostTask);
@@ -296,8 +242,7 @@ public class ManyToManyMain
                     " posted \"" + post2.contents + "\"");
             System.out.println("Test completed successfully");
         }
-        catch (InterruptedException e)
-        {
+        catch (InterruptedException e) {
             e.printStackTrace();
         }
     }

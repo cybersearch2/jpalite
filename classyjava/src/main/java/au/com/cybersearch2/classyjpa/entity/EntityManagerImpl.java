@@ -110,7 +110,7 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
         checkEntityManagerClosed("persist()");
         OrmDaoHelper<?> ormDaoHelper = getOrmDaoHelperForClass(entity.getClass());
         int primaryKey = ormDaoHelper.extractId(entity);
-        Object alreadyManaged = objectMonitor.startManagingEntity(entity, primaryKey, PersistOp.persist);
+        OrmEntity alreadyManaged = objectMonitor.startManagingEntity(entity, primaryKey, PersistOp.persist);
         if ((alreadyManaged != null) || 
             ((primaryKey > 0) && ormDaoHelper.entityExists(entity)))
             throw new EntityExistsException("Entity of class " + entity.getClass() + ", primary key " + primaryKey + " already exists");
@@ -118,6 +118,7 @@ public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupp
             entityTransaction.begin(); // Transaction commit/rollback triggers refresh
         if (ormDaoHelper.create(entity) == 0)
             throw new PersistenceException("persist operation returned result count 0");
+        ormDaoHelper.setForeignCollections(entity);
         // DAO may update primary key value on entity during create operation
         if (!objectMonitor.monitorNewEntity(entity, primaryKey, ormDaoHelper.extractId(entity)))
         {

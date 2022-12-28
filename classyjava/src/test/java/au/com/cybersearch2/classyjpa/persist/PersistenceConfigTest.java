@@ -47,7 +47,8 @@ public class PersistenceConfigTest
     public void test_addNamedQuery()
     {
         PersistenceConfig persistenceConfig = new PersistenceConfig(new SqliteDatabaseType());
-        DaoQueryFactory daoQueryFactory = mock(DaoQueryFactory.class);
+        @SuppressWarnings("unchecked")
+		DaoQueryFactory<RecordCategory> daoQueryFactory = mock(DaoQueryFactory.class);
         @SuppressWarnings({ "unchecked" })
         Map<String,NamedDaoQuery<?>> namedQueryMap = mock(Map.class);
         persistenceConfig.namedQueryMap = namedQueryMap;
@@ -58,9 +59,10 @@ public class PersistenceConfigTest
     
     @Test
     public void test_addNamedQuery_already_exists()
-    {   // Check error does not throw exeption or change existing setting
+    {   // Check error does not throw exception or change existing setting
         PersistenceConfig persistenceConfig = new PersistenceConfig(new SqliteDatabaseType());
-        DaoQueryFactory daoQueryFactory = mock(DaoQueryFactory.class);
+        @SuppressWarnings("unchecked")
+		DaoQueryFactory<RecordCategory> daoQueryFactory = mock(DaoQueryFactory.class);
         @SuppressWarnings({ "unchecked" })
         Map<String,NamedDaoQuery<?>> namedQueryMap = mock(Map.class);
         persistenceConfig.namedQueryMap = namedQueryMap;

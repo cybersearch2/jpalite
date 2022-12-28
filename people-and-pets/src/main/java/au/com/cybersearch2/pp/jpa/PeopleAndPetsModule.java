@@ -21,8 +21,8 @@ import java.util.Locale;
 import au.com.cybersearch2.classyapp.ResourceEnvironment;
 import au.com.cybersearch2.classydb.ConnectionSourceFactory;
 import au.com.cybersearch2.classydb.DatabaseSupport;
-import au.com.cybersearch2.classydb.H2DatabaseSupport;
 import au.com.cybersearch2.classydb.DatabaseSupport.ConnectionType;
+import au.com.cybersearch2.classydb.SQLiteDatabaseSupport;
 import au.com.cybersearch2.classyjpa.entity.EntityClassLoader;
 import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
 import au.com.cybersearch2.classyjpa.persist.PersistenceFactory;
@@ -43,8 +43,7 @@ public class PeopleAndPetsModule
 	
 	private int version;
 	private ConnectionType connectionType;
-//    private SQLiteDatabaseSupport sqliteDatabaseSupport;
-    private H2DatabaseSupport h2DatabaseSupport;
+    private SQLiteDatabaseSupport databaseSupport;
     private PersistenceContext persistenceContext;
 
     public PeopleAndPetsModule(int version) {
@@ -88,8 +87,8 @@ public class PeopleAndPetsModule
 
     public  DatabaseSupport provideDatabaseSupport()
     {
-        h2DatabaseSupport = new H2DatabaseSupport(provideConnectionType());
-        return h2DatabaseSupport;    
+        databaseSupport = new SQLiteDatabaseSupport(provideConnectionType());
+        return databaseSupport;    
     }
     
     public  PersistenceFactory providePersistenceFactory()

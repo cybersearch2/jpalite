@@ -14,9 +14,8 @@
 package au.com.cybersearch2.example;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-
-import javax.persistence.Query;
 
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
@@ -28,25 +27,17 @@ import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
  */
 public class UsersByPostTask implements PersistenceWork
 {
-    User user1;
-    User user2;
     Post post1;
     Post post2;
     List<List<User>> resultsList;
 
     /**
      * Create UsersByPostTask object
-     * @param user1_id User 1 primary key
-     * @param user2_id User 2 primary key
      * @param post1_id Post 1 primary key
      * @param post2_id Post 2 primary key
      */
-    public UsersByPostTask(int user1_id, int user2_id, int post1_id, int post2_id)
+    public UsersByPostTask(int post1_id, int post2_id)
     {
-        user1 = new User();
-        user1.id = user1_id;
-        user2 = new User();
-        user2.id = user2_id;
         post1 = new Post();
         post1.id = post1_id;
         post2 = new Post();
@@ -75,24 +66,15 @@ public class UsersByPostTask implements PersistenceWork
     /**
      * @see au.com.cybersearch2.classyjpa.entity.PersistenceWork#doTask(au.com.cybersearch2.classyjpa.EntityManagerLite)
      */
-    @SuppressWarnings("unchecked")
     @Override
     public void doTask(EntityManagerLite entityManager) 
     {
-        entityManager.merge(user1);
-        entityManager.merge(user2);
         entityManager.merge(post1);
         entityManager.merge(post2);
-        entityManager.refresh(user1);
-        entityManager.refresh(user2);
         entityManager.refresh(post1);
         entityManager.refresh(post2);
-        Query query = entityManager.createNamedQuery(ManyToManyMain.USERS_BY_POST);
-        query.setParameter(UserPost.POST_ID_FIELD_NAME, post1.id);
-        resultsList.add((List<User>) query.getResultList());
-        query = entityManager.createNamedQuery(ManyToManyMain.USERS_BY_POST);
-        query.setParameter(UserPost.POST_ID_FIELD_NAME, post2.id);
-        resultsList.add((List<User>) query.getResultList());
+        resultsList.add(Collections.unmodifiableList(post1.getUsers()));
+        resultsList.add(Collections.unmodifiableList(post2.getUsers()));
     }
     
     /**

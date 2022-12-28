@@ -245,6 +245,18 @@ public class PersistenceAdminImpl implements PersistenceAdmin
 	}
 
     /**
+     * Returns DAO for given entity class
+     * @param <T> Entity type
+     * @param entityClass Entity class
+     * @return PersistenceDao object
+     */
+	@Override
+	public <T extends OrmEntity> PersistenceDao<T> getDao(Class<T> entityClass) {
+
+		return config.getDao(entityClass, getConnectionSource());
+	}
+
+    /**
      * Returns database version, which is defined as PU property "database-version". Defaults to 1 if not defined
      * @param properties Database properties
      * @return int

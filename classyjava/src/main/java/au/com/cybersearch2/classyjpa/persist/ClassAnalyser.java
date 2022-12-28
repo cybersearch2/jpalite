@@ -18,28 +18,25 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.persistence.PersistenceException;
 
-import au.com.cybersearch2.classylog.JavaLogger;
-import au.com.cybersearch2.classylog.Log;
-import au.com.cybersearch2.classybean.BeanException;
-import au.com.cybersearch2.classybean.BeanUtil;
-import au.com.cybersearch2.classyjpa.entity.EntityClassLoader;
-import au.com.cybersearch2.classyjpa.entity.OrmEntity;
-
 import com.j256.ormlite.db.DatabaseType;
-import com.j256.ormlite.field.DataPersisterManager;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseFieldConfig;
 import com.j256.ormlite.misc.JavaxPersistenceImpl;
 import com.j256.ormlite.table.DatabaseTableConfig;
+
+import au.com.cybersearch2.classybean.BeanException;
+import au.com.cybersearch2.classybean.BeanUtil;
+import au.com.cybersearch2.classyjpa.entity.EntityClassLoader;
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+import au.com.cybersearch2.classylog.JavaLogger;
+import au.com.cybersearch2.classylog.Log;
 
 /**
  * ClassAnalyser
@@ -70,19 +67,14 @@ public class ClassAnalyser
      * @author Andrew Bowley
      * 25/05/2014
      */
-    public static class ForeignFieldData
-    {   // FieldKey is a composite of field class (or generic class for collections) and column name.
-        // JPA specifies mappedBy column name, but OrmLite uses field name for one to many associatiions.
+    public static class ForeignFieldData {   
+    	// FieldKey is a composite of field class (or generic class for collections) and column name.
         Map<FieldKey, DatabaseFieldConfig> foreignFieldMap;
-        Map<FieldKey, DatabaseFieldConfig> foreignCollectionMap;
         
-        public ForeignFieldData()
-        {
+        public ForeignFieldData() {
             foreignFieldMap = new HashMap<>();
-            foreignCollectionMap = new HashMap<>();
         }
     }
-    
 
     public static final String TAG = "ClassAnalyser";
     protected static Log log = JavaLogger.getLogger(TAG);
@@ -173,15 +165,6 @@ public class ClassAnalyser
         }
         if (failedList != null)
             throw new PersistenceException("Failed to extract persistence config following entity classes: " + failedList.toString());
-        // Resolve foreign field mapping and foreign table configs
-        // Set ForeignCollectionForeignFieldName for foreign collections (OneToMany) 
-        for (Entry<FieldKey, DatabaseFieldConfig> entry: foreignFieldData.foreignCollectionMap.entrySet())
-        {	// This wires a foreign collection that is not actually foreign, but maps to same table
-            // If associated field is defined, the assign it's field name to ForeignCollectionColumnName
-            DatabaseFieldConfig fieldConfig = foreignFieldData.foreignFieldMap.get(entry.getKey());
-            if (fieldConfig != null)
-            	entry.getValue().setForeignCollectionForeignFieldName(fieldConfig.getFieldName());
-        }
         // Set ForeignTableConfig for foreign fields (ManyToOne) 
         for (Entry<FieldKey, DatabaseFieldConfig> entry: foreignFieldData.foreignFieldMap.entrySet())
         {
@@ -211,7 +194,7 @@ public class ClassAnalyser
         return new ArrayList<>(tableConfigMap.values());
     }
 
-    /**
+	/**
      * Fix up any field if data type is UNKNOWN and the field type is byte[].
      * Because of some Ormlite backwards compatibility issues, a byte array won't be detected automatically. 
      * @param dataClass Entity class
@@ -222,7 +205,6 @@ public class ClassAnalyser
 			if ((DataType.UNKNOWN == fieldConfig.getDataType()))
 				resolveUnknownType(dataClass, fieldConfig);
 		});
-		
 	}
 
     /**
@@ -286,18 +268,14 @@ public class ClassAnalyser
                 catch (SQLException e)
                 {   // This exception is not thrown by the OrmLite code, just declared
                 }
-                if (fieldConfig == null) 
-                    // In case nothing found, check for unsupported OneToMany annotation
-                    fieldConfig = createOneToManyConfig(databaseType, field);
-                else if (fieldConfig.getDataType() == DataType.UNKNOWN) {
-                    if (byte[].class.isAssignableFrom(field.getType()))
-                	    // Because of some Ormlite backwards compatibility issues, a byte array won't be detected automatically. 
-                	    fieldConfig.setDataType(DataType.BYTE_ARRAY);
-         			else if (Serializable.class.isAssignableFrom(field.getType()))
-         				fieldConfig.setDataType(DataType.SERIALIZABLE);
-                }
-                if (fieldConfig != null) 
-                {
+                if (fieldConfig != null) {
+                	if (fieldConfig.getDataType() == DataType.UNKNOWN) {
+	                    if (byte[].class.isAssignableFrom(field.getType()))
+	                	    // Because of some Ormlite backwards compatibility issues, a byte array won't be detected automatically. 
+	                	    fieldConfig.setDataType(DataType.BYTE_ARRAY);
+	         			else if (Serializable.class.isAssignableFrom(field.getType()))
+	         				fieldConfig.setDataType(DataType.SERIALIZABLE);
+                    }
                     fieldConfigs.add(fieldConfig);
                     // Perform further analysis to fill in gaps in OrmLite implementation
                     analyseFieldConfig(fieldConfig, field, foreignFieldData, clazz);
@@ -321,7 +299,6 @@ public class ClassAnalyser
         return null;
     }
 
-
 	/**
      * Perform additional annotation checks
      * @param fieldConfig populated DatabaseFieldConfig object for current field
@@ -333,109 +310,24 @@ public class ClassAnalyser
             DatabaseFieldConfig fieldConfig, 
             Field field, 
             ForeignFieldData foreignFieldData, 
-            Class<?> clazz) 
-    {
-        // For foreign field, set ForeignColumnName and prepare to resolve foreignTableConfig
-        // For foreign collection, prepare to resolve ForeignCollectionForeignFieldName
-        if (fieldConfig.isForeign() || fieldConfig.isForeignCollection())
-        {
-            for (Annotation annotation : field.getAnnotations()) 
-            {
+            Class<?> clazz) {
+        // For foreign field, prepare to resolve foreignTableConfig
+        if (fieldConfig.isForeign() || fieldConfig.isForeignCollection()) {
+            for (Annotation annotation : field.getAnnotations()) {
                 Class<?> annotationClass = annotation.annotationType();
-                if (annotationClass.getName().equals("javax.persistence.JoinColumn")) 
+                boolean isJoinColumn = annotationClass.getName().equals("javax.persistence.JoinColumn");
+                if (isJoinColumn) 
                 {
                     String referencedColumnName = getStringByInvocation(annotation, "referencedColumnName");
-                    if ((referencedColumnName.length() > 0) && (fieldConfig.getColumnName() != null))
-                    {
-                        fieldConfig.setForeignColumnName(referencedColumnName);
+                    if ((referencedColumnName.length() > 0) && (fieldConfig.getColumnName() != null)) {
                         FieldKey key = new FieldKey(field.getType(), fieldConfig.getColumnName());
                         foreignFieldData.foreignFieldMap.put(key, fieldConfig);
                     }
                 }
-                else if (annotationClass.getName().equals("javax.persistence.OneToMany")) 
-                {
-                    if (!Collection.class.isAssignableFrom(field.getType()))
-                        throw new PersistenceException(
-                                "@OneToMany annotation not applied to Collection type for field " + field);
-                    String mappedBy = extractOneToManyField(fieldConfig, annotation, field);
-                    if (mappedBy.length() > 0)
-                    {
-                        FieldKey key = new FieldKey(clazz, mappedBy);
-                        foreignFieldData.foreignCollectionMap.put(key, fieldConfig);
-                    }
-                }
-
             }
-        }
+        } 
     }
 
-    /**
-     * Process OneToMany annotation missing from com.j256.ormlite.misc.JavaxPersistence probably because
-     * ForeignCollection annotation serves the same purpose
-     * 
-     * @param databaseType DatabaseType object
-     * @param field Field object
-     * @return DatabaseFieldConfig 
-     */
-    private DatabaseFieldConfig createOneToManyConfig(DatabaseType databaseType, Field field) 
-    {
-        Annotation oneToManyAnnotation = null;
-        for (Annotation annotation : field.getAnnotations()) 
-        {
-            Class<?> annotationClass = annotation.annotationType();
-            if (annotationClass.getName().equals("javax.persistence.OneToMany")) 
-            {
-                if (!Collection.class.isAssignableFrom(field.getType()))
-                    throw new PersistenceException(
-                            "@OneToMany annotation not applied to Collection type for field " + field);
-                oneToManyAnnotation = annotation;
-                break; 
-            }
-        }
-        if (oneToManyAnnotation == null)
-            return null;
-        DatabaseFieldConfig config = new DatabaseFieldConfig();
-        String fieldName = field.getName();
-        if (databaseType.isEntityNamesMustBeUpCase())
-        {
-            fieldName = fieldName.toUpperCase(Locale.US);
-        }
-        config.setFieldName(fieldName);
-        if (config.getDataPersister() == null) 
-            config.setDataPersister(DataPersisterManager.lookupForField(field));
-        config.setUseGetSet((DatabaseFieldConfig.findGetMethod(field, databaseType, false) != null) &&
-                            (DatabaseFieldConfig.findSetMethod(field, databaseType, false) != null));
-        // Defaults from ForeignCollectionField
-        config.setForeignCollection(true);
-        config.setForeignCollectionMaxEagerLevel(1);
-        config.setForeignCollectionOrderAscending(true);
-        return config;
-    }
- 
-    /**
-     * Returns "mappedBy" attribute for OneToMany annotation. Also handles "fetch" value of "EAGER".
-     * @param fieldConfig DatabaseFieldConfig object of current field
-     * @param annotation Annotation object of current field
-     * @param field Field  object
-     * @return "mappedBy" value or empty String if not found or empty
-     */
-    protected String extractOneToManyField(DatabaseFieldConfig fieldConfig, Annotation annotation, Field field)
-    {
-       // The field that owns the relationship. Required unless the relationship is unidirectional.
-        String mappedBy = getStringByInvocation(annotation, "mappedBy");
-        String fetchType = getStringByInvocation(annotation, "fetch");
-        if (fetchType.toString().equals("EAGER")) 
-            fieldConfig.setForeignCollectionEager(true);
-        if (mappedBy.length() > 0) 
-        {
-            fieldConfig.setForeignCollectionForeignFieldName(mappedBy);
-            fieldConfig.setForeignCollectionColumnName(mappedBy);
-        }
-        // With OrmLite foreign collections, column name is expected to match field name 
-        fieldConfig.setColumnName(field.getName());
-        return mappedBy;
-    }
- 
     /**
      * Utility method to return unitName of class with PersistenceUnit annotation
      * @param clazz Class which is expect to have PersistenceUnit annotation
@@ -465,7 +357,7 @@ public class ClassAnalyser
      * @param methodName Method name
      * @return text or empty string if object returned is null 
      */
-    protected static String getStringByInvocation(Annotation annotation, String methodName)
+    private static String getStringByInvocation(Annotation annotation, String methodName)
     {
         try
         {

@@ -13,6 +13,11 @@
     limitations under the License. */
 package au.com.cybersearch2.classyjpa.entity;
 
+import java.sql.SQLException;
+import java.util.Arrays;
+
+import com.j256.ormlite.field.FieldType;
+
 /**
  * OrmDaoHelper
  * JPA adapter for OrmLite
@@ -46,6 +51,25 @@ public class OrmDaoHelper<T extends OrmEntity>
         return entityDao.create(entity);
     }
 
+    /**
+     * Set every foreign collection object in given entiry as an empty ForeignCollection
+     * @param data Entity object
+     */
+	@SuppressWarnings("unchecked")
+	public void setForeignCollections(OrmEntity data)  {
+		FieldType[] foreign = entityDao.getTableInfo().getForeignCollections();
+		if (foreign.length > 0) {
+		    Arrays.asList(foreign).forEach(field -> {
+		    	try {
+		    		entityDao.assignEmptyForeignCollection((T) data, field.getFieldName());
+					field.buildForeignCollection(foreign, null);
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+		    });
+		}
+	}
+	
     /**
      * Retrieves an object associated with a specific ID.
      * 

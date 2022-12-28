@@ -13,14 +13,16 @@
     limitations under the License. */
 package au.com.cybersearch2.example;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 
@@ -28,11 +30,9 @@ import au.com.cybersearch2.classyjpa.entity.OrmEntity;
  * A user object with a name.
  */
 @Entity(name="tableUser")
-public class User implements OrmEntity
-{
+public class User implements OrmEntity {
 
 	public final static String ID_FIELD_NAME = "id";
-
 
     @Id @GeneratedValue
 	int id;
@@ -40,17 +40,9 @@ public class User implements OrmEntity
 	@Column
 	String name;
 
-
-    @ManyToMany(fetch=FetchType.EAGER)
-    Collection<Post> posts;
-    
-    /**
-     * User default constructor for ormlite
-     */
-	User() 
-	{
-	}
-
+	@OneToMany(fetch=FetchType.LAZY)
+    Collection<UserPost> userPosts;
+ 
 	/**
 	 * Construct User object
 	 * @param name String
@@ -58,5 +50,34 @@ public class User implements OrmEntity
 	public User(String name) 
 	{
 		this.name = name;
+	}
+
+    /**
+     * User default constructor for Ormlite
+     */
+	User() {
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public List<Post> getPosts() {
+		List<Post> postList = new ArrayList<>();
+		userPosts.forEach(userPost -> postList.add(userPost.post));
+		return postList;
+	}
+
+	public void addPost(Post post) {
+		UserPost userPost = new UserPost(this, post);
+		userPosts.add(userPost);
 	}
 }

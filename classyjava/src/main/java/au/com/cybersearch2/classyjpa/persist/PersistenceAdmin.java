@@ -126,9 +126,18 @@ public interface PersistenceAdmin extends ConnectionSourceFactory
     /**
      * Returns DAO for given entity class
      * @param entityClass Entity class
+     * @param connectionSource Open connection source
      * @return PersistenceDao object
      */
     //PersistenceDao<?> getDao(Class<? extends OrmEntity> entityClass, ConnectionSource connectionSource);
     <T extends OrmEntity> PersistenceDao<T> getDao(Class<T> entityClass, ConnectionSource connectionSource);
 
- }
+    /**
+     * Returns DAO for given entity class
+     * @param entityClass Entity class
+     * @return PersistenceDao object
+     */
+    //PersistenceDao<?> getDao(Class<? extends OrmEntity> entityClass, ConnectionSource connectionSource);
+    <T extends OrmEntity> PersistenceDao<T> getDao(Class<T> entityClass);
+
+}

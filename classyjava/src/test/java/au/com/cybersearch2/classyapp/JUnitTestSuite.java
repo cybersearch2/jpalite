@@ -16,17 +16,14 @@ package au.com.cybersearch2.classyapp;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
-import au.com.cybersearch2.classydb.DatabaseAdminImplTest;
 import au.com.cybersearch2.classydb.NativeScriptDatabaseWorkTest;
 import au.com.cybersearch2.classydb.SQLiteDatabaseSupportTest;
 import au.com.cybersearch2.classydb.SQLiteSupportTest;
-import au.com.cybersearch2.classyjpa.JpaIntegrationTest;
 import au.com.cybersearch2.classyjpa.entity.EntityManagerImplTest;
 import au.com.cybersearch2.classyjpa.entity.JavaPersistenceContextTest;
 import au.com.cybersearch2.classyjpa.entity.ObjectMonitorTest;
 import au.com.cybersearch2.classyjpa.entity.OrmDaoHelperFactoryTest;
 import au.com.cybersearch2.classyjpa.entity.OrmDaoHelperTest;
-import au.com.cybersearch2.classyjpa.entity.PersistenceContainerTest;
 import au.com.cybersearch2.classyjpa.entity.PersistenceDaoTest;
 import au.com.cybersearch2.classyjpa.persist.ClassAnalyserTest;
 import au.com.cybersearch2.classyjpa.persist.PersistenceConfigTest;
@@ -37,7 +34,6 @@ import au.com.cybersearch2.classyjpa.query.NativeQueryTest;
 import au.com.cybersearch2.classyjpa.query.SqlQueryTest;
 import au.com.cybersearch2.classyjpa.transaction.ClassyEntityTransactionTest;
 import au.com.cybersearch2.classyjpa.transaction.TransactionStateTest;
-import au.com.cybersearch2.classynode.NodeTest;
 
 /**
  * JUnitTestSuite
@@ -46,7 +42,6 @@ import au.com.cybersearch2.classynode.NodeTest;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-    JpaIntegrationTest.class,
     SQLiteSupportTest.class,
     OrmDaoHelperTest.class,
     OrmDaoHelperFactoryTest.class,
@@ -55,10 +50,8 @@ import au.com.cybersearch2.classynode.NodeTest;
     PersistenceConfigTest.class,
     PersistenceXmlParserTest.class,
     TransactionStateTest.class,
-    DatabaseAdminImplTest.class,
     PersistenceDaoTest.class,
     JavaPersistenceContextTest.class,
-    PersistenceContainerTest.class,
     SQLiteDatabaseSupportTest.class,
     NativeScriptDatabaseWorkTest.class,
     DaoQueryTest.class,
@@ -66,8 +59,7 @@ import au.com.cybersearch2.classynode.NodeTest;
     NativeQueryTest.class,
     SqlQueryTest.class,
     ClassyEntityTransactionTest.class,
-    ClassAnalyserTest.class,
-    NodeTest.class
+    ClassAnalyserTest.class
 })
 public class JUnitTestSuite 
 {   

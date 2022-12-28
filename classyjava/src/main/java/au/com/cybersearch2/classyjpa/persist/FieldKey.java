@@ -21,20 +21,20 @@ package au.com.cybersearch2.classyjpa.persist;
  */
 public class FieldKey implements Comparable<FieldKey>
 {
-    /** Class of entity with one or more OneToMany or ManyToOne annotations */
+    /** Entity class */
     protected Class<?> entityClass;
-    /** Name of "mappedBy" field */
-    protected String columnName;
+    /** Name of field */
+    protected String fieldName;
  
     /**
      * Construct a FieldKey Instance
-     * @param entityClass Class of entity with one or more OneToMany or ManyToOne annotations
-     * @param columnName Name of "mappedBy" field 
+     * @param entityClass Entity class
+     * @param fieldName Name of field 
      */
-    public FieldKey(Class<?> entityClass, String columnName)
+    public FieldKey(Class<?> entityClass, String fieldName)
     {
         this.entityClass = entityClass;
-        this.columnName = columnName;
+        this.fieldName = fieldName;
     }
 
     /**
@@ -53,7 +53,7 @@ public class FieldKey implements Comparable<FieldKey>
     public int compareTo(FieldKey another) 
     {
         int compareClasses = entityClass.getName().compareTo(another.entityClass.getName());
-        return (compareClasses != 0) ? compareClasses : (columnName.compareTo(another.columnName));
+        return (compareClasses != 0) ? compareClasses : (fieldName.compareTo(another.fieldName));
     }
 
     /**
@@ -75,21 +75,21 @@ public class FieldKey implements Comparable<FieldKey>
     }
 
     /**
-     * Returns name of "mappedBy" field
+     * Returns name of field
      * @return String
      */
-    public String getColumnName() 
+    public String getFieldName() 
     {
-        return columnName;
+        return fieldName;
     }
 
     /**
-     * Set name of "mappedBy" field
-     * @param columnName String
+     * Set name of  field
+     * @param fieldName String
      */
-    public void setColumnName(String columnName) 
+    public void setFieldName(String fieldName) 
     {
-        this.columnName = columnName;
+        this.fieldName = fieldName;
     }
 
     /**
@@ -101,7 +101,7 @@ public class FieldKey implements Comparable<FieldKey>
     @Override
     public int hashCode()
     {
-        return entityClass.hashCode() ^ columnName.hashCode();
+        return entityClass.hashCode() ^ fieldName.hashCode();
     }
   
     /**
@@ -113,7 +113,7 @@ public class FieldKey implements Comparable<FieldKey>
     {
         if (another instanceof FieldKey)
             return entityClass.equals(((FieldKey) another).entityClass) && 
-                    columnName.equals(((FieldKey) another).columnName);
+            		fieldName.equals(((FieldKey) another).fieldName);
         return false;
     }
 }
