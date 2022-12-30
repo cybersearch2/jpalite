@@ -26,11 +26,13 @@ import au.com.cybersearch2.classylog.Log;
 /**
  * SqlQuery
  * Implements javax.persistence.Query invoked using an Android SQLite interface.
- * The SQL is executed with OrmLite JDBC when not running on Android.
+ * The SQL is executed with OrmLite JDBC.
+ * @param <T> Return type
+ * 
  * @author Andrew Bowley
  * 10/07/2014
  */
-public class SqlQuery
+public class SqlQuery<T>
 {
     public static final String TAG = "SqlQuery";
     protected static Log log = JavaLogger.getLogger(TAG);
@@ -56,10 +58,10 @@ public class SqlQuery
      }
 
     /**
-     * Execute query and return results as a list of Objects
-     * @return Object list
+     * Execute query and return results as a list of T Objects
+     * @return T list
      */
-    public List<?> getResultObjectList() 
+    public List<T> getResultObjectList() 
     {
         return getResultObjectList(0,0);
     }
@@ -70,20 +72,22 @@ public class SqlQuery
      * @param maxResults Maximum results limit
      * @return Object list
      */
-    public List<?> getResultObjectList(int startPosition, int maxResults) 
+    @SuppressWarnings("unchecked")
+	public List<T> getResultObjectList(int startPosition, int maxResults) 
     {
         queryInfo.setSelectionArgs(selectionArgs.toArray(new String[selectionArgs.size()]));
-        return persistenceAdmin.getResultList(queryInfo, startPosition, maxResults);
+        return (List<T>) persistenceAdmin.getResultList(queryInfo, startPosition, maxResults);
     }
 
     /**
      * Execute query and return a single Object result
      * @return Object or null if nothing returned by query
      */
-    public Object getResultObject() 
+    @SuppressWarnings("unchecked")
+	public T getResultObject() 
     {
         queryInfo.setSelectionArgs(selectionArgs.toArray(new String[selectionArgs.size()]));
-        return persistenceAdmin.getSingleResult(queryInfo);
+        return (T) persistenceAdmin.getSingleResult(queryInfo);
     }
 
     /**

@@ -37,13 +37,13 @@ public class NativeQuery<T> extends QueryBase<T>
     public static final String TAG = "NativeQuery";
     protected static Log log = JavaLogger.getLogger(TAG);
     /** Query invoked using Android SQLite interface */
-    protected SqlQuery sqlQuery;
+    protected SqlQuery<T> sqlQuery;
   
     /**
      * Create a NativeQuery object
      * @param sqlQuery Query invoked using Android SQLite interface
      */
-    public NativeQuery(SqlQuery sqlQuery)
+    public NativeQuery(SqlQuery<T> sqlQuery)
     {
         this.sqlQuery = sqlQuery;
     }
@@ -63,7 +63,6 @@ public class NativeQuery<T> extends QueryBase<T>
      * Execute a SELECT query and return the query results as a List.
      * @return List of objects
      */   
-    @SuppressWarnings("unchecked")
     @Override
     public List<T> getResultList() 
     {
@@ -71,7 +70,7 @@ public class NativeQuery<T> extends QueryBase<T>
             return new ArrayList<>();
         try
         {
-            return (List<T>) sqlQuery.getResultObjectList(startPosition, maxResults);
+            return sqlQuery.getResultObjectList(startPosition, maxResults);
         }
         finally
         {
@@ -84,7 +83,6 @@ public class NativeQuery<T> extends QueryBase<T>
      * @return Object
      * @throws NoResultException if there is no result
      */
-    @SuppressWarnings("unchecked")
 	@Override
     public T getSingleResult() 
     {
@@ -94,7 +92,7 @@ public class NativeQuery<T> extends QueryBase<T>
         String message = sqlQuery.toString();
         try
         {
-             result = (T) sqlQuery.getResultObject();
+             result = sqlQuery.getResultObject();
         }
         catch (PersistenceException e)
         {

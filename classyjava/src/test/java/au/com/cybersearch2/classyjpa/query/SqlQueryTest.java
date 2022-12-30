@@ -36,6 +36,9 @@ import au.com.cybersearch2.classyjpa.query.QueryInfo.RowMapper;
  */
 public class SqlQueryTest
 {
+	static final class Employee {
+		
+	}
 
     static final String PU_NAME = "acme-enterprise";
     static final String DATABASE_NAME = "acme-enterprise.db";
@@ -56,7 +59,7 @@ public class SqlQueryTest
     static final String SQL_LIMIT = "20";
     static Date CREATED;
 
-    protected SqlQuery sqlQuery;
+    protected SqlQuery<Employee> sqlQuery;
     protected PersistenceAdmin persistenceAdmin;
     protected QueryInfo queryInfo;
 
@@ -65,7 +68,7 @@ public class SqlQueryTest
     {
         persistenceAdmin = mock(PersistenceAdmin.class);
         queryInfo = getTestQueryInfo();
-        sqlQuery = new SqlQuery(persistenceAdmin, queryInfo);
+        sqlQuery = new SqlQuery<Employee>(persistenceAdmin, queryInfo);
         Calendar cal = GregorianCalendar.getInstance(Locale.US);
         cal.set(2014, 5, 25, 5, 17, 23);
         CREATED = cal.getTime();
@@ -77,13 +80,12 @@ public class SqlQueryTest
         sqlQuery.selectionArgs.add(queryInfo.selectionArgs[0]);
         sqlQuery.selectionArgs.add(queryInfo.selectionArgs[1]);
         queryInfo.selectionArgs = null;
-        Object object = new Object();
-        when(persistenceAdmin.getResultList(queryInfo, 0, 0)).thenReturn((List<Object>)Collections.singletonList(object));
-        @SuppressWarnings("unchecked")
-        List<Object> result = (List<Object>) sqlQuery.getResultObjectList();
+        Employee employee = new Employee();
+        when(persistenceAdmin.getResultList(queryInfo, 0, 0)).thenReturn(Collections.singletonList(employee));
+        List<Employee> result = sqlQuery.getResultObjectList();
         assertThat(result).isNotNull();
         assertThat(result.size()).isEqualTo(1);
-        assertThat(result.get(0)).isEqualTo(object);
+        assertThat(result.get(0)).isEqualTo(employee);
         assertThat(queryInfo.selectionArgs.length).isEqualTo(2);
         assertThat(queryInfo.selectionArgs[0]).isEqualTo("Brown");
         assertThat(queryInfo.selectionArgs[1]).isEqualTo("Smith");
@@ -95,11 +97,11 @@ public class SqlQueryTest
         sqlQuery.selectionArgs.add(queryInfo.selectionArgs[0]);
         sqlQuery.selectionArgs.add(queryInfo.selectionArgs[1]);
         queryInfo.selectionArgs = null;
-        Object object = new Object();
-        when(persistenceAdmin.getSingleResult(queryInfo)).thenReturn(object);
+        Employee employee = new Employee();
+        when(persistenceAdmin.getSingleResult(queryInfo)).thenReturn(employee);
         Object result = sqlQuery.getResultObject();
         assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(object);
+        assertThat(result).isEqualTo(employee);
         assertThat(queryInfo.selectionArgs.length).isEqualTo(2);
         assertThat(queryInfo.selectionArgs[0]).isEqualTo("Brown");
         assertThat(queryInfo.selectionArgs[1]).isEqualTo("Smith");

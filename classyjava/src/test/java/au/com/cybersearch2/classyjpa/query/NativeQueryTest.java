@@ -55,10 +55,11 @@ public class NativeQueryTest
     static Calendar CREATED_CALENDAR;
     private static final int OFFSET = 17;
     private static final int LIMIT = 100;
-    protected SqlQuery sqlQuery;
-    protected NativeQuery nativeQuery;
+    protected SqlQuery<RecordCategory> sqlQuery;
+    protected NativeQuery<RecordCategory> nativeQuery;
   
-    @Before
+    @SuppressWarnings("unchecked")
+	@Before
     public void setUp()
     {
         if (CREATED_CALENDAR == null)
@@ -67,10 +68,9 @@ public class NativeQueryTest
             CREATED_CALENDAR.setTime(CREATED);
         }
         sqlQuery = mock(SqlQuery.class);
-        nativeQuery = new NativeQuery(sqlQuery);
+        nativeQuery = new NativeQuery<>(sqlQuery);
     }
     
-    @SuppressWarnings("unchecked")
     @Test
     public void test_getResultList() throws SQLException
     {
@@ -79,7 +79,7 @@ public class NativeQueryTest
         nativeQuery.setFirstResult(OFFSET);
         assertThat(nativeQuery.isClosed).isFalse();
         when((List<RecordCategory>)sqlQuery.getResultObjectList(OFFSET, LIMIT)).thenReturn(Collections.singletonList(recordCategory));
-        List<Object> result = nativeQuery.getResultList();
+        List<RecordCategory> result = nativeQuery.getResultList();
         assertThat(result).isNotNull();
         assertThat(result.size()).isEqualTo(1);
         assertThat(result.get(0)).isEqualTo(recordCategory);
@@ -313,6 +313,4 @@ public class NativeQueryTest
         }
         
     }
-    
-
 }

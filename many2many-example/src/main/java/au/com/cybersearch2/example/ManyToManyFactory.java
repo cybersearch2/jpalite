@@ -13,7 +13,15 @@
     limitations under the License. */
 package au.com.cybersearch2.example;
 
-import au.com.cybersearch2.classyapp.JavaTestResourceEnvironment;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Locale;
+
+import au.com.cybersearch2.classyapp.ResourceEnvironment;
+import au.com.cybersearch2.classyjpa.entity.EntityClassLoader;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWorkModule;
 import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
@@ -45,8 +53,32 @@ public class ManyToManyFactory
     	this.taskMessenger = taskMessenger;
         component = new ApplicationComponent() {
 
-        	ManyToManyModule module = new ManyToManyModule(new JavaTestResourceEnvironment("src/main/resources"));
-        	
+        	ManyToManyModule module = new ManyToManyModule(new ResourceEnvironment() {
+
+    			@Override
+    			public InputStream openResource(String resourceName) throws IOException {
+    		        File resourceFile = new File("src/main/resources", resourceName);
+    		        if (!resourceFile.exists())
+    		            throw new FileNotFoundException(resourceName);
+    		        InputStream instream = new FileInputStream(resourceFile);
+    		        return instream;
+    			}
+    			
+    			@Override
+    			public Locale getLocale() {
+    				return new Locale("en", "AU");
+    			}
+
+    			@Override
+    			public File getDatabaseDirectory() {
+    				return null;
+    			}
+
+    			@Override
+    			public EntityClassLoader getEntityClassLoader(String puName) {
+    				return null;
+    			}}); 
+       	
 			@Override
 			public PersistenceContext persistenceContext() {
 				return module.providePersistenceContext();

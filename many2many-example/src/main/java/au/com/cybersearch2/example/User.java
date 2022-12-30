@@ -13,7 +13,6 @@
     limitations under the License. */
 package au.com.cybersearch2.example;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -25,6 +24,7 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
+import au.com.cybersearch2.classyjpa.entity.TableJoiner;
 
 /**
  * A user object with a name.
@@ -34,6 +34,9 @@ public class User implements OrmEntity {
 
 	public final static String ID_FIELD_NAME = "id";
 
+	/** Wraps OrmLite ForeignCollection set by Jpalite on the posts field at start up */
+	private final TableJoiner<Post, UserPost> tableJoiner;
+	
     @Id @GeneratedValue
 	int id;
 
@@ -49,6 +52,7 @@ public class User implements OrmEntity {
 	 */
 	public User(String name) 
 	{
+		this();
 		this.name = name;
 	}
 
@@ -56,6 +60,17 @@ public class User implements OrmEntity {
      * User default constructor for Ormlite
      */
 	User() {
+		tableJoiner = new TableJoiner<>() {
+
+			@Override
+			public Post fromJoin(UserPost joinRecord) {
+				return joinRecord.post;
+			}
+
+			@Override
+			public UserPost toJoin(Post tableRecord) {
+				return new UserPost(User.this, tableRecord);
+			}};
 	}
 
 	public String getName() {
@@ -70,14 +85,20 @@ public class User implements OrmEntity {
 		return id;
 	}
 
+	/**
+	 * Returns list of posts owned by this user
+	 * @return Post list
+	 */
 	public List<Post> getPosts() {
-		List<Post> postList = new ArrayList<>();
-		userPosts.forEach(userPost -> postList.add(userPost.post));
-		return postList;
+		return tableJoiner.getList(userPosts);
 	}
 
-	public void addPost(Post post) {
-		UserPost userPost = new UserPost(this, post);
-		userPosts.add(userPost);
+	/**
+	 * Add given post to this user
+	 * @param post Post object
+	 * @return resulting number of posts own by this user
+	 */
+	public int addPost(Post post) {
+		return tableJoiner.add(post, userPosts);
 	}
 }

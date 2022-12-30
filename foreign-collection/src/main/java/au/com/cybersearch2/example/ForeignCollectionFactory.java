@@ -30,11 +30,11 @@ import au.com.cybersearch2.classytask.TaskMessenger;
 import au.com.cybersearch2.classytask.TaskStatus;
 
 /**
- * H2ManyToManyFactory
+ * ForeignCollectionFactory
  * @author Andrew Bowley
  * 8 Jan 2016
  */
-public class H2ManyToManyFactory
+public class ForeignCollectionFactory
 {
     static interface ApplicationComponent
     {
@@ -47,13 +47,14 @@ public class H2ManyToManyFactory
     protected ApplicationComponent component;
     protected PersistenceWorkModule persistenceWorkModule;
     
-    public H2ManyToManyFactory(TaskExecutor taskExecutor, TaskMessenger<Void,Boolean> taskMessenger)
+    public ForeignCollectionFactory(TaskExecutor taskExecutor, TaskMessenger<Void,Boolean> taskMessenger)
     {
     	this.taskExecutor = taskExecutor;
     	this.taskMessenger = taskMessenger;
         component = new ApplicationComponent() {
 
-        	H2ManyToManyModule module = new H2ManyToManyModule( new ResourceEnvironment() {
+        	ForeignCollectionModule module = new ForeignCollectionModule(
+                new ResourceEnvironment() {
 
     			@Override
     			public InputStream openResource(String resourceName) throws IOException {
@@ -94,8 +95,7 @@ public class H2ManyToManyFactory
     
     public TaskStatus doTask(PersistenceWork persistenceWork)
     {
-        persistenceWorkModule = new PersistenceWorkModule("manytomany", persistenceWork, taskMessenger, taskExecutor);
+        persistenceWorkModule = new PersistenceWorkModule(ForeignCollectionMain.ACCOUNTS_PU, persistenceWork, taskMessenger, taskExecutor);
 		return persistenceWorkModule.doTask(component.persistenceContext());
     }
-
 }

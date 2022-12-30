@@ -62,6 +62,7 @@
   </developers>
   <modules>
     <module>classyjava</module>
+    <module>foreign-collection</module>
     <module>many2many-example</module>
     <module>people-and-pets</module>
   </modules>
