@@ -15,7 +15,7 @@ package au.com.cybersearch2.pp;
 
 import java.util.concurrent.TimeUnit;
 
-import au.com.cybersearch2.classydb.DatabaseSupport.ConnectionType;
+import au.com.cybersearch2.classydb.DatabaseSupport;
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.QueryForAllGenerator;
 import au.com.cybersearch2.classyjpa.entity.PersistenceTask;
@@ -32,7 +32,7 @@ import au.com.cybersearch2.classytask.WorkStatus;
 import au.com.cybersearch2.pp.api.ObjectsStore;
 import au.com.cybersearch2.pp.api.Person;
 import au.com.cybersearch2.pp.api.Pet;
-import au.com.cybersearch2.pp.jpa.PeopleAndPetsModule;
+import au.com.cybersearch2.pp.jpa.PeopleAndPetsFactory;
 import au.com.cybersearch2.pp.jpa.PeopleUpdate;
 import au.com.cybersearch2.pp.jpa.PetsUpdate;
 
@@ -60,18 +60,19 @@ public class PeopleAndPets {
     
     protected class ApplicationComponent {
 
-    	private PeopleAndPetsModule peopleAndPetsModule;
+    	private PeopleAndPetsFactory peopleAndPetsFactory;
     	
-    	public ApplicationComponent(PeopleAndPetsModule peopleAndPetsModule) {
-    		this.peopleAndPetsModule = peopleAndPetsModule;
+    	public ApplicationComponent(int version) {
+    		peopleAndPetsFactory = new PeopleAndPetsFactory(version);
+    		prepareDatabaseSupport(peopleAndPetsFactory.getDatabaseSupport());
     	}
 
 		public PersistenceContext persistenceContext() {
-			return peopleAndPetsModule.providePersistenceContext();
+			return peopleAndPetsFactory.getPersistenceContext();
 		}
 
 		public WorkStatus execute(PersistenceWorkModule persistenceWorkModule) {
-			TaskStatus taskStatus = persistenceWorkModule.doTask(peopleAndPetsModule.providePersistenceContext());
+			TaskStatus taskStatus = persistenceWorkModule.doTask(persistenceContext());
 			try {
 				taskStatus.await(5, TimeUnit.SECONDS);
 				return taskStatus.getWorkStatus();
@@ -79,9 +80,9 @@ public class PeopleAndPets {
 				return WorkStatus.FAILED;
 			}
 		}
-
-		public ConnectionType connectionType() {
-			return peopleAndPetsModule.provideConnectionType();
+		
+		protected void prepareDatabaseSupport(DatabaseSupport databaseSupport) {
+			
 		}
 	}
 
@@ -203,7 +204,7 @@ public class PeopleAndPets {
     protected PersistenceContext initializeApplication()
     {
         // Set up dependency injection, which creates an ObjectGraph from a PeopleAndPetsModule configuration object
-        component = new ApplicationComponent(new PeopleAndPetsModule(JPA_VERSION));
+        component = new ApplicationComponent(JPA_VERSION);
         return component.persistenceContext();
     }
     
@@ -224,11 +225,6 @@ public class PeopleAndPets {
        	populateDatabases();
     }
     
-    protected ConnectionType getConnectionType()
-	{
-	    return component.connectionType();
-	}
-	
 	/**
 	 * Display message to user
 	 * @param message Message

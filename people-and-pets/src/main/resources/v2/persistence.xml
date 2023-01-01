@@ -4,14 +4,16 @@
              version="2.0">
    <persistence-unit name="pets">
        <class>au.com.cybersearch2.pp.v2.PetDataV2</class>
-        <property name="database-name" value="people-and-pets.db"/>
-        <property name="database-version" value="2"/>
-        <property name="open-helper-callbacks-classname" value="au.com.cybersearch2.pp.v2.PetsOpenHelperCallbacks"/>
+        <property name="JTA_database-name" value="people-and-pets.db"/>
+        <property name="JTA_database-version" value="2"/>
+        <property name="JTA_open-helper-callbacks-classname" 
+                  value="au.com.cybersearch2.pp.v2.PetsOpenHelperCallbacks"/>
    </persistence-unit>
    <persistence-unit name="people">
        <class>au.com.cybersearch2.pp.v2.PersonDataV2</class>
-       <property name="database-name" value="people-and-pets.db"/>
-       <property name="database-version" value="2"/>
-       <property name="open-helper-callbacks-classname" value="au.com.cybersearch2.pp.v2.PeopleOpenHelperCallbacks"/>
+       <property name="JTA_database-name" value="people-and-pets.db"/>
+       <property name="JTA_database-version" value="2"/>
+       <property name="JTA_open-helper-callbacks-classname" 
+                 value="au.com.cybersearch2.pp.v2.PeopleOpenHelperCallbacks"/>
    </persistence-unit>
 </persistence>

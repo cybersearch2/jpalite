@@ -66,11 +66,6 @@ public class PetsUpdate implements PersistenceTask
     public void doTask(EntityManagerLite entityManager) 
     {
 		// Query for all of the data objects in the database
-    	/* Comments starting with "///" are alternate EntityManagerDelegate approach, 
-    	 * but you will need to handle lots of places where checked SQLException is thrown. */
-    	/// EntityManagerDelegate delegate = (EntityManagerDelegate) entityManager.getDelegate();
-    	/// PersistenceDao<PetData, Integer> petDao = (PersistenceDao<PetData, Integer>) delegate.getDaoForClass(PetData.class);
-		/// List<PetData> list = petDao.queryForAll();
         TypedQuery<Pet> query = entityManager.createNamedQuery(PeopleAndPets.ALL_PET_DATA, Pet.class);
         List<Pet> list = query.getResultList();
 

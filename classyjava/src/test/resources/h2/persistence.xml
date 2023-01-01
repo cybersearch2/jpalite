@@ -7,9 +7,9 @@
        <class>au.com.cybersearch2.classynode.NodeEntity</class>
        <class>au.com.cybersearch2.classyfy.data.alfresco.RecordCategory</class>
        <class>au.com.cybersearch2.classyfy.data.alfresco.RecordFolder</class>
-       <property name="database-name" value="classyfy.db"/>
-       <property name="schema-filename" value="classyfy_schema.sql"/>
-       <property name="drop-schema-filename" value="drop_classyfy_schema.sql"/>
-       <property name="data-filename" value="classyfy_data.sql"/>
+       <property name="JTA_database-name" value="classyfy.db"/>
+       <property name="JTA_schema-filename" value="classyfy_schema.sql"/>
+       <property name="JTA_drop-schema-filename" value="drop_classyfy_schema.sql"/>
+       <property name="JTA_data-filename" value="classyfy_data.sql"/>
        </persistence-unit>
 </persistence>

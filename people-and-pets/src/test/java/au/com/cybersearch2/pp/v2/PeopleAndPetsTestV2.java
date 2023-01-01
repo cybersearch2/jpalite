@@ -60,16 +60,16 @@ public class PeopleAndPetsTestV2
 {
     private static PeopleAndPetsV2 peopleAndPets;
     private static TaskExecutor taskExecutor;
-    private static ObjectsStore objectsStoreV1 = new ObjectsStore() {
+    private static ObjectsStore objectsStoreV2 = new ObjectsStore() {
 
 		@Override
 		public Person personInstance(String name) {
-			return new PersonDataV2(name, "");
+			return new PersonDataV2(name, QuoteSource.getQuote());
 		}
 
 		@Override
 		public Pet petInstance(String name) {
-			return new PetDataV2(name, "");
+			return new PetDataV2(name, QuoteSource.getQuote());
 		}};
 
 	@BeforeClass
@@ -154,14 +154,14 @@ public class PeopleAndPetsTestV2
     	int returnCode = result.get();
     	assertThat(returnCode == 0);
     	String context = "test_upgrade";
-    	doIntegrationTest(context, ConnectionType.file, true);
+    	doSingleTest(context);
     	// Do second time for start at JPA version 2
     	peopleAndPets.shutdown();
-    	doIntegrationTest(context, ConnectionType.file, true);
+    	doSingleTest(context);
     }
     
    private void doIntegrationTest(String context, ConnectionType connectionType, boolean isSerial) throws Exception
-    {
+   {
     	if (connectionType == ConnectionType.file)
         	System.setProperty(PeopleAndPetsModule.PERSIST_ON_DISK, "true");
     	else
@@ -170,7 +170,7 @@ public class PeopleAndPetsTestV2
         PersistenceContext persistenceContext = peopleAndPets.getPersistenceContext();
         assertThat(getVersion(persistenceContext, PeopleAndPets.PEOPLE_PU)).isEqualTo(2);
         assertThat(getVersion(persistenceContext, PeopleAndPets.PETS_PU)).isEqualTo(2);
-        PetsUpdate petsUpdate = new PetsUpdate(objectsStoreV1, context);
+        PetsUpdate petsUpdate = new PetsUpdate(objectsStoreV2, context);
         WorkStatus workStatus = WorkStatus.PENDING;
         if (isSerial)
         {
@@ -178,7 +178,7 @@ public class PeopleAndPetsTestV2
         	    peopleAndPets.performPersistenceWork(PeopleAndPets.PETS_PU, petsUpdate);
             assertThat(workStatus == WorkStatus.FINISHED);
         }
-        PeopleUpdate peopleUpdate = new PeopleUpdate(objectsStoreV1, context);
+        PeopleUpdate peopleUpdate = new PeopleUpdate(objectsStoreV2, context);
         if (isSerial)
         {
             workStatus = 
@@ -210,6 +210,29 @@ public class PeopleAndPetsTestV2
 				.append(petsUpdate.getMessage())
 				.append(PeopleAndPets.SEPARATOR_LINE)
 				.append(peopleUpdate.getMessage())
+				.toString());
+    }
+
+   private void doSingleTest(String context) throws Exception
+   {
+       	System.setProperty(PeopleAndPetsModule.PERSIST_ON_DISK, "true");
+        assertThat(peopleAndPets.setUp()).isTrue();
+        PersistenceContext persistenceContext = peopleAndPets.getPersistenceContext();
+        assertThat(getVersion(persistenceContext, PeopleAndPets.PEOPLE_PU)).isEqualTo(2);
+        assertThat(getVersion(persistenceContext, PeopleAndPets.PETS_PU)).isEqualTo(2);
+        PetsUpdate petsUpdate = new PetsUpdate(objectsStoreV2, context);
+        WorkStatus workStatus = peopleAndPets.performPersistenceWork(PeopleAndPets.PETS_PU, petsUpdate);
+        assertThat(workStatus == WorkStatus.FINISHED);
+        assertThat(getVersion(persistenceContext, PeopleAndPets.PEOPLE_PU)).isEqualTo(2);
+        assertThat(getVersion(persistenceContext, PeopleAndPets.PETS_PU)).isEqualTo(2);
+        PeopleAndPetsMain.logInfo("Test completed successfully");
+		// Our string builder for building the content-view
+		StringBuilder sb = new StringBuilder();
+        peopleAndPets.displayMessage(sb
+				.append(PeopleAndPets.SEPARATOR_LINE)
+				.append(petsUpdate.getMessage())
+				.append(PeopleAndPets.SEPARATOR_LINE)
+				.append(petsUpdate.getMessage())
 				.toString());
     }
 

@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
 
 import javax.persistence.PersistenceException;
 
+import org.h2.jdbcx.JdbcDataSource;
+
 import com.j256.ormlite.db.DatabaseType;
 import com.j256.ormlite.field.FieldType;
 import com.j256.ormlite.field.SqlType;
@@ -47,15 +49,7 @@ import au.com.cybersearch2.classylog.Log;
  */
 public abstract class DatabaseSupportBase implements DatabaseSupport, ConnectionSourceFactory 
 {
-    /** Table to hold database version */
-    public static final String INFO_SUFFIX = "_info";
-    /** Limit clause validation */
-    protected static final Pattern LIMIT_PATTERN =
-            Pattern.compile("\\s*\\d+\\s*(,\\s*\\d+\\s*)?");
-	public static final boolean CACHE_STORE = true;
-    /** Default location for file database. Intended only for testing purposes. */
-    public static final String DEFAULT_FILE_LOCATION = System.getProperty("user.home") + "/.c2/resources/db";
-
+    /** A connection is created when a ConnectionSource is created */
     public static final class ConnectionPair {
         
     	private final ConnectionSource connectionSource;
@@ -80,6 +74,14 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
 			connectionSource.close();
 		}
     }
+    
+    /** Table to hold database version */
+    public static final String INFO_SUFFIX = "_info";
+    /** Limit clause validation */
+    protected static final Pattern LIMIT_PATTERN =
+            Pattern.compile("\\s*\\d+\\s*(,\\s*\\d+\\s*)?");
+	public static final boolean CACHE_STORE = true;
+
     /** Connection type: memory, file or pooled */
     protected final ConnectionType connectionType;
     /** ORMLite databaseType */
@@ -114,7 +116,7 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
 	abstract protected ConnectionSource getConnectionSourceForType(String databaseName, Properties properties) throws SQLException;
 
     /**
-     * Perform any inititialization required prior to creating first database connection
+     * Perform any initialization required prior to creating first database connection
      */
     public void initialize()
     {
@@ -325,6 +327,53 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
         return resultList.size() > 0 ? resultList.get(0) : null;
     }
 
+    protected String appendProperties(String url, Properties properties, JdbcDataSource jdbcDataSource) {
+		String newUrl = url;
+		Properties filtered = filterProperties(properties);
+		if (!filtered.isEmpty()) {
+			StringBuilder builder = new StringBuilder(url);
+			for (Entry<Object, Object> entry: filtered.entrySet()) {
+			    String key = entry.getKey().toString();
+			    String value = entry.getValue().toString();
+			    if ("USER".equalsIgnoreCase(key))
+			        jdbcDataSource.setUser(value);
+			    else if ("PASSWORD".equalsIgnoreCase(key))
+			        jdbcDataSource.setPassword(value);
+			    else
+				    builder.append(';').append(key).append('=').append(value);
+			}
+			newUrl = builder.toString();
+		}
+		return newUrl;
+	}
+	
+	protected String appendProperties(String url, Properties properties) {
+		String newUrl = url;
+		Properties filtered = filterProperties(properties);
+		if (!filtered.isEmpty()) {
+			StringBuilder builder = new StringBuilder(url);
+			for (Entry<Object, Object> entry: filtered.entrySet()) {
+			    String key = entry.getKey().toString();
+			    String value = entry.getValue().toString();
+				builder.append(';').append(key).append('=').append(value);
+			}
+			newUrl = builder.toString();
+		}
+		return newUrl;
+	}
+
+	protected Properties filterProperties(Properties properties) {
+        Properties filtered = new Properties();
+		if ((properties != null) && !properties.isEmpty()) {
+ 			for (Entry<Object, Object> entry: properties.entrySet()) {
+			    String key = entry.getKey().toString();
+			    if (!key.toUpperCase().startsWith(JTA_PREFIX))
+			        filtered.put(key, entry.getValue().toString());
+			}
+		}
+		return filtered;
+    }
+
     /**
      * Build an SQL query string from the given clauses.
      *
@@ -496,7 +545,7 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
  
     protected String getInfoTable(Properties properties) 
     {
-    	String puName = properties.getProperty(PersistenceUnitInfoImpl.PU_NAME_PROPERTY);
+    	String puName = properties.getProperty(DatabaseSupport.JTA_PREFIX + PersistenceUnitInfoImpl.PU_NAME_PROPERTY);
     	return puName + INFO_SUFFIX;
     }
 }

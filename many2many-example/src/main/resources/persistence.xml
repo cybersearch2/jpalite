@@ -6,6 +6,6 @@
        <class>au.com.cybersearch2.example.User</class>
        <class>au.com.cybersearch2.example.Post</class>
        <class>au.com.cybersearch2.example.UserPost</class>
-       <property name="database-name" value="manytomany.db"/>
+       <property name="JTA_database-name" value="manytomany.db"/>
    </persistence-unit>
 </persistence>

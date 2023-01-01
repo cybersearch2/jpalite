@@ -32,11 +32,15 @@ import au.com.cybersearch2.classydb.ConnectionSourceFactory;
 import au.com.cybersearch2.classydb.DatabaseAdmin;
 import au.com.cybersearch2.classydb.DatabaseAdminImpl;
 import au.com.cybersearch2.classydb.DatabaseSupport;
+import au.com.cybersearch2.classydb.DatabaseSupport.ConnectionType;
+import au.com.cybersearch2.classydb.DatabaseType;
+import au.com.cybersearch2.classydb.H2DatabaseSupport;
 import au.com.cybersearch2.classydb.OpenHelperCallbacks;
+import au.com.cybersearch2.classydb.SQLiteDatabaseSupport;
 
 /**
  * PersistenceFactory
- * Creates PersistenceUnitAdmin Unit implementations based on persistence.xml configuration
+ * Creates Persistence Unit implementations based on persistence.xml configuration
  * @author Andrew Bowley
  * 05/07/2014
  */
@@ -53,6 +57,8 @@ public class PersistenceFactory
     protected Map<String, DatabaseAdminImpl> databaseAdminImplMap;
     /** Interface for access to persistence.xml */
     private final ResourceEnvironment resourceEnvironment;
+    /** Flag set true if initializePersistenceContext() called */
+    private boolean isContextInitialized;
     
     /**
      * Create PersistenceFactory object
@@ -60,18 +66,29 @@ public class PersistenceFactory
      * @param resourceEnvironment Resource environment
      * @throws PersistenceException for error opening or parsing persistence.xml
      */
-    public PersistenceFactory(DatabaseSupport databaseSupport, ResourceEnvironment resourceEnvironment)
+    public PersistenceFactory(DatabaseType databaseType, ConnectionType connectionType, ResourceEnvironment resourceEnvironment)
     {
-        this.databaseSupport = databaseSupport;
         this.resourceEnvironment = resourceEnvironment;
+        databaseSupport = getDatabaseSupport(databaseType, connectionType);
         persistenceImplMap = new HashMap<>();
         databaseAdminImplMap = new HashMap<>();
         if (useDoubleLongBits)
         	setUseDoubleLongBits();
-        initializePersistenceContext();
     }
 
     /**
+     * Returns a PersistenceContext instance
+     * @return PersistenceContext object
+     */
+    public PersistenceContext persistenceContextInstance() {
+    	if (!isContextInitialized) {
+            initializePersistenceContext();
+            isContextInitialized = true;
+    	}
+    	return new PersistenceContext(this, (ConnectionSourceFactory) databaseSupport, true);
+    }
+    
+	/**
      * Returns native support
      * @return DatabaseSupport
      */
@@ -215,7 +232,7 @@ public class PersistenceFactory
     protected OpenHelperCallbacks getOpenHelperCallbacks(Properties properties)
     {
         // Property "open-helper-callbacks-classname"
-        String openHelperCallbacksClassname = properties.getProperty(PersistenceUnitInfoImpl.CUSTOM_OHC_PROPERTY);
+        String openHelperCallbacksClassname = properties.getProperty(DatabaseSupport.JTA_PREFIX + PersistenceUnitInfoImpl.CUSTOM_OHC_PROPERTY);
         if (openHelperCallbacksClassname != null)
         {
             // Custom
@@ -252,4 +269,14 @@ public class PersistenceFactory
         DataPersisterManager.registerDataPersisters(
     		JavaDoubleType.getSingleton(), PrimitiveJavaDoubleType.getSingleton());
 	}
+
+    private DatabaseSupport getDatabaseSupport(DatabaseType databaseType, ConnectionType connectionType) {
+		switch (databaseType) {
+		case H2: return new H2DatabaseSupport(connectionType);
+		case SQLite: return new SQLiteDatabaseSupport(connectionType);
+		default:
+		}
+		throw new PersistenceException(String.format("Unsupported database type %s", databaseType.name()));
+	}
+
 }

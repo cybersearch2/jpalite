@@ -25,6 +25,8 @@ import javax.persistence.spi.PersistenceUnitInfo;
 import javax.persistence.spi.PersistenceUnitTransactionType;
 import javax.sql.DataSource;
 
+import au.com.cybersearch2.classydb.DatabaseSupport;
+
 /**
  * PersistenceUnitInfoImpl
  * @author Andrew Bowley
@@ -46,7 +48,7 @@ public class PersistenceUnitInfoImpl implements PersistenceUnitInfo
         this.persistenceUnitName = persistenceUnitName;
         managedClassNames = new ArrayList<>();
         properties = new Properties();
-        properties.setProperty(PU_NAME_PROPERTY, persistenceUnitName);
+        properties.setProperty(DatabaseSupport.JTA_PREFIX + PU_NAME_PROPERTY, persistenceUnitName);
         
     }
 

@@ -5,6 +5,6 @@
    <persistence-unit name="account">
        <class>au.com.cybersearch2.example.Account</class>
        <class>au.com.cybersearch2.example.Order</class>
-       <property name="database-name" value="account"/>
+       <property name="JTA_database-name" value="account"/>
    </persistence-unit>
 </persistence>

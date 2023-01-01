@@ -13,17 +13,10 @@
     limitations under the License. */
 package au.com.cybersearch2.pp.jpa;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Locale;
-
 import au.com.cybersearch2.classyapp.ResourceEnvironment;
-import au.com.cybersearch2.classydb.ConnectionSourceFactory;
 import au.com.cybersearch2.classydb.DatabaseSupport;
 import au.com.cybersearch2.classydb.DatabaseSupport.ConnectionType;
-import au.com.cybersearch2.classydb.SQLiteDatabaseSupport;
-import au.com.cybersearch2.classyjpa.entity.EntityClassLoader;
+import au.com.cybersearch2.classydb.DatabaseType;
 import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
 import au.com.cybersearch2.classyjpa.persist.PersistenceFactory;
 
@@ -40,74 +33,24 @@ import au.com.cybersearch2.classyjpa.persist.PersistenceFactory;
 public class PeopleAndPetsModule
 {
 	public static String PERSIST_ON_DISK = "persist-on-disk";
-	
-	private int version;
-	private ConnectionType connectionType;
-    private SQLiteDatabaseSupport databaseSupport;
-    private PersistenceContext persistenceContext;
 
-    public PeopleAndPetsModule(int version) {
-    	this.version = version;
+	private final PersistenceFactory persistenceFactory;
+	
+	private ConnectionType connectionType;
+   	private PersistenceContext persistenceContext;
+
+    public PeopleAndPetsModule(ResourceEnvironment resourceEnvironment) {
     	if (isPersistOnDisk())
     		connectionType = ConnectionType.file;
     	else
        		connectionType = ConnectionType.memory;
+    	persistenceFactory = new PersistenceFactory(DatabaseType.SQLite, connectionType, resourceEnvironment);
     }
     
-    public  ConnectionType provideConnectionType()
-    {
-        return connectionType;
-    }
-    
-    public  ResourceEnvironment provideResourceEnvironment()
-    {
-        return new ResourceEnvironment() {
-
-			@Override
-			public InputStream openResource(String resourceName) throws IOException {
-				String path = "v" + version + "/" + resourceName;
-				return PeopleAndPetsModule.class.getClassLoader().getResourceAsStream(path);
-			}
-			
-			@Override
-			public Locale getLocale() {
-				return new Locale("en", "AU");
-			}
-
-			@Override
-			public File getDatabaseDirectory() {
-				return null;
-			}
-
-			@Override
-			public EntityClassLoader getEntityClassLoader(String puName) {
-				return null;
-			}}; 
-    }
-
-    public  DatabaseSupport provideDatabaseSupport()
-    {
-        databaseSupport = new SQLiteDatabaseSupport(provideConnectionType());
-        return databaseSupport;    
-    }
-    
-    public  PersistenceFactory providePersistenceFactory()
-    {
-        return new PersistenceFactory(provideDatabaseSupport(), provideResourceEnvironment());
-    }
-
-    public  ConnectionSourceFactory provideConnectionSourceFactory()
-    {
-        return (ConnectionSourceFactory) provideDatabaseSupport();
-    }
-
     public  PersistenceContext providePersistenceContext()
     {
     	if (persistenceContext == null)
-    	{
-    		ConnectionSourceFactory connectionSourceFactory = provideConnectionSourceFactory();
-    		persistenceContext = new PersistenceContext(providePersistenceFactory(), connectionSourceFactory);
-    	}
+    		persistenceContext = persistenceFactory.persistenceContextInstance();
     	return persistenceContext;
     }
     
@@ -120,6 +63,9 @@ public class PeopleAndPetsModule
     		return false;
     	peristOnDisk = System.getenv(PERSIST_ON_DISK);
     	return ("true".equals(peristOnDisk));
-
     }
+
+	public DatabaseSupport getDatabaseSupport() {
+		return persistenceFactory.getDatabaseSupport();
+	}
 }

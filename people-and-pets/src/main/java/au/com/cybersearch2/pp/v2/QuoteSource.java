@@ -23,7 +23,8 @@ import java.util.Random;
  */
 public class QuoteSource 
 {
-
+    private static Random rand = new Random(new Date().getTime());
+	
 	static String[] QUOTES =
 	{
 		"To be or not to be",
@@ -43,7 +44,6 @@ public class QuoteSource
 	
 	static String getQuote()
 	{
-		Random rand = new Random(new Date().getTime());
 		return QUOTES[rand.nextInt(QUOTES.length)];
 	}
 }

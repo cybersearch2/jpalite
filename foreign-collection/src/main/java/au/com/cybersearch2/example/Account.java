@@ -20,12 +20,11 @@ import java.util.Collection;
 import java.util.List;
 
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
-
-import com.j256.ormlite.table.DatabaseTable;
 
 import au.com.cybersearch2.classyjpa.entity.ForeignCollector;
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
@@ -33,7 +32,7 @@ import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 /**
  * Example account entity object
  */
-@DatabaseTable(tableName = "accounts")
+@Entity(name = "accounts")
 public class Account implements OrmEntity {
 
 	// for QueryBuilder to be able to find the fields

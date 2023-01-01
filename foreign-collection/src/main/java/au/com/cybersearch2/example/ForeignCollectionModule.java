@@ -14,10 +14,8 @@
 package au.com.cybersearch2.example;
 
 import au.com.cybersearch2.classyapp.ResourceEnvironment;
-import au.com.cybersearch2.classydb.ConnectionSourceFactory;
-import au.com.cybersearch2.classydb.DatabaseSupport;
 import au.com.cybersearch2.classydb.DatabaseSupport.ConnectionType;
-import au.com.cybersearch2.classydb.H2DatabaseSupport;
+import au.com.cybersearch2.classydb.DatabaseType;
 import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
 import au.com.cybersearch2.classyjpa.persist.PersistenceFactory;
 
@@ -32,7 +30,6 @@ import au.com.cybersearch2.classyjpa.persist.PersistenceFactory;
 public class ForeignCollectionModule
 {
     private ResourceEnvironment resourceEnvironment;
-    private H2DatabaseSupport h2DatabaseSupport;
    	private PersistenceContext persistenceContext;
     
     public ForeignCollectionModule(ResourceEnvironment resourceEnvironment)
@@ -45,29 +42,14 @@ public class ForeignCollectionModule
         return resourceEnvironment;
     }
 
-    public  DatabaseSupport provideDatabaseSupport()
-    {
-        h2DatabaseSupport = new H2DatabaseSupport(ConnectionType.memory); 
-        return h2DatabaseSupport;     
-    }
-    
-    public  PersistenceFactory providePersistenceFactory()
-    {
-        return new PersistenceFactory(provideDatabaseSupport(), resourceEnvironment);
-    }
-
-    public  ConnectionSourceFactory provideConnectionSourceFactory()
-    {
-        return (ConnectionSourceFactory) provideDatabaseSupport();
-    }
-
     public  PersistenceContext providePersistenceContext()
     {
     	if (persistenceContext == null)
-    	{
-    		ConnectionSourceFactory connectionSourceFactory = provideConnectionSourceFactory();
-    		persistenceContext = new PersistenceContext(providePersistenceFactory(), connectionSourceFactory);
-    	}
-    	return persistenceContext;
+      		persistenceContext = 
+      	        new PersistenceFactory(DatabaseType.H2, 
+      	        		               ConnectionType.memory, 
+      	        		               resourceEnvironment)
+      	       	    .persistenceContextInstance();
+     	return persistenceContext;
     }
 }

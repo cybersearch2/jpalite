@@ -1,3 +1,18 @@
+/** Copyright 2022 Andrew J Bowley
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License. */
+// License for OrmLite Foreign Example in test package 
+// com.j256.ormlite.jdbc.examples.foreignCollection
 /*
 ISC License (https://opensource.org/licenses/ISC)
 
@@ -58,11 +73,18 @@ public class ForeignCollectionMain {
      		foreignCollectionMain.setUp();
      	    // read and write some data
      		Transcript transcript = foreignCollectionMain.readWriteData();
-     		transcript.getReports().forEach(entry -> System.out.println(entry));
+     		transcript.getObservations().forEach(entry -> { 
+     			if (entry.isStatus())
+     				System.out.println(entry.getReport());
+     			else
+     				System.err.println(entry.getReport());
+     		});
      		if (transcript.getErrorCount() == 0)
      			System.out.println("Success");
      		else
      			System.err.println("Failed");
+     	} catch (Throwable t) {
+     		t.printStackTrace();
      	} finally {
      		taskExecutor.shutdown();
      		System.exit(0);
@@ -143,16 +165,16 @@ public class ForeignCollectionMain {
 				boolean status = itemNumber1 == order.getItemNumber();
 				transcript.add("Item number match is " + status, status);
 				status = accountResult.equals(order.getAccount());
-				transcript.add("Account objects same = " + status, status);
+				transcript.add("Account objects same is " + status, status);
 				if (orderList.size() < 2) {
 					transcript.add("Order 2 not returned by for all query", false);
 					return;
 				}
 				order = orderList.get(1);
 				status = itemNumber2 == order.getItemNumber();
-				transcript.add("Item numbers match = " + status, status);
+				transcript.add("Item numbers match is " + status, status);
 				status = orderList.size() == 2;
-				transcript.add("At end = " + status, status);
+				transcript.add("At end is " + status, status);
 		
 				// create another Order for the Account
 				// Buzz also bought 1 of item #785 for a price of $7.98
@@ -164,12 +186,12 @@ public class ForeignCollectionMain {
 				// now let's add this order via the foreign collection
 				int size = accountResult.add(order3);
 				// now there are 3 of them in there
-				transcript.add("Number of account object orders = " + size, size == 3);
+				transcript.add("Number of account object orders is " + size, size == 3);
 		        TypedQuery<Order> query = entityManager.createNamedQuery(ALL_ORDERS, Order.class);
 				orderList = query.getResultList();
 				// and 3 in the database
 				size = orderList.size();
-				transcript.add("Number of database orders = " +  size, size == 3);
+				transcript.add("Number of database orders is " +  size, size == 3);
            }
 
             @Override

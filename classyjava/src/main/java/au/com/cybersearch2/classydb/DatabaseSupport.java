@@ -29,6 +29,12 @@ import com.j256.ormlite.support.ConnectionSource;
  */
 public interface DatabaseSupport
 {
+	/** Prefix to distinguish Jtalite property names from others */
+	public static final String JTA_PREFIX = "JTA_";
+
+    /** Default location for file database. Intended only for testing purposes. */
+    public static final String DEFAULT_FILE_LOCATION = System.getProperty("user.home") + "/.jpalite/resources/db";
+
     /** Connection type is implementation-specific */
     public enum ConnectionType
     {
@@ -38,7 +44,7 @@ public interface DatabaseSupport
     }
 
     /**
-     * Perform any inititialization required prior to creating first database connection
+     * Perform any initialization required prior to creating first database connection
      */
     void initialize();
 

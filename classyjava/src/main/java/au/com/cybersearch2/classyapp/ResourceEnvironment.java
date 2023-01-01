@@ -14,11 +14,15 @@
 package au.com.cybersearch2.classyapp;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
 
+import au.com.cybersearch2.classydb.DatabaseSupport;
 import au.com.cybersearch2.classyjpa.entity.EntityClassLoader;
+import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 
 /**
  * ResourceEnvironment
@@ -35,23 +39,53 @@ public interface ResourceEnvironment
      * @throws IOException if IO error occurs
      */
     InputStream openResource(String resourceName) throws IOException;
+
+    /**
+     * Provides read access to a resource stream such as a file.
+     * @param resourceFile File object
+     * @return InputStream object
+     * @throws IOException if IO error occurs
+     */
+    default InputStream openFile(File resourceFile) throws IOException {
+        if (!resourceFile.exists())
+            throw new FileNotFoundException(resourceFile.toString());
+        InputStream instream = new FileInputStream(resourceFile);
+        return instream;
+    }
+    
     /**
      * Get locale. 
      * Android lint complains if Locale is omitted where it can be specified as an optional parameter.
      * @return Locale object
      */
-    Locale getLocale();
+    default Locale getLocale() {
+    	return Locale.getDefault();
+    }
   
     /**
      * Returns database location when ConnectionType = "file"
      * @return File object for a directory location
      */
-    File getDatabaseDirectory();
+    default File getDatabaseDirectory() {
+    	return new File(DatabaseSupport.DEFAULT_FILE_LOCATION);
+    }
 
     /**
      * Returns Class Loader for instantiating entity classes
      * @param puName Persistence unit name - allows class loader to be specific to persistence unit
-     * @return EntityClassLoader object or null if not provided
+     * @return EntityClassLoader object
      */
-    EntityClassLoader getEntityClassLoader(String puName);
+    default EntityClassLoader getEntityClassLoader(String puName) {
+    	return new EntityClassLoader() {
+
+			@SuppressWarnings("unchecked")
+			@Override
+			public Class<? extends OrmEntity> loadClass(String name) throws ClassNotFoundException {
+				Class<?> entityClass = Class.forName(name);
+				if (OrmEntity.class.isAssignableFrom(entityClass))
+				    return (Class<? extends OrmEntity>) Class.forName(name);
+				else
+					throw new IllegalArgumentException(String.format("%s down not implement interface OrmEntity", entityClass.getName()));
+			}};
+    }
 }

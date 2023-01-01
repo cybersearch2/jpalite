@@ -22,13 +22,11 @@ import com.j256.ormlite.support.ConnectionSource;
 
 import au.com.cybersearch2.classydb.ConnectionSourceFactory;
 import au.com.cybersearch2.classydb.DatabaseAdminImpl;
-import au.com.cybersearch2.classydb.DatabaseSupport;
 import au.com.cybersearch2.classydb.DatabaseSupport.ConnectionType;
-import au.com.cybersearch2.classydb.H2DatabaseSupport;
+import au.com.cybersearch2.classydb.DatabaseType;
 import au.com.cybersearch2.classyjpa.persist.PersistenceAdminImpl;
 import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
 import au.com.cybersearch2.classyjpa.persist.PersistenceFactory;
-import au.com.cybersearch2.classytask.DefaultTaskExecutor;
 
 /**
  * TestClassyApplicationModule
@@ -38,27 +36,12 @@ import au.com.cybersearch2.classytask.DefaultTaskExecutor;
 public class TestClassyApplicationModule
 {
     private ResourceEnvironment resourceEnvironment;
-    //private SQLiteDatabaseSupport sqliteDatabaseSupport;
-    private H2DatabaseSupport h2DatabaseSupport;
     private PersistenceContext persistenceContext;
     private PersistenceFactory persistenceFactory;
     
     public TestClassyApplicationModule(ResourceEnvironment resourceEnvironment)
     {
         this.resourceEnvironment = resourceEnvironment;
-    }
-    
-    public DefaultTaskExecutor provideTaskManager()
-    {
-        return new DefaultTaskExecutor();
-    }
-
-    public DatabaseSupport provideDatabaseSupport()
-    {
-        //sqliteDatabaseSupport = new SQLiteDatabaseSupport(ConnectionType.memory);
-        //return sqliteDatabaseSupport;    
-        h2DatabaseSupport = new H2DatabaseSupport(ConnectionType.memory); 
-        return h2DatabaseSupport;     
     }
     
     public ResourceEnvironment provideResourceEnvironment()
@@ -70,7 +53,7 @@ public class TestClassyApplicationModule
     {
     	if (persistenceFactory == null)
     	{
-    		persistenceFactory =  new PersistenceFactory(provideDatabaseSupport(), resourceEnvironment) {
+    		persistenceFactory =  new PersistenceFactory(DatabaseType.H2, ConnectionType.memory, resourceEnvironment) {
     			
 	        	@Override
 	            public void initializeAllDatabases(ConnectionSourceFactory connectionSourceFactory) {
@@ -93,18 +76,10 @@ public class TestClassyApplicationModule
     	return persistenceFactory;
     }
 
-    public ConnectionSourceFactory provideConnectionSourceFactory()
-    {
-        //return sqliteDatabaseSupport;
-    	return h2DatabaseSupport;
-    }
-    
     public PersistenceContext providePersistenceContext()
     {
     	if (persistenceContext == null)
-    	{
-    		persistenceContext = new PersistenceContext(providePersistenceFactory(), provideConnectionSourceFactory(), true);
-    	}
+    		persistenceContext = providePersistenceFactory().persistenceContextInstance();
         return persistenceContext;
     }
     

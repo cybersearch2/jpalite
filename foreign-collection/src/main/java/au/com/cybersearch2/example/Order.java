@@ -1,18 +1,17 @@
 package au.com.cybersearch2.example;
 
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToOne;
-
-import com.j256.ormlite.table.DatabaseTable;
 
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 
 /**
  * Example order entity object
  */
-@DatabaseTable(tableName = "orders")
+@Entity(name = "orders")
 public class Order implements OrmEntity {
 
     @Id @GeneratedValue

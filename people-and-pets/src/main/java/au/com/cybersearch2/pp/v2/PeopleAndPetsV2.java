@@ -19,7 +19,6 @@ import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
 import au.com.cybersearch2.classytask.TaskExecutor;
 import au.com.cybersearch2.pp.PeopleAndPets;
-import au.com.cybersearch2.pp.jpa.PeopleAndPetsModule;
 
 public class PeopleAndPetsV2 extends PeopleAndPets {
 
@@ -33,18 +32,16 @@ public class PeopleAndPetsV2 extends PeopleAndPets {
     protected PersistenceContext initializeApplication()
     {
         // Set up dependency injection, which creates an ObjectGraph from a PeopleAndPetsModule configuration object
-        component = new ApplicationComponent(new PeopleAndPetsModule(JPA_VERSION) {
-  
+        component = new ApplicationComponent(JPA_VERSION) {
+        	
         	@Override
-            public  DatabaseSupport provideDatabaseSupport()
+            public  void prepareDatabaseSupport(DatabaseSupport databaseSupport)
             {
-                DatabaseSupport databaseSupport = super.provideDatabaseSupport();
                 databaseSupport.registerOpenHelperCallbacks(new PeopleOpenHelperCallbacks());
                 databaseSupport.registerOpenHelperCallbacks(new PetsOpenHelperCallbacks());
-                return databaseSupport;    
             }
 
-        });
+        };
         return component.persistenceContext();
     }
     

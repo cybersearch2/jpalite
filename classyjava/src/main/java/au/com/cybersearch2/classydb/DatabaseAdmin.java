@@ -32,6 +32,8 @@ public interface DatabaseAdmin
     public final static String UPGRADE_FILENAME_FORMAT = "upgrade-filename-format";
     /** Property key for database version */
     public final static String DATABASE_VERSION = "database-version";
+    /** Property key for database type */
+    public final static String DATABASE_TYPE = "database-type";
     /** Property key for database name */
     public final static String DATABASE_NAME = "database-name";
 

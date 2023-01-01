@@ -14,14 +14,11 @@
 package au.com.cybersearch2.example;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
 
 import au.com.cybersearch2.classyapp.ResourceEnvironment;
-import au.com.cybersearch2.classyjpa.entity.EntityClassLoader;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWorkModule;
 import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
@@ -36,66 +33,40 @@ import au.com.cybersearch2.classytask.TaskStatus;
  */
 public class ForeignCollectionFactory
 {
-    static interface ApplicationComponent
-    {
-        PersistenceContext persistenceContext();
-    }
-
     private final TaskExecutor taskExecutor;
     private final TaskMessenger<Void,Boolean> taskMessenger;
 
-    protected ApplicationComponent component;
-    protected PersistenceWorkModule persistenceWorkModule;
+    private PersistenceContext persistenceContext;
     
-    public ForeignCollectionFactory(TaskExecutor taskExecutor, TaskMessenger<Void,Boolean> taskMessenger)
-    {
+    public ForeignCollectionFactory(TaskExecutor taskExecutor, TaskMessenger<Void,Boolean> taskMessenger) {
     	this.taskExecutor = taskExecutor;
     	this.taskMessenger = taskMessenger;
-        component = new ApplicationComponent() {
+        ForeignCollectionModule module = 
+        	 new ForeignCollectionModule(
+                 new ResourceEnvironment() {
 
-        	ForeignCollectionModule module = new ForeignCollectionModule(
-                new ResourceEnvironment() {
-
-    			@Override
-    			public InputStream openResource(String resourceName) throws IOException {
-    		        File resourceFile = new File("src/main/resources", resourceName);
-    		        if (!resourceFile.exists())
-    		            throw new FileNotFoundException(resourceName);
-    		        InputStream instream = new FileInputStream(resourceFile);
-    		        return instream;
-    			}
+    			 @Override
+    			 public InputStream openResource(String resourceName) throws IOException {
+    			     return openFile(new File("src/main/resources", resourceName));
+    			 }
     			
-    			@Override
-    			public Locale getLocale() {
-    				return new Locale("en", "AU");
-    			}
-
-    			@Override
-    			public File getDatabaseDirectory() {
-    				return null;
-    			}
-
-    			@Override
-    			public EntityClassLoader getEntityClassLoader(String puName) {
-    				return null;
-    			}}); 
-       	
-			@Override
-			public PersistenceContext persistenceContext() {
-				return module.providePersistenceContext();
-			}
-
-        };
+    			 @Override
+    			 public Locale getLocale() {
+    				 // Developed in Australia
+    				 return new Locale("en", "AU");
+        		 }
+            }); 
+       	 persistenceContext = module.providePersistenceContext();
     }
     
-    public PersistenceContext getPersistenceContext()
-    {
-        return component.persistenceContext();
+    public PersistenceContext getPersistenceContext() {
+        return persistenceContext;
     }
     
     public TaskStatus doTask(PersistenceWork persistenceWork)
     {
-        persistenceWorkModule = new PersistenceWorkModule(ForeignCollectionMain.ACCOUNTS_PU, persistenceWork, taskMessenger, taskExecutor);
-		return persistenceWorkModule.doTask(component.persistenceContext());
+        PersistenceWorkModule persistenceWorkModule = 
+        	new PersistenceWorkModule(ForeignCollectionMain.ACCOUNTS_PU, persistenceWork, taskMessenger, taskExecutor);
+		return persistenceWorkModule.doTask(persistenceContext);
     }
 }

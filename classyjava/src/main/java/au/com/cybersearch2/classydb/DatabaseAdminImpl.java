@@ -97,9 +97,9 @@ public class DatabaseAdminImpl implements DatabaseAdmin
         Properties properties = persistenceAdmin.getProperties();
         // Get SQL script file names from persistence.xml properties
         // A filename may be null if operation not supported
-        String schemaFilename = properties.getProperty(DatabaseAdmin.DROP_SCHEMA_FILENAME);
-        String dropSchemaFilename = properties.getProperty(DatabaseAdmin.SCHEMA_FILENAME);
-        String dataFilename = properties.getProperty(DatabaseAdmin.DATA_FILENAME);
+        String schemaFilename = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DROP_SCHEMA_FILENAME);
+        String dropSchemaFilename = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.SCHEMA_FILENAME);
+        String dataFilename = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DATA_FILENAME);
         if (!((schemaFilename == null) && (dropSchemaFilename == null) && (dataFilename == null)))
         {
         	// Database work is executed as background task
@@ -129,7 +129,7 @@ public class DatabaseAdminImpl implements DatabaseAdmin
         Properties properties = persistenceAdmin.getProperties();
         // Get SQL script upgrade file name format from persistence.xml properties
         boolean upgradeSupported = false;
-        String upgradeFilenameFormat = properties.getProperty(DatabaseAdmin.UPGRADE_FILENAME_FORMAT);
+        String upgradeFilenameFormat = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.UPGRADE_FILENAME_FORMAT);
         String filename = null;
         // Default filename format: "{puName}-upgrade-v{old-version}-v{new-version}.sql" 
         if (upgradeFilenameFormat == null)

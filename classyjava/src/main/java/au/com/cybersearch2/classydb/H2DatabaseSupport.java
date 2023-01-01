@@ -15,19 +15,17 @@ package au.com.cybersearch2.classydb;
 
 import java.io.File;
 import java.sql.SQLException;
-import java.util.Map.Entry;
 import java.util.Properties;
-
-import au.com.cybersearch2.classylog.JavaLogger;
-import au.com.cybersearch2.classylog.Log;
-import au.com.cybersearch2.classyjpa.persist.PersistenceUnitInfoImpl;
 
 import org.h2.jdbcx.JdbcDataSource;
 
-import com.j256.ormlite.jdbc.db.H2DatabaseType;
 import com.j256.ormlite.jdbc.DataSourceConnectionSource;
 import com.j256.ormlite.jdbc.JdbcPooledConnectionSource;
+import com.j256.ormlite.jdbc.db.H2DatabaseType;
 import com.j256.ormlite.support.ConnectionSource;
+
+import au.com.cybersearch2.classylog.JavaLogger;
+import au.com.cybersearch2.classylog.Log;
 
 /**
  * H2DatabaseSupport
@@ -41,18 +39,6 @@ public class H2DatabaseSupport extends DatabaseSupportBase
     static Log log = JavaLogger.getLogger(TAG);
     /** H2 memory path */
     private static final String IN_MEMORY_PATH = "jdbc:h2:mem:";
-    
-    private static final String[] EXCLUDE_KEYS = 
-    { 
-		DatabaseAdmin.DATABASE_NAME, 
-		DatabaseAdmin.DATA_FILENAME,
-		DatabaseAdmin.DATABASE_VERSION,
-		DatabaseAdmin.DROP_SCHEMA_FILENAME,
-		DatabaseAdmin.SCHEMA_FILENAME,
-		DatabaseAdmin.UPGRADE_FILENAME_FORMAT,
-		PersistenceUnitInfoImpl.PU_NAME_PROPERTY,
-		PersistenceUnitInfoImpl.CUSTOM_OHC_PROPERTY
-    };
     
     private File databaseDirectory;
 
@@ -133,55 +119,4 @@ public class H2DatabaseSupport extends DatabaseSupportBase
         return new JdbcPooledConnectionSource(url); 
 	}
 	
-	private String appendProperties(String url, Properties properties, JdbcDataSource jdbcDataSource) {
-		String newUrl = url;
-		Properties filtered = filterProperties(properties);
-		if (!filtered.isEmpty()) {
-			StringBuilder builder = new StringBuilder(url);
-			for (Entry<Object, Object> entry: filtered.entrySet()) {
-			    String key = entry.getKey().toString();
-			    String value = entry.getValue().toString();
-			    if ("USER".equalsIgnoreCase(key))
-			        jdbcDataSource.setUser(value);
-			    else if ("PASSWORD".equalsIgnoreCase(key))
-			        jdbcDataSource.setPassword(value);
-			    else
-				    builder.append(';').append(key).append('=').append(value);
-			}
-			newUrl = builder.toString();
-		}
-		return newUrl;
-	}
-	private String appendProperties(String url, Properties properties) {
-		String newUrl = url;
-		Properties filtered = filterProperties(properties);
-		if (!filtered.isEmpty()) {
-			StringBuilder builder = new StringBuilder(url);
-			for (Entry<Object, Object> entry: filtered.entrySet()) {
-			    String key = entry.getKey().toString();
-			    String value = entry.getValue().toString();
-				builder.append(';').append(key).append('=').append(value);
-			}
-			newUrl = builder.toString();
-		}
-		return newUrl;
-	}
-
-    private Properties filterProperties(Properties properties) {
-        Properties filtered = new Properties();
-		if ((properties != null) && !properties.isEmpty()) {
- 			for (Entry<Object, Object> entry: properties.entrySet()) {
-			    String key = entry.getKey().toString();
-			    for (String exclude:  EXCLUDE_KEYS) {
-			        if (exclude.equalsIgnoreCase(key)) {
-			           key = null;
-			           break;
-			        }
-			    }
-			    if (key != null)
-			        filtered.put(key, entry.getValue().toString());
-			}
-		}
-		return filtered;
-    }
 }

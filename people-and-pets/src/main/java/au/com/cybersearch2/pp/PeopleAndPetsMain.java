@@ -31,7 +31,7 @@ import au.com.cybersearch2.pp.api.Person;
 import au.com.cybersearch2.pp.api.Pet;
 
 /**
- * This application demonstrates how Classy Data provides support for in-situ database schema updates.
+ * This application demonstrates how Jpalite provides support for in-situ database schema updates.
  * It also show how two persistence units can share a single database which is an alternative to placing
  * each persistence unit in it's own database. 
  */
@@ -79,6 +79,8 @@ public class PeopleAndPetsMain
 	        PeopleAndPets peopleAndPets = new PeopleAndPets(taskExecutor);
 	        if (peopleAndPets.setUp())
 	        	returnCode = peopleAndPets.performTasks(objectsStoreV1);
+     	} catch (Throwable t) {
+     		t.printStackTrace();
      	} finally {
      		taskExecutor.shutdown();
      		System.exit(returnCode);

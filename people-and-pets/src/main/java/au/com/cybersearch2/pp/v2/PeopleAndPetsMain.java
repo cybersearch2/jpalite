@@ -35,12 +35,12 @@ public class PeopleAndPetsMain extends au.com.cybersearch2.pp.PeopleAndPetsMain 
 
     		@Override
     		public Person personInstance(String name) {
-    			return new PersonDataV2(name, "");
+    			return new PersonDataV2(name, QuoteSource.getQuote());
     		}
 
     		@Override
     		public Pet petInstance(String name) {
-    			return new PetDataV2(name, "");
+    			return new PetDataV2(name, QuoteSource.getQuote());
     		}};
     }
 
@@ -56,6 +56,8 @@ public class PeopleAndPetsMain extends au.com.cybersearch2.pp.PeopleAndPetsMain 
             PeopleAndPetsV2 peopleAndPetsV2 = new PeopleAndPetsV2(taskExecutor);
             if (peopleAndPetsV2.setUp())
             	returnCode = peopleAndPetsV2.performTasks(objectsStoreV2);
+     	} catch (Throwable t) {
+     		t.printStackTrace();
      	} finally {
      		taskExecutor.shutdown();
      		System.exit(returnCode);

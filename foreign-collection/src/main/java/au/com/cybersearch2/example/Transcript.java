@@ -40,6 +40,10 @@ public class Transcript {
     public int getTotalCount() {
     	return observations.size();
     }
+
+    public List<Observation> getObservations() {
+    	return observations;
+    }
     
 	public List<String> getReports() {
     	List<String> contents = new ArrayList<>();

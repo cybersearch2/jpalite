@@ -267,7 +267,7 @@ public class PersistenceAdminImpl implements PersistenceAdmin
         int databaseVersion = 1;
         if (properties != null)
         {
-        	String textVersion = properties.getProperty(DatabaseAdmin.DATABASE_VERSION);
+        	String textVersion = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DATABASE_VERSION);
 	        try
 	        {
 	        	if (textVersion != null)
@@ -275,7 +275,7 @@ public class PersistenceAdminImpl implements PersistenceAdmin
 	        }
 	        catch (NumberFormatException e)
 	        {
-	        	log.error(TAG, "Invalid " + DatabaseAdmin.DATABASE_VERSION + " value: \"" + textVersion);
+	        	log.error(TAG, "Invalid " + DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DATABASE_VERSION + " value: \"" + textVersion);
 	        }
         }
     	return databaseVersion;
@@ -283,9 +283,10 @@ public class PersistenceAdminImpl implements PersistenceAdmin
 	    
 	public static String getDatabaseName(PersistenceUnitInfo puInfo)
 	{
-        String databaseName = puInfo.getProperties().getProperty(DatabaseAdmin.DATABASE_NAME);
+        String databaseName = puInfo.getProperties().getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DATABASE_NAME);
         if ((databaseName == null) || (databaseName.length() == 0))
-            throw new PersistenceException("\"" + puInfo.getPersistenceUnitName() + "\" does not have property \"" + DatabaseAdmin.DATABASE_NAME + "\"");
+            throw new PersistenceException(String.format("\"%s\" does not have property \"%s\"", 
+            		puInfo.getPersistenceUnitName(), DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DATABASE_NAME));
         return databaseName;
 	}
 

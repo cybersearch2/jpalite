@@ -14,10 +14,8 @@
 package au.com.cybersearch2.example;
 
 import au.com.cybersearch2.classyapp.ResourceEnvironment;
-import au.com.cybersearch2.classydb.ConnectionSourceFactory;
-import au.com.cybersearch2.classydb.DatabaseSupport;
-import au.com.cybersearch2.classydb.SQLiteDatabaseSupport;
 import au.com.cybersearch2.classydb.DatabaseSupport.ConnectionType;
+import au.com.cybersearch2.classydb.DatabaseType;
 import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
 import au.com.cybersearch2.classyjpa.persist.PersistenceFactory;
 
@@ -30,7 +28,6 @@ import au.com.cybersearch2.classyjpa.persist.PersistenceFactory;
 public class ManyToManyModule
 {
     private ResourceEnvironment resourceEnvironment;
-    private SQLiteDatabaseSupport sqliteDatabaseSupport;
    	private PersistenceContext persistenceContext;
     
     public ManyToManyModule(ResourceEnvironment resourceEnvironment)
@@ -43,29 +40,12 @@ public class ManyToManyModule
          return resourceEnvironment;
     }
 
-    public  DatabaseSupport provideDatabaseSupport()
-    {
-        sqliteDatabaseSupport = new SQLiteDatabaseSupport(ConnectionType.memory);
-        return sqliteDatabaseSupport;    
-    }
-    
-    public  PersistenceFactory providePersistenceFactory()
-    {
-        return new PersistenceFactory(provideDatabaseSupport(), resourceEnvironment);
-    }
-
-    public  ConnectionSourceFactory provideConnectionSourceFactory()
-    {
-        return (ConnectionSourceFactory) provideDatabaseSupport();
-    }
-
     public  PersistenceContext providePersistenceContext()
     {
     	if (persistenceContext == null)
-    	{
-    		ConnectionSourceFactory connectionSourceFactory = provideConnectionSourceFactory();
-    		persistenceContext = new PersistenceContext(providePersistenceFactory(), connectionSourceFactory);
-    	}
+    		persistenceContext = 
+    	        new PersistenceFactory(DatabaseType.SQLite, ConnectionType.memory, resourceEnvironment)
+    	        .persistenceContextInstance();
     	return persistenceContext;
     }
     

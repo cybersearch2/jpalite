@@ -14,13 +14,9 @@
 package au.com.cybersearch2.classyapp;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
-
-import au.com.cybersearch2.classyjpa.entity.EntityClassLoader;
 
 /**
  * JavaTestResourceEnvironment
@@ -31,42 +27,24 @@ public class JavaTestResourceEnvironment implements ResourceEnvironment
 {
     public static final String DEFAULT_RESOURCE_LOCATION = "src/test/resources";
     
-    Locale locale = new Locale("en", "AU");
-    final String resourceLocation;
+    private final Locale locale = new Locale("en", "AU");
+    private final String resourceLocation;
 
-    public JavaTestResourceEnvironment()
-    {
+    public JavaTestResourceEnvironment() {
         resourceLocation = DEFAULT_RESOURCE_LOCATION;
     }
     
-    public JavaTestResourceEnvironment(String resourceLocation)
-    {
+    public JavaTestResourceEnvironment(String resourceLocation) {
         this.resourceLocation = resourceLocation;
     }
     
     @Override
-    public InputStream openResource(String resourceName) throws IOException 
-    {
-        File resourceFile = new File(resourceLocation, resourceName);
-        if (!resourceFile.exists())
-            throw new FileNotFoundException(resourceName);
-        InputStream instream = new FileInputStream(resourceFile);
-        return instream;
+    public InputStream openResource(String resourceName) throws IOException {
+        return openFile(new File(resourceLocation, resourceName));
     }
 
     @Override
-    public Locale getLocale() 
-    {
+    public Locale getLocale() {
         return locale;
     }
-
-	@Override
-	public File getDatabaseDirectory() {
-		return null;
-	}
-
-	@Override
-	public EntityClassLoader getEntityClassLoader(String puName) {
-		return null;
-	}
 }
