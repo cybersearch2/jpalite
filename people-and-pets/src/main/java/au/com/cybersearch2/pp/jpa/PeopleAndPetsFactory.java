@@ -13,6 +13,7 @@
     limitations under the License. */
 package au.com.cybersearch2.pp.jpa;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
@@ -34,8 +35,8 @@ public class PeopleAndPetsFactory {
 
            			 @Override
            			 public InputStream openResource(String resourceName) throws IOException {
-         				String path = "v" + version + "/" + resourceName;
-        				return PeopleAndPetsModule.class.getClassLoader().getResourceAsStream(path);
+         				String path = "v" + version + "/";
+        		        return openFile(new File("src/main/resources/" + path, resourceName));
            			 }
            			
            			 @Override

@@ -78,6 +78,8 @@ public class NativeScriptDatabaseWork implements TransactionCallable
             try
             {
                 instream = resourceEnvironment.openResource(filename);
+                if (instream == null)
+                	throw new PersistenceException("Native script file " + filename + " not found");
                 SqlParser sqlParser = new SqlParser();
                 sqlParser.parseStream(instream, callback);
                 success = true;

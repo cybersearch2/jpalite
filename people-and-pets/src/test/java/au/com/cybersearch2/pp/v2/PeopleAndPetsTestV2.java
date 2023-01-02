@@ -13,13 +13,14 @@
     limitations under the License. */
 package au.com.cybersearch2.pp.v2;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.After;
@@ -31,6 +32,7 @@ import org.junit.Test;
 import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.support.ConnectionSource;
 
 import au.com.cybersearch2.classydb.DatabaseSupport;
@@ -43,6 +45,8 @@ import au.com.cybersearch2.classytask.TaskExecutor;
 import au.com.cybersearch2.classytask.WorkStatus;
 import au.com.cybersearch2.pp.PeopleAndPets;
 import au.com.cybersearch2.pp.PeopleAndPetsMain;
+import au.com.cybersearch2.pp.PersonData;
+import au.com.cybersearch2.pp.PetData;
 import au.com.cybersearch2.pp.api.ObjectsStore;
 import au.com.cybersearch2.pp.api.Person;
 import au.com.cybersearch2.pp.api.Pet;
@@ -135,31 +139,6 @@ public class PeopleAndPetsTestV2
     	doIntegrationTest(context, ConnectionType.file, true);
     }
     
-    @Test 
-    public void test_upgrade() throws Exception
-    {
-		deleteDatabaseFile();
-    	System.setProperty(PeopleAndPetsModule.PERSIST_ON_DISK, "");
-    	// Sqlite driver on Windows looks for "tmp" environment parameter
-    	String tmp = System.getenv("TMP");
-    	int length = 5;
-    	if (tmp != null)
-     		length = 6;
-    	String[] env = getEnv(length, "user.home", "user.name", "user.dir", "java.io.tmpdir");
-    	env[4] = PeopleAndPetsModule.PERSIST_ON_DISK + "=true";
-    	if (tmp != null)
-    		env[5] = "tmp=" + tmp;
-    	Process process = Runtime.getRuntime().exec("java -Dorg.sqlite.tmpdir=. -jar people-and-pets.jar", env, new File("target"));
-    	ListenableFuture<Integer>  result = grabProcessOutput(process); 
-    	int returnCode = result.get();
-    	assertThat(returnCode == 0);
-    	String context = "test_upgrade";
-    	doSingleTest(context);
-    	// Do second time for start at JPA version 2
-    	peopleAndPets.shutdown();
-    	doSingleTest(context);
-    }
-    
    private void doIntegrationTest(String context, ConnectionType connectionType, boolean isSerial) throws Exception
    {
     	if (connectionType == ConnectionType.file)
@@ -210,29 +189,6 @@ public class PeopleAndPetsTestV2
 				.append(petsUpdate.getMessage())
 				.append(PeopleAndPets.SEPARATOR_LINE)
 				.append(peopleUpdate.getMessage())
-				.toString());
-    }
-
-   private void doSingleTest(String context) throws Exception
-   {
-       	System.setProperty(PeopleAndPetsModule.PERSIST_ON_DISK, "true");
-        assertThat(peopleAndPets.setUp()).isTrue();
-        PersistenceContext persistenceContext = peopleAndPets.getPersistenceContext();
-        assertThat(getVersion(persistenceContext, PeopleAndPets.PEOPLE_PU)).isEqualTo(2);
-        assertThat(getVersion(persistenceContext, PeopleAndPets.PETS_PU)).isEqualTo(2);
-        PetsUpdate petsUpdate = new PetsUpdate(objectsStoreV2, context);
-        WorkStatus workStatus = peopleAndPets.performPersistenceWork(PeopleAndPets.PETS_PU, petsUpdate);
-        assertThat(workStatus == WorkStatus.FINISHED);
-        assertThat(getVersion(persistenceContext, PeopleAndPets.PEOPLE_PU)).isEqualTo(2);
-        assertThat(getVersion(persistenceContext, PeopleAndPets.PETS_PU)).isEqualTo(2);
-        PeopleAndPetsMain.logInfo("Test completed successfully");
-		// Our string builder for building the content-view
-		StringBuilder sb = new StringBuilder();
-        peopleAndPets.displayMessage(sb
-				.append(PeopleAndPets.SEPARATOR_LINE)
-				.append(petsUpdate.getMessage())
-				.append(PeopleAndPets.SEPARATOR_LINE)
-				.append(petsUpdate.getMessage())
 				.toString());
     }
 

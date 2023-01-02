@@ -44,7 +44,7 @@ public class PeopleAndPetsModule
     		connectionType = ConnectionType.file;
     	else
        		connectionType = ConnectionType.memory;
-    	persistenceFactory = new PersistenceFactory(DatabaseType.SQLite, connectionType, resourceEnvironment);
+    	persistenceFactory = new PersistenceFactory(DatabaseType.H2, connectionType, resourceEnvironment);
     }
     
     public  PersistenceContext providePersistenceContext()

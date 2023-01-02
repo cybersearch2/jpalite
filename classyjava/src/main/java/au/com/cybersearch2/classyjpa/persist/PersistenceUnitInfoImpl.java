@@ -36,7 +36,7 @@ public class PersistenceUnitInfoImpl implements PersistenceUnitInfo
 {
     public static final String PERSISTENCE_CONFIG_FILENAME = "persistence.xml";
     public static final String PU_NAME_PROPERTY = "persistence-unit-name";
-    public static final String CUSTOM_OHC_PROPERTY = "open-helper-callbacks-classname";
+    public static final String CUSTOM_OHC_PROPERTY = "open-helper-class";
     
     private String persistenceUnitName;
     String persistenceProviderClassName = "";
