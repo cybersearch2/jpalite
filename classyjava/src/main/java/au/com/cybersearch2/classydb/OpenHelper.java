@@ -19,11 +19,11 @@ import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 
 /**
  * OpenHelperCallbacks
- * Interface for onCreate() and onUpdate() SQLiteOpenHelper abstract methods
+ * Interface for onCreate() and onUpdate() to mimic SQLiteOpenHelper abstract methods
  * @author Andrew Bowley
  * 24/06/2014
  */
-public interface OpenHelperCallbacks
+public interface OpenHelper
 {
     void setDatabaseAdmin(DatabaseAdmin databaseAdmin);
     void setPersistenceAdmin(PersistenceAdmin persistenceAdmin);

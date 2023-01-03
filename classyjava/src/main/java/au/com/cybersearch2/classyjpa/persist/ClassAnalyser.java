@@ -81,7 +81,7 @@ public class ClassAnalyser
     
     /** Definition of the per-database functionality needed to isolate the differences between the various databases */
     protected DatabaseType databaseType;
-    /** Maps entity class  to OrmDaoHelper<T,ID> object */
+    /** Maps entity class  to OrmDaoHelper object */
     protected ClassRegistry classRegistry;
     /** Instantiates entity classes */
     protected EntityClassLoader entityClassLoader;

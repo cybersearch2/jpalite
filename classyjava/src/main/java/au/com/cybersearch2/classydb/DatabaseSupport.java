@@ -93,7 +93,7 @@ public interface DatabaseSupport
      */
     void setVersion(int version, Properties properties, ConnectionSource connectionSource);
     
-    void registerOpenHelperCallbacks(OpenHelperCallbacks openHelperCallbacks);
-    List<OpenHelperCallbacks> getOpenHelperCallbacksList();
+    void registerOpenHelperCallbacks(OpenHelper openHelper);
+    List<OpenHelper> getOpenHelperCallbacksList();
 
 }

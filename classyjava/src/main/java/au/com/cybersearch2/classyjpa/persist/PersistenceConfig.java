@@ -95,7 +95,7 @@ public class PersistenceConfig
 
 	/**
      * Create a named query and store it in namedQueryMap. The query is implemented using OrmLite rather than JPA query language.
-     * @param clazz entityClass Entity class. This must be included in persistence.xml entity class list.
+     * @param entityClass entityClass Entity class. This must be included in persistence.xml entity class list.
      * @param name Query name
      * @param daoQueryFactory Query generator which uses supplied DAO for entity class
      */

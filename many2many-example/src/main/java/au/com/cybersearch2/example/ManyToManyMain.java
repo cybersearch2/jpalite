@@ -31,8 +31,6 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
 package au.com.cybersearch2.example;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -61,7 +59,7 @@ import au.com.cybersearch2.classytask.WorkStatus;
  * <p>
  * This example shows how a many-to-many table relationship with a join table can be performed in lightweight JPA.
  * OrmLite does not support the use of @ManyToMany or @JoinTable annotations so a workaround is to have back to back
- * @OneToMany associations with the join table in the middle.
+ * OneToMany associations with the join table in the middle.
  * </p>
  */
 public class ManyToManyMain 
@@ -209,13 +207,18 @@ public class ManyToManyMain
      * Verify posts retrieved by "posts_by_user" named query
      * @param posts List&lt;Post&gt; retrieved for user1
      */
-    public void verifyPostsByUser(List<Post> posts) {
+    public void verifyPostsByUser(List<Post> posts, Transcript transcript) {
         // user1 should have 2 posts
-        assertEquals(2, posts.size());
-        assertEquals(post1.id, posts.get(0).id);
-        assertEquals(post1.contents, posts.get(0).contents);
-        assertEquals(post2.id, posts.get(1).id);
-        assertEquals(post2.contents, posts.get(1).contents);
+    	boolean status = posts.size() == 2;
+    	transcript.add("2 posts by user = " + status, status);
+    	status = post1.id == posts.get(0).id;
+    	transcript.add("First post id of " + posts.get(0).id + " = " + status, status);
+    	status = post1.contents.equals(posts.get(0).contents);
+    	transcript.add("First post contents match = " + status, status);
+       	status = post2.id == posts.get(1).id;
+    	transcript.add("Second post id of " + posts.get(1).id + " = " + status, status);
+    	status = post2.contents.equals(posts.get(1).contents);
+    	transcript.add("Second post contents match = " + status, status);
     }
  
     /**
@@ -223,18 +226,25 @@ public class ManyToManyMain
      * @param usersByPost1 List&lt;User&gt; retrieved for post1
      * @param usersByPost2 List&lt;User&gt; retrieved for post2
      */
-    public void verifyUsersByPost(List<User> usersByPost1, List<User> usersByPost2) {
+    public void verifyUsersByPost(List<User> usersByPost1, List<User> usersByPost2, Transcript transcript) {
         // Examine all of the users that have a post.
         // post1 should only have 1 corresponding user
-        assertEquals(1, usersByPost1.size());
-        assertEquals(user1.id, usersByPost1.get(0).id);
+        boolean status = usersByPost1.size() == 1;
+        transcript.add("One user for post1 = " + status, status);
+        status = user1.id ==  usersByPost1.get(0).id;
+        transcript.add("User1 ids match = " + status, status);
 
         // post2 should have 2 corresponding users
-        assertEquals(2, usersByPost2.size());
-        assertEquals(user1.id, usersByPost2.get(0).id);
-        assertEquals(user1.name, usersByPost2.get(0).name);
-        assertEquals(user2.id, usersByPost2.get(1).id);
-        assertEquals(user2.name, usersByPost2.get(1).name);
+        status = usersByPost2.size() == 2;
+        transcript.add("Two users for post2 = " + status, status);
+        status = user1.id ==  usersByPost2.get(0).id;
+        transcript.add("User1 ids match = " + status, status);
+        status = user1.name.equals(usersByPost2.get(0).name);
+        transcript.add("User1 namess match = " + status, status);
+        status = user2.id ==  usersByPost2.get(1).id;
+        transcript.add("User1 ids match = " + status, status);
+        status = user2.name.equals(usersByPost2.get(1).name);
+        transcript.add("User2 namess match = " + status, status);
     }
  
     protected void runApplication() {
@@ -248,19 +258,29 @@ public class ManyToManyMain
                     user1.id);
             execute(postsByUserEntityTask);
             List<Post> posts = postsByUserEntityTask.getPosts();
-            verifyPostsByUser(posts);
+    		Transcript transcript = new Transcript();
+            verifyPostsByUser(posts, transcript);
             System.out.println("PostsByUser: ");
             System.out.println(user1.name + " posted \"" + posts.get(0).contents + "\" & \"" + posts.get(1).contents + "\"");
             UsersByPostTask usersByPostTask= new UsersByPostTask(
                     post1.id,
                     post2.id);
             execute(usersByPostTask);
-            verifyUsersByPost(usersByPostTask.getUsersByPost1(), usersByPostTask.getUsersByPost2());
-            System.out.println("UsersByPosts: ");
-            System.out.println("Only " + user1.name + " posted \"" + post1.contents + "\"");
-            System.out.println("Both " + user1.name + " and " + user2.name +
-                    " posted \"" + post2.contents + "\"");
-            System.out.println("Test completed successfully");
+            verifyUsersByPost(usersByPostTask.getUsersByPost1(), usersByPostTask.getUsersByPost2(), transcript);
+     		transcript.getObservations().forEach(entry -> { 
+     			if (entry.isStatus())
+     				System.out.println(entry.getReport());
+     			else
+     				System.err.println(entry.getReport());
+     		});
+     		if (transcript.getErrorCount() == 0) {
+                System.out.println("UsersByPosts: ");
+                System.out.println("Only " + user1.name + " posted \"" + post1.contents + "\"");
+                System.out.println("Both " + user1.name + " and " + user2.name +
+                        " posted \"" + post2.contents + "\"");
+     			System.out.println("Success");
+     		} else
+     			System.err.println("Failed");
         }
         catch (InterruptedException e) {
             e.printStackTrace();

@@ -55,8 +55,6 @@ public abstract class DaoQueryFactory<T extends OrmEntity>
 
     /**
      * Returns query object which will execute a prepared statement when required selection arguments are provided
-     * @param dao OrmLite data access object of generic type matching Entity class to be retrieved
-     * @param <T> Entity type
      * @param connectionSource Open connection source
      * @return DaoQuery object
      * @throws SQLException if database operation fails

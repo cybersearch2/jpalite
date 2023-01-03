@@ -88,7 +88,7 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
     protected final DatabaseType databaseType;
     /** Map connectionSource to database name */
     protected Map<String, ConnectionPair> connectionSourceMap;
-    protected List<OpenHelperCallbacks> openHelperCallbacksList;
+    protected List<OpenHelper> openHelperCallbacksList;
     private Log log;
     private String tag;
 
@@ -185,15 +185,15 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
     }
 
     @Override
-    public void registerOpenHelperCallbacks(OpenHelperCallbacks openHelperCallbacks)
+    public void registerOpenHelperCallbacks(OpenHelper openHelper)
     {
         if (openHelperCallbacksList.isEmpty())
             openHelperCallbacksList = new ArrayList<>();
-        openHelperCallbacksList.add(openHelperCallbacks);
+        openHelperCallbacksList.add(openHelper);
     }
     
     @Override
-    public List<OpenHelperCallbacks> getOpenHelperCallbacksList()
+    public List<OpenHelper> getOpenHelperCallbacksList()
     {
         return openHelperCallbacksList;
     }

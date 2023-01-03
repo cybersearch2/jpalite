@@ -17,7 +17,7 @@ import javax.persistence.TypedQuery;
 
 import com.j256.ormlite.support.ConnectionSource;
 
-import au.com.cybersearch2.classydb.OpenHelperCallbacksImpl;
+import au.com.cybersearch2.classydb.OpenHelperImpl;
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.QueryForAllGenerator;
 import au.com.cybersearch2.classyjpa.entity.PersistenceTask;
@@ -28,7 +28,7 @@ import au.com.cybersearch2.pp.PeopleAndPets;
  * @author Andrew Bowley
  * 24 Nov 2014
  */
-public class PetsOpenHelperCallbacks extends OpenHelperCallbacksImpl 
+public class PetsOpenHelperCallbacks extends OpenHelperImpl 
 {
 
 	public PetsOpenHelperCallbacks() 

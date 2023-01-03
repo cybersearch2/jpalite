@@ -35,7 +35,7 @@ import au.com.cybersearch2.classydb.DatabaseSupport;
 import au.com.cybersearch2.classydb.DatabaseSupport.ConnectionType;
 import au.com.cybersearch2.classydb.DatabaseType;
 import au.com.cybersearch2.classydb.H2DatabaseSupport;
-import au.com.cybersearch2.classydb.OpenHelperCallbacks;
+import au.com.cybersearch2.classydb.OpenHelper;
 import au.com.cybersearch2.classydb.SQLiteDatabaseSupport;
 
 /**
@@ -62,7 +62,8 @@ public class PersistenceFactory
     
     /**
      * Create PersistenceFactory object
-     * @param databaseSupport Native support
+     * @param databaseType Database type
+     * @param connectionType Connection type
      * @param resourceEnvironment Resource environment
      * @throws PersistenceException for error opening or parsing persistence.xml
      */
@@ -217,8 +218,8 @@ public class PersistenceFactory
             // Create objects for JPA and native support which are accessed using PersistenceFactory
             PersistenceAdminImpl persistenceAdmin = new PersistenceAdminImpl(name, databaseSupport, persistenceConfig);
             persistenceImplMap.put(name, persistenceAdmin);
-            OpenHelperCallbacks openHelperCallbacks = getOpenHelperCallbacks(persistenceConfig.getPuInfo().getProperties());
-            DatabaseAdminImpl databaseAdmin = new DatabaseAdminImpl(name, persistenceAdmin, resourceEnvironment, openHelperCallbacks);
+            OpenHelper openHelper = getOpenHelperCallbacks(persistenceConfig.getPuInfo().getProperties());
+            DatabaseAdminImpl databaseAdmin = new DatabaseAdminImpl(name, persistenceAdmin, resourceEnvironment, openHelper);
             databaseAdminImplMap.put(name, databaseAdmin);
         }
         databaseSupport.initialize();
@@ -229,16 +230,16 @@ public class PersistenceFactory
      * @param properties Properties object
      * @return OpenHelperCallbacks or null if not defined
      */
-    protected OpenHelperCallbacks getOpenHelperCallbacks(Properties properties)
+    protected OpenHelper getOpenHelperCallbacks(Properties properties)
     {
         // Property "open-helper-callbacks-classname"
         String openHelperCallbacksClassname = properties.getProperty(DatabaseSupport.JTA_PREFIX + PersistenceUnitInfoImpl.CUSTOM_OHC_PROPERTY);
         if (openHelperCallbacksClassname != null)
         {
             // Custom
-            for (OpenHelperCallbacks openHelperCallbacks: databaseSupport.getOpenHelperCallbacksList())
-                if (openHelperCallbacks.getClass().getName().equals(openHelperCallbacksClassname))
-                    return openHelperCallbacks;
+            for (OpenHelper openHelper: databaseSupport.getOpenHelperCallbacksList())
+                if (openHelper.getClass().getName().equals(openHelperCallbacksClassname))
+                    return openHelper;
             throw new PersistenceException(openHelperCallbacksClassname + " object not registered");
         }
         // Mo match

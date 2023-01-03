@@ -29,6 +29,7 @@ package au.com.cybersearch2.example;
     along with this program.  If not, see <http://www.gnu.org/licenses/> */
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -56,12 +57,20 @@ public class ManyToManyTest
                 manyToManyMain.getUser1().id);
 
         assertEquals(manyToManyMain.execute(postsByUserEntityTask), WorkStatus.FINISHED);
-        manyToManyMain.verifyPostsByUser(postsByUserEntityTask.getPosts());
+		Transcript transcript = new Transcript();
+        manyToManyMain.verifyPostsByUser(postsByUserEntityTask.getPosts(), transcript);
         UsersByPostTask usersByPostTask= new UsersByPostTask(
                 manyToManyMain.getPost1().id,
                 manyToManyMain.getPost2().id);
         assertEquals(manyToManyMain.execute(usersByPostTask), WorkStatus.FINISHED);
-        manyToManyMain.verifyUsersByPost(usersByPostTask.getUsersByPost1(), usersByPostTask.getUsersByPost2());
+        manyToManyMain.verifyUsersByPost(usersByPostTask.getUsersByPost1(), usersByPostTask.getUsersByPost2(), transcript);
+        if (transcript.getErrorCount() > 0) {
+     		transcript.getObservations().forEach(entry -> { 
+     			if (!entry.isStatus())
+     				System.err.println(entry.getReport());
+     		});
+     		fail();
+        }
     }
 
 }

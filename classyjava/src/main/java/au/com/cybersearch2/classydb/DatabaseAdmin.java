@@ -67,5 +67,5 @@ public interface DatabaseAdmin
      */
     void onUpgrade(ConnectionSource connectionSource, int oldVersion, int newVersion);
 
-    OpenHelperCallbacks getCustomOpenHelperCallbacks();
+    OpenHelper getCustomOpenHelperCallbacks();
 }

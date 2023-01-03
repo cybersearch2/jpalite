@@ -48,41 +48,41 @@ public class DatabaseAdminImpl implements DatabaseAdmin
     protected PersistenceAdmin persistenceAdmin;
     /** Resource environment provides system-specific file open method. */
     protected ResourceEnvironment resourceEnvironment;
-    protected OpenHelperCallbacks openHelperCallbacks;
+    protected OpenHelper openHelper;
     
     /**
      * Construct a DatabaseAdminImpl object
      * @param puName The persistence unit name
      * @param persistenceAdmin The persistence unit connectionSource and properties provider  
      * @param resourceEnvironment Resource environment
-     * @param openHelperCallbacks Open helper callbacks
+     * @param openHelper Open helper callbacks
      */
     public DatabaseAdminImpl(
             String puName, 
             PersistenceAdmin persistenceAdmin, 
             ResourceEnvironment resourceEnvironment,
-            OpenHelperCallbacks openHelperCallbacks)
+            OpenHelper openHelper)
     {
         this.puName = puName;
         this.persistenceAdmin = persistenceAdmin;
         this.resourceEnvironment = resourceEnvironment;
-        if (openHelperCallbacks != null)
+        if (openHelper != null)
         {
-            openHelperCallbacks.setDatabaseAdmin(this);
-            openHelperCallbacks.setPersistenceAdmin(persistenceAdmin);
-            this.openHelperCallbacks = openHelperCallbacks;
+            openHelper.setDatabaseAdmin(this);
+            openHelper.setPersistenceAdmin(persistenceAdmin);
+            this.openHelper = openHelper;
         }
     }
 
     @Override
-    public OpenHelperCallbacks getCustomOpenHelperCallbacks()
+    public OpenHelper getCustomOpenHelperCallbacks()
     {
-        return openHelperCallbacks;
+        return openHelper;
     }
 
     /**
      * Database create handler.
-     * Optionally runs native scripts to drop and create schema and populate the database with data.
+     * Optionally runs native script to create schema and populate the database with data.
      * Note that because ORMLite uses a ThreadLocal variable for a special connection, this 
      * executes in a single thread.
      * @param connectionSource An open ConnectionSource to be employed for all database activities.
@@ -93,28 +93,19 @@ public class DatabaseAdminImpl implements DatabaseAdmin
         Properties properties = persistenceAdmin.getProperties();
         // Get SQL script file names from persistence.xml properties
         // A filename may be null if operation not supported
-        String dropSchemaFilename = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DROP_SCHEMA_FILENAME);
-        String schemaFilename = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.SCHEMA_FILENAME);
+         String schemaFilename = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.SCHEMA_FILENAME);
         String dataFilename = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DATA_FILENAME);
-        if (!((schemaFilename == null) && (dropSchemaFilename == null) && (dataFilename == null)))
+        if (!((schemaFilename == null) && (dataFilename == null)))
         {
         	// Database work is executed as background task
         	TransactionCallable processFilesCallable = 
-                new NativeScriptDatabaseWork(resourceEnvironment, dropSchemaFilename, schemaFilename, dataFilename);    
+                new NativeScriptDatabaseWork(resourceEnvironment, schemaFilename, dataFilename);    
         	executeTask(connectionSource, processFilesCallable);
         }
     }
 
     /**
      * Database upgrade handler.
-     *
-     * <p>
-     * The SQLite ALTER TABLE documentation can be found
-     * <a href="http://sqlite.org/lang_altertable.html">here</a>. If you add new columns
-     * you can use ALTER TABLE to insert them into a live table. If you rename or remove columns
-     * you can use ALTER TABLE to rename the old table, then create the new table and then
-     * populate the new table with the contents of the old table.
-     * </p>  
      * @param connectionSource An open ConnectionSource to be employed for all database activities.
      * @param oldVersion The old database version.
      * @param newVersion The new database version.
@@ -140,16 +131,45 @@ public class DatabaseAdminImpl implements DatabaseAdmin
 	        finally
 	        {
 	            close(instream, filename);
+	            if (log.isLoggable(TAG, Level.INFO))
+	                log.info(TAG, "Upgrade file \"" + filename + "\" exists: " + upgradeSupported);
 	        }
         }
-        //	throw new PersistenceException("\"" + puName + "\" database upgrade from v" + oldVersion + " to v" + newVersion + " is not possible");
-        if (log.isLoggable(TAG, Level.INFO))
-            log.info(TAG, "Upgrade file \"" + filename + "\" exists: " + upgradeSupported);
         if (upgradeSupported) {
         	// Database work is executed in a transaction
         	TransactionCallable processFilesCallable = new NativeScriptDatabaseWork(resourceEnvironment, filename);    
         	executeTask(connectionSource, processFilesCallable);
         }
+    }
+
+    /**
+     * Database drop schema handler.
+     * @param connectionSource An open ConnectionSource to be employed for all database activities.
+     */
+    private boolean dropSchema(ConnectionSource connectionSource)
+    {
+        Properties properties = persistenceAdmin.getProperties();
+        String filename = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DROP_SCHEMA_FILENAME);
+        boolean downgradeSupported = false;
+        InputStream instream = null;
+        try {
+            instream = resourceEnvironment.openResource(filename);
+            downgradeSupported = instream != null;
+        } catch (IOException e) {
+        	log.error(TAG, "Error opening \"" + filename + "\" for database upgrade", e);
+		}
+        finally {
+            close(instream, filename);
+        }
+        //	throw new PersistenceException("\"" + puName + "\" database upgrade from v" + oldVersion + " to v" + newVersion + " is not possible");
+        if (log.isLoggable(TAG, Level.INFO))
+            log.info(TAG, "Downgrade file \"" + filename + "\" exists: " + downgradeSupported);
+        if (downgradeSupported) {
+        	// Database work is executed in a transaction
+        	TransactionCallable processFilesCallable = new NativeScriptDatabaseWork(resourceEnvironment, filename);    
+        	executeTask(connectionSource, processFilesCallable);
+        }
+        return downgradeSupported;
     }
     
 	/**
@@ -164,16 +184,17 @@ public class DatabaseAdminImpl implements DatabaseAdmin
     	int currentDatabaseVersion = PersistenceAdminImpl.getDatabaseVersion(properties);
         // Get a connection to open the database and possibly trigger a create or upgrade event (eg. AndroidSQLite)
         ConnectionSource connectionSource = persistenceAdmin.getConnectionSource();
+        boolean dropSchema = false;
         int reportedDatabaseVersion = databaseSupport.getVersion(connectionSource, properties);
         if (reportedDatabaseVersion != currentDatabaseVersion)
         {   // No assistance provided by helper to trigger create/upgrade event
             // Allow custom create/upgrade handler
         	if (reportedDatabaseVersion == 0)
         	{
-        		if (openHelperCallbacks == null)
+        		if (openHelper == null)
         			onCreate(connectionSource);
         		else
-        			openHelperCallbacks.onCreate(connectionSource);
+        			openHelper.onCreate(connectionSource);
         		// Get database version again in case onCreate() set it
         		reportedDatabaseVersion = databaseSupport.getVersion(connectionSource, properties);
         		if (reportedDatabaseVersion != currentDatabaseVersion)
@@ -181,12 +202,26 @@ public class DatabaseAdminImpl implements DatabaseAdmin
         	}
         	else
         	{
-        		if (openHelperCallbacks == null)
-        			onUpgrade(connectionSource, reportedDatabaseVersion, currentDatabaseVersion);
-        		else
-        			openHelperCallbacks.onUpgrade(connectionSource, reportedDatabaseVersion, currentDatabaseVersion);
+        		dropSchema = currentDatabaseVersion < reportedDatabaseVersion;
+        		if (dropSchema) {
+        			dropSchema = properties.containsKey(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DROP_SCHEMA_FILENAME);
+        			if (dropSchema) {
+        				dropSchema= dropSchema(connectionSource);
+            			if (dropSchema) {
+		            		if (openHelper == null)
+		            			onCreate(connectionSource);
+		            		else
+		            			openHelper.onCreate(connectionSource);
+            			}
+        			}
+        		} else {
+	        		if (openHelper == null)
+	        			onUpgrade(connectionSource, reportedDatabaseVersion, currentDatabaseVersion);
+	        		else
+	        			openHelper.onUpgrade(connectionSource, reportedDatabaseVersion, currentDatabaseVersion);
+        		}
     		    databaseSupport.setVersion(currentDatabaseVersion, properties, connectionSource);
-        	}
+       	    }
         }
         persistenceConfig.checkEntityTablesExist(connectionSource);
     }

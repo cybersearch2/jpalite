@@ -23,8 +23,7 @@ import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 import au.com.cybersearch2.classytask.TaskStatus;
 
 /**
- * ClassyOpenHelperCallbacks
- * Implementation of onCreate() and onUpdate() SQLiteOpenHelper abstract methods.
+ * Implementation of onCreate() and onUpdate() OpenHelper abstract methods.
  * This is a persistence container in which tasks can be performed using a supplied
  * EntityManager object by calling doWork(). Unlike other PersistenceContainer 
  * implementations, the execution takes place in the current thread using supplied
@@ -34,7 +33,7 @@ import au.com.cybersearch2.classytask.TaskStatus;
  * @author Andrew Bowley
  * 24/06/2014
  */
-public class OpenHelperCallbacksImpl implements OpenHelperCallbacks
+public class OpenHelperImpl implements OpenHelper
 {
     protected DatabaseAdmin databaseAdmin;
     protected PersistenceAdmin persistenceAdmin;
@@ -43,7 +42,7 @@ public class OpenHelperCallbacksImpl implements OpenHelperCallbacks
      * Create ClassyOpenHelperCallbacks object
      * @param puName PersistenceUnitAdmin Unit name
      */
-    public OpenHelperCallbacksImpl(String puName)
+    public OpenHelperImpl(String puName)
     {
     }
 

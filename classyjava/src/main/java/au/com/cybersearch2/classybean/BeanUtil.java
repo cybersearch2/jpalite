@@ -33,7 +33,7 @@ public class BeanUtil
 {
     /**
      * DataPair
-     * Entry for Map&lt;String, Object&gt;
+     * Entry for String, Object Map
      * @author Andrew Bowley
      * 28/07/2014
      */
