@@ -133,7 +133,7 @@ public class EntityQueryTest
         SimpleSelectArg selectArg = (SimpleSelectArg) daoQuery.argumentMap.get(ID_COLUMN_NAME);
         assertThat(selectArg.getColumnName()).isEqualTo(ID_COLUMN_NAME);
         assertThat(selectArg.getValue()).isNull();
-        selectArg = (SimpleSelectArg) entityQuery.daoQuery.get(CREATED_COLUMN_NAME);
+        selectArg = (SimpleSelectArg) entityQuery.validateParam(CREATED_COLUMN_NAME);
         assertThat(selectArg.getColumnName()).isEqualTo(CREATED_COLUMN_NAME);
         assertThat(selectArg.getValue()).isNull();
     }

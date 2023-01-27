@@ -13,279 +13,107 @@
     limitations under the License. */
 package au.com.cybersearch2.classyjpa.transaction;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import com.j256.ormlite.support.ConnectionSource;
-import com.j256.ormlite.support.DatabaseConnection;
-import com.j256.ormlite.db.DatabaseType;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.sql.SQLException;
-import java.sql.Savepoint;
+
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import au.com.cybersearch2.log.LogRecordHandler;
+import au.com.cybersearch2.log.TestLogHandler;
 
 /**
- * ClassyFyEntityTransactionTest
+ * TransactionStateTest
  * @author Andrew Bowley
  * 09/05/2014
  */
+@RunWith(MockitoJUnitRunner.class)
 public class TransactionStateTest
 {
-	private static final String DATABASE_INFO_NAME = "";
+	static LogRecordHandler logRecordHandler;
+
+	@Mock
+	TransactionConnection transConnection;
+	int transactionId;
+
+	@BeforeClass public static void onlyOnce() {
+		logRecordHandler = TestLogHandler.logRecordHandlerInstance();
+	}
+
+	@Before
+	public void setUp() {
+		TestLogHandler.getLogRecordHandler().clear();
+	}
 	
-    private ConnectionSource connectionSource;
-    private DatabaseConnection connection;
-
-
-    @Before
-    public void setUp() throws Exception 
-    {
-        connectionSource = mock(ConnectionSource.class);
-        connection = mock(DatabaseConnection.class);
-
-    }
-    
     @Test
     public void test_begin() throws Exception
     {
-        int transactionId = TransactionState.savePointCounter.get() + 1;
-        String savepointName = "ORMLITE" + transactionId;
-        when(connectionSource.getReadWriteConnection(DATABASE_INFO_NAME)).thenReturn(connection);
-        when(connectionSource.saveSpecialConnection(connection)).thenReturn(true);
-        when(connection.isAutoCommitSupported()).thenReturn(true);
-        when(connection.isAutoCommit()).thenReturn(true);
-        Savepoint savePoint = mock(Savepoint.class);
-        when(connection.setSavePoint(isA(String.class))).thenReturn(savePoint);
-        when(savePoint.getSavepointName()).thenReturn(savepointName);
-        TransactionState transactionState = new TransactionState(connectionSource);
-        verify(connectionSource).saveSpecialConnection(connection);
-        verify(connection).setAutoCommit(false);
-        assertThat(transactionState.transactionId).isEqualTo(transactionId);
-        assertThat(transactionState.hasSavePoint).isTrue();
-        assertThat(transactionState.savePointName).isEqualTo(savepointName);
+    	transactionId += 1;
+    	when(transConnection.isActive()).thenReturn(true);
+        TransactionState transactionState = new TransactionState(transConnection, transactionId);
+        assertThat(transactionState.getTransactionId()).isEqualTo(transactionId);
+        assertThat(transactionState.isActive()).isTrue();
     }
-
-    @Test
-    public void test_begin_NestedSavePointsSupported() throws Exception
-    {
-        DatabaseType databaseType = mock(DatabaseType.class);
-        when(databaseType.isNestedSavePointsSupported()).thenReturn(true);
-        when(connectionSource.getReadWriteConnection(DATABASE_INFO_NAME)).thenReturn(connection);
-        when(connectionSource.saveSpecialConnection(connection)).thenReturn(false);
-        when(connection.isAutoCommitSupported()).thenReturn(true);
-        when(connectionSource.getDatabaseType()).thenReturn(databaseType);
-        when(connection.isAutoCommit()).thenReturn(true);
-        Savepoint savePoint = mock(Savepoint.class);
-        when(connection.setSavePoint(isA(String.class))).thenReturn(savePoint);
-        when(savePoint.getSavepointName()).thenReturn("mySavePoint");
-        new TransactionState(connectionSource);
-        verify(connectionSource).saveSpecialConnection(connection);
-        verify(connection).setAutoCommit(false);
-    }
-
-
-    @Test
-    public void test_begin_connection_exception() throws Exception
-    {
-        SQLException exception = new SQLException("Connection failed");
-        doThrow(exception).when(connectionSource).getReadWriteConnection(DATABASE_INFO_NAME);
-        try
-        {
-            new TransactionState(connectionSource);
-            failBecauseExceptionWasNotThrown(SQLException.class);
-        }
-        catch(SQLException e)
-        {
-            assertThat(e.getMessage()).contains("Connection failed");
-        }
-   }
-
-    @Test
-    public void test_begin_connection_source_exception() throws Exception
-    {
-        SQLException exception = new SQLException("saveSpecialConnection failed");
-        when(connectionSource.getReadWriteConnection(DATABASE_INFO_NAME)).thenReturn(connection);
-        doThrow(exception).when(connectionSource).saveSpecialConnection(connection);
-        try
-        {
-            new TransactionState(connectionSource);
-            failBecauseExceptionWasNotThrown(SQLException.class);
-        }
-        catch(SQLException e)
-        {
-            assertThat(e.getMessage()).contains("Connection failed");
-        }
-        verify(connectionSource).clearSpecialConnection(connection);
-   }
-
-    @Test
-    public void test_begin_connection_source_exception_on_release() throws Exception
-    {
-        SQLException exception = new SQLException("saveSpecialConnection failed");
-        when(connectionSource.getReadWriteConnection(DATABASE_INFO_NAME)).thenReturn(connection);
-        doThrow(exception).when(connectionSource).saveSpecialConnection(connection);
-        doThrow(new SQLException()).when(connectionSource).releaseConnection(connection);
-        try
-        {
-            new TransactionState(connectionSource);
-            failBecauseExceptionWasNotThrown(SQLException.class);
-        }
-        catch(SQLException e)
-        {
-            assertThat(e.getMessage()).contains("Connection failed");
-        }
-        verify(connectionSource).clearSpecialConnection(connection);
-   }
-
-    @Test
-    public void test_begin_auto_commit_supported_exception() throws Exception
-    {
-        SQLException exception = new SQLException("isAutoCommitSupported failed");
-        when(connectionSource.getReadWriteConnection(DATABASE_INFO_NAME)).thenReturn(connection);
-        when(connectionSource.saveSpecialConnection(connection)).thenReturn(true);
-        doThrow(exception).when(connection).isAutoCommitSupported();
-        try
-        {
-            new TransactionState(connectionSource);
-            failBecauseExceptionWasNotThrown(SQLException.class);
-        }
-        catch(SQLException e)
-        {
-            assertThat(e.getMessage()).contains("isAutoCommitSupported failed");
-        }
-        verify(connectionSource).saveSpecialConnection(connection);
-   }
-
-    @Test
-    public void test_begin_get_auto_commit_exception() throws Exception
-    {
-        SQLException exception = new SQLException("isAutoCommit failed");
-        when(connectionSource.getReadWriteConnection(DATABASE_INFO_NAME)).thenReturn(connection);
-        when(connectionSource.saveSpecialConnection(connection)).thenReturn(true);
-        when(connection.isAutoCommitSupported()).thenReturn(true);
-        doThrow(exception).when(connection).isAutoCommit();
-        try
-        {
-            new TransactionState(connectionSource);
-            failBecauseExceptionWasNotThrown(SQLException.class);
-        }
-        catch(SQLException e)
-        {
-            assertThat(e.getMessage()).contains("isAutoCommit failed");
-        }
-        verify(connectionSource).saveSpecialConnection(connection);
-   }
-
-    @Test
-    public void test_begin_set_auto_commit_exception() throws Exception
-    {
-        SQLException exception = new SQLException("setAutoCommit failed");
-        when(connectionSource.getReadWriteConnection(DATABASE_INFO_NAME)).thenReturn(connection);
-        when(connectionSource.saveSpecialConnection(connection)).thenReturn(true);
-        when(connection.isAutoCommitSupported()).thenReturn(true);
-        when(connection.isAutoCommit()).thenReturn(true);
-        doThrow(exception).when(connection).setAutoCommit(false);;
-        try
-        {
-            new TransactionState(connectionSource);
-            failBecauseExceptionWasNotThrown(SQLException.class);
-        }
-        catch(SQLException e)
-        {
-            assertThat(e.getMessage()).contains("setAutoCommit failed");
-        }
-        verify(connectionSource).saveSpecialConnection(connection);
-   }
-
-    @Test
-    public void test_begin_set_save_point_exception() throws Exception
-    {
-        SQLException exception = new SQLException("setSavePoint failed");
-        when(connectionSource.getReadWriteConnection(DATABASE_INFO_NAME)).thenReturn(connection);
-        when(connectionSource.saveSpecialConnection(connection)).thenReturn(true);
-        when(connection.isAutoCommitSupported()).thenReturn(true);
-        when(connection.isAutoCommit()).thenReturn(true);
-        doThrow(exception).when(connection).setSavePoint(isA(String.class));
-        try
-        {
-            new TransactionState(connectionSource);
-            failBecauseExceptionWasNotThrown(SQLException.class);
-        }
-        catch(SQLException e)
-        {
-            assertThat(e.getMessage()).contains("setSavePoint failed");
-        }
-        verify(connection).setAutoCommit(false);
-        verify(connectionSource).saveSpecialConnection(connection);
-        verify(connection).setAutoCommit(true);
-   }
 
     @Test
     public void test_commit() throws Exception
     {
-        int transactionId = TransactionState.savePointCounter.get() + 1;
-        String savepointName = "ORMLITE" + transactionId;
-        when(connectionSource.getReadWriteConnection(DATABASE_INFO_NAME)).thenReturn(connection);
-        when(connectionSource.saveSpecialConnection(connection)).thenReturn(true);
-        when(connection.isAutoCommitSupported()).thenReturn(true);
-        when(connection.isAutoCommit()).thenReturn(true, false);
-        Savepoint savePoint = mock(Savepoint.class);
-        when(connection.setSavePoint(savepointName)).thenReturn(savePoint);
-        when(savePoint.getSavepointName()).thenReturn("mySavePoint");
-        TransactionState transactionState = new TransactionState(connectionSource);
-        verify(connectionSource).saveSpecialConnection(connection);
-        verify(connection).setAutoCommit(false);
-        when(savePoint.getSavepointName()).thenReturn(savepointName);
+       	transactionId += 1;
+        TransactionState transactionState = new TransactionState(transConnection, transactionId);
+        when(transConnection.canCommit()).thenReturn(true);
         transactionState.doCommit();
-        verify(connection).commit(savePoint);
-        assertThat(transactionState.hasSavePoint).isNull();
-        assertThat(transactionState.savePoint).isNull();
-        assertThat(transactionState.connection).isNull();
+        verify(transConnection).commit();
+        verify(transConnection).release();
+        assertThat(transactionState.isActive()).isFalse();
+        String logMessage = String.format("Committed transaction id %d", transactionId);
+        assertThat(logRecordHandler.match(0, logMessage)).isTrue();
+    }
+
+    @Test
+    public void test_cannot_commit() throws Exception
+    {
+       	transactionId += 1;
+        TransactionState transactionState = new TransactionState(transConnection, transactionId);
+        when(transConnection.canCommit()).thenReturn(false);
+        when(transConnection.excludeAutoCommit()).thenReturn(true);
+        transactionState.doCommit();
+        verify(transConnection).release();
+        assertThat(transactionState.isActive()).isFalse();
+        assertThat(logRecordHandler.match(0, "doCommit() called while connection in invalid state")).isTrue();
     }
 
     @Test
     public void test_rollback() throws Exception
     {
-        int transactionId = TransactionState.savePointCounter.get() + 1;
-        String savepointName = "ORMLITE" + transactionId;
-        when(connectionSource.getReadWriteConnection(DATABASE_INFO_NAME)).thenReturn(connection);
-        when(connectionSource.saveSpecialConnection(connection)).thenReturn(true);
-        when(connection.isAutoCommitSupported()).thenReturn(true);
-        when(connection.isAutoCommit()).thenReturn(true, false);
-        Savepoint savePoint = mock(Savepoint.class);
-        when(connection.setSavePoint(savepointName)).thenReturn(savePoint);
-        when(savePoint.getSavepointName()).thenReturn("mySavePoint");
-        TransactionState transactionState = new TransactionState(connectionSource);
-        verify(connectionSource).saveSpecialConnection(connection);
-        verify(connection).setAutoCommit(false);
-        when(savePoint.getSavepointName()).thenReturn(savepointName);
+       	transactionId += 1;
+        TransactionState transactionState = new TransactionState(transConnection, transactionId);
+        when(transConnection.canCommit()).thenReturn(true);
         transactionState.doRollback();
-        verify(connection).rollback(savePoint);
-        assertThat(transactionState.hasSavePoint).isNull();
-        assertThat(transactionState.savePoint).isNull();
-        assertThat(transactionState.connection).isNull();
+        verify(transConnection).rollback();
+        verify(transConnection).release();
+        assertThat(transactionState.isActive()).isFalse();
+        String logMessage = String.format("Rolled back transaction id %d", transactionId);
+        logRecordHandler.printAll();
+        assertThat(logRecordHandler.match(0, logMessage)).isTrue();
     }
 
     @Test
     public void test_commit_rollback() throws Exception
     {
-        SQLException exception = new SQLException("doCommit failed");
-        int transactionId = TransactionState.savePointCounter.get() + 1;
-        String savepointName = "ORMLITE" + transactionId;
-        when(connectionSource.getReadWriteConnection(DATABASE_INFO_NAME)).thenReturn(connection);
-        when(connectionSource.saveSpecialConnection(connection)).thenReturn(true);
-        when(connection.isAutoCommitSupported()).thenReturn(true);
-        when(connection.isAutoCommit()).thenReturn(true, false);
-        Savepoint savePoint = mock(Savepoint.class);
-        when(connection.setSavePoint(savepointName)).thenReturn(savePoint);
-        when(savePoint.getSavepointName()).thenReturn(savepointName);
-        TransactionState transactionState = new TransactionState(connectionSource);
-        verify(connectionSource).saveSpecialConnection(connection);
-        verify(connection).setAutoCommit(false);
-        when(savePoint.getSavepointName()).thenReturn("mySavePoint");
-        doThrow(exception).when(connection).commit(savePoint);
+       	transactionId += 1;
+        TransactionState transactionState = new TransactionState(transConnection, transactionId);
+        when(transConnection.canCommit()).thenReturn(true);
+        doThrow(new SQLException("doCommit failed")).when(transConnection).commit();
+        when(transConnection.getHasSavePoint()).thenReturn(true);
         try
         {
             transactionState.doCommit();
@@ -295,9 +123,11 @@ public class TransactionStateTest
         {
             assertThat(e.getMessage()).contains("doCommit failed");
         }
-        verify(connection).rollback(savePoint);
-        assertThat(transactionState.hasSavePoint).isNull();
-        assertThat(transactionState.savePoint).isNull();
-        assertThat(transactionState.connection).isNull();
+        verify(transConnection).rollback();
+        verify(transConnection).release();
+        assertThat(transactionState.isActive()).isFalse();
+        String logMessage = String.format("Rolled back transaction id %d - \"doCommit failed\"", transactionId);
+        assertThat(logRecordHandler.match(0, logMessage)).isTrue();
+        logRecordHandler.printAll();
     }
 }

@@ -16,7 +16,6 @@ package au.com.cybersearch2.classydb;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.logging.Level;
 
 import javax.persistence.EntityTransaction;
 
@@ -28,8 +27,11 @@ import au.com.cybersearch2.classyjpa.persist.PersistenceAdminImpl;
 import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
 import au.com.cybersearch2.classyjpa.transaction.EntityTransactionImpl;
 import au.com.cybersearch2.classyjpa.transaction.TransactionCallable;
-import au.com.cybersearch2.classylog.JavaLogger;
-import au.com.cybersearch2.classylog.Log;
+import au.com.cybersearch2.classyjpa.transaction.TransactionStateFactory;
+
+import com.j256.ormlite.logger.Level;
+import com.j256.ormlite.logger.Logger;
+import au.com.cybersearch2.classylog.LogManager;
 
 /**
  * DatabaseAdminImpl
@@ -40,37 +42,32 @@ import au.com.cybersearch2.classylog.Log;
  */
 public class DatabaseAdminImpl implements DatabaseAdmin
 {
-    private static final String TAG = "DatabaseAdminImpl";
-    private static Log log = JavaLogger.getLogger(TAG);
-    /** PersistenceUnitAdmin unit name*/
-    protected String puName;
+	private static Logger logger = LogManager.getLogger(DatabaseAdminImpl.class);
+	
     /** PersistenceUnitAdmin control and configuration implementation */
-    protected PersistenceAdmin persistenceAdmin;
+    private final PersistenceAdmin persistenceAdmin;
     /** Resource environment provides system-specific file open method. */
-    protected ResourceEnvironment resourceEnvironment;
-    protected OpenHelper openHelper;
+    private final ResourceEnvironment resourceEnvironment;
+    private final OpenHelper openHelper;
     
     /**
      * Construct a DatabaseAdminImpl object
-     * @param puName The persistence unit name
      * @param persistenceAdmin The persistence unit connectionSource and properties provider  
      * @param resourceEnvironment Resource environment
      * @param openHelper Open helper callbacks
      */
     public DatabaseAdminImpl(
-            String puName, 
             PersistenceAdmin persistenceAdmin, 
             ResourceEnvironment resourceEnvironment,
             OpenHelper openHelper)
     {
-        this.puName = puName;
         this.persistenceAdmin = persistenceAdmin;
         this.resourceEnvironment = resourceEnvironment;
+        this.openHelper = openHelper;
         if (openHelper != null)
         {
             openHelper.setDatabaseAdmin(this);
             openHelper.setPersistenceAdmin(persistenceAdmin);
-            this.openHelper = openHelper;
         }
     }
 
@@ -126,13 +123,13 @@ public class DatabaseAdminImpl implements DatabaseAdmin
 	        } 
 	        catch (IOException e) 
 	        {
-	        	log.error(TAG, "Error opening \"" + filename + "\" for database upgrade", e);
+	        	logger.error("Error opening \"" + filename + "\" for database upgrade", e);
 			}
 	        finally
 	        {
 	            close(instream, filename);
-	            if (log.isLoggable(TAG, Level.INFO))
-	                log.info(TAG, "Upgrade file \"" + filename + "\" exists: " + upgradeSupported);
+	            if (logger.isLevelEnabled(Level.INFO))
+	                logger.info("Upgrade file \"" + filename + "\" exists: " + upgradeSupported);
 	        }
         }
         if (upgradeSupported) {
@@ -142,36 +139,6 @@ public class DatabaseAdminImpl implements DatabaseAdmin
         }
     }
 
-    /**
-     * Database drop schema handler.
-     * @param connectionSource An open ConnectionSource to be employed for all database activities.
-     */
-    private boolean dropSchema(ConnectionSource connectionSource)
-    {
-        Properties properties = persistenceAdmin.getProperties();
-        String filename = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DROP_SCHEMA_FILENAME);
-        boolean downgradeSupported = false;
-        InputStream instream = null;
-        try {
-            instream = resourceEnvironment.openResource(filename);
-            downgradeSupported = instream != null;
-        } catch (IOException e) {
-        	log.error(TAG, "Error opening \"" + filename + "\" for database upgrade", e);
-		}
-        finally {
-            close(instream, filename);
-        }
-        //	throw new PersistenceException("\"" + puName + "\" database upgrade from v" + oldVersion + " to v" + newVersion + " is not possible");
-        if (log.isLoggable(TAG, Level.INFO))
-            log.info(TAG, "Downgrade file \"" + filename + "\" exists: " + downgradeSupported);
-        if (downgradeSupported) {
-        	// Database work is executed in a transaction
-        	TransactionCallable processFilesCallable = new NativeScriptDatabaseWork(resourceEnvironment, filename);    
-        	executeTask(connectionSource, processFilesCallable);
-        }
-        return downgradeSupported;
-    }
-    
 	/**
 	 * Open database and handle create/upgrade events
 	 * @param persistenceConfig PersistenceUnitAdmin Unit Configuration
@@ -234,11 +201,42 @@ public class DatabaseAdminImpl implements DatabaseAdmin
     protected void executeTask(ConnectionSource connectionSource, TransactionCallable processFilesCallable)
     {
         // Execute task on transaction commit using Callable
-    	EntityTransaction transaction = new EntityTransactionImpl(connectionSource, processFilesCallable);
+    	TransactionStateFactory transStateFactory = new TransactionStateFactory(connectionSource);
+    	EntityTransaction transaction = new EntityTransactionImpl(transStateFactory, processFilesCallable);
         transaction.begin();
         transaction.commit();
     }
    
+    /**
+     * Database drop schema handler.
+     * @param connectionSource An open ConnectionSource to be employed for all database activities.
+     */
+    private boolean dropSchema(ConnectionSource connectionSource)
+    {
+        Properties properties = persistenceAdmin.getProperties();
+        String filename = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DROP_SCHEMA_FILENAME);
+        boolean downgradeSupported = false;
+        InputStream instream = null;
+        try {
+            instream = resourceEnvironment.openResource(filename);
+            downgradeSupported = instream != null;
+        } catch (IOException e) {
+        	logger.error("Error opening \"" + filename + "\" for database upgrade", e);
+		}
+        finally {
+            close(instream, filename);
+        }
+        //	throw new PersistenceException("\"" + puName + "\" database upgrade from v" + oldVersion + " to v" + newVersion + " is not possible");
+        if (logger.isLevelEnabled(Level.INFO))
+            logger.info("Downgrade file \"" + filename + "\" exists: " + downgradeSupported);
+        if (downgradeSupported) {
+        	// Database work is executed in a transaction
+        	TransactionCallable processFilesCallable = new NativeScriptDatabaseWork(resourceEnvironment, filename);    
+        	executeTask(connectionSource, processFilesCallable);
+        }
+        return downgradeSupported;
+    }
+    
     /**
      * Closes input stream quietly
      * @param instream InputStream
@@ -253,7 +251,7 @@ public class DatabaseAdminImpl implements DatabaseAdmin
             }
             catch (IOException e)
             {
-                log.warn(TAG, "Error closing file " + filename, e);
+                logger.error("Error closing file " + filename, e);
             }
     }
 

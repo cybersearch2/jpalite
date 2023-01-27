@@ -20,7 +20,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.After;
@@ -32,7 +31,6 @@ import org.junit.Test;
 import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.support.ConnectionSource;
 
 import au.com.cybersearch2.classydb.DatabaseSupport;
@@ -45,8 +43,6 @@ import au.com.cybersearch2.classytask.TaskExecutor;
 import au.com.cybersearch2.classytask.WorkStatus;
 import au.com.cybersearch2.pp.PeopleAndPets;
 import au.com.cybersearch2.pp.PeopleAndPetsMain;
-import au.com.cybersearch2.pp.PersonData;
-import au.com.cybersearch2.pp.PetData;
 import au.com.cybersearch2.pp.api.ObjectsStore;
 import au.com.cybersearch2.pp.api.Person;
 import au.com.cybersearch2.pp.api.Pet;

@@ -17,55 +17,55 @@ import au.com.cybersearch2.classyjpa.transaction.TransactionInfo;
 import au.com.cybersearch2.classytask.TaskMonitor;
 
 /**
- * Implements most of the details to execute a persistence WorkerTask. To complete, override base class method executeInBackground().
+ * Implements most of the details to execute a persistence WorkerTask. To
+ * complete, override base class method executeInBackground().
  */
-public abstract class TaskBase<Progress> extends TaskMonitor<Progress, Boolean>
-{
-    //private static final String TAG = "TaskBase";
-    //private Log log = JavaLogger.getLogger(TAG);
-    
-    /** Task to be performed */
-    protected JavaPersistenceContext persistenceContext;
+public abstract class TaskBase<Progress> extends TaskMonitor<Progress, Boolean> {
+	/** Task to be performed */
+	private final JavaPersistenceContext persistenceContext;
 
-    /**
-     * Constructor
-     * @param persistenceContext Object which creates a persistence context and executes a task in that context
-     */
-    public TaskBase(final JavaPersistenceContext persistenceContext)
-    {
-        super();
-        this.persistenceContext = persistenceContext;
-    }
- 
-    /**
-     * Process signaled result after task has run
-     * @param success Boolean TRUE or FALSE or null if task cancelled before result available
-     */
-    @Override
-    public void onPostExecute(Boolean success) 
-    {
-        persistenceContext.setExecutionException(executionException);
-        persistenceContext.onPostExecute(success);
-    }
+	/**
+	 * Constructor
+	 * 
+	 * @param persistenceContext Object which creates a persistence context and
+	 *                           executes a task in that context
+	 */
+	public TaskBase(final JavaPersistenceContext persistenceContext) {
+		super();
+		this.persistenceContext = persistenceContext;
+	}
 
-    /**
-     * Process signaled result after task has been cancelled. 
-     * NOTE: Interruption of the running thread is not permitted, so same as non-cancel case.
-     * @param success Boolean TRUE or FALSE or null if task cancelled before result available
-     */
-    @Override
-    public void onCancelled(Boolean success) 
-    {
-        persistenceContext.onPostExecute(success);
-    }
+	/**
+	 * Process signaled result after task has run
+	 * 
+	 * @param success Boolean TRUE or FALSE or null if task cancelled before result
+	 *                available
+	 */
+	@Override
+	public void onPostExecute(Boolean success) {
+		persistenceContext.setExecutionException(executionException);
+		persistenceContext.onPostExecute(success);
+	}
 
-    /**
-     * Returns transaction information
-     * @return TransactionInfo
-     */
-    public TransactionInfo getTransactionInfo()
-    {
-        return persistenceContext.getTransactionInfo();
-    }
- 
+	/**
+	 * Process signaled result after task has been cancelled. NOTE: Interruption of
+	 * the running thread is not permitted, so same as non-cancel case.
+	 * 
+	 * @param success Boolean TRUE or FALSE or null if task cancelled before result
+	 *                available
+	 */
+	@Override
+	public void onCancelled(Boolean success) {
+		persistenceContext.onPostExecute(success);
+	}
+
+	/**
+	 * Returns transaction information
+	 * 
+	 * @return TransactionInfo
+	 */
+	public TransactionInfo getTransactionInfo() {
+		return persistenceContext.getTransactionInfo();
+	}
+
 }

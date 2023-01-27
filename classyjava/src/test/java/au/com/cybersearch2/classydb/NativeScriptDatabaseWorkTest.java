@@ -53,7 +53,7 @@ public class NativeScriptDatabaseWorkTest
     public void test_constructor()
     {
         NativeScriptDatabaseWork databaseWork = new NativeScriptDatabaseWork(resourceEnvironment, CREATE_SQL_FILENAME);
-        assertThat(databaseWork.resourceEnvironment).isNotNull();
+        assertThat(databaseWork.getResourceEnvironment()).isNotNull();
     }
     
     @Test

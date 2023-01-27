@@ -17,8 +17,9 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import au.com.cybersearch2.classylog.JavaLogger;
-import au.com.cybersearch2.classylog.Log;
+import com.j256.ormlite.logger.Logger;
+
+import au.com.cybersearch2.classylog.LogManager;
 
 import com.j256.ormlite.jdbc.db.SqliteDatabaseType;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
@@ -33,9 +34,8 @@ import com.j256.ormlite.support.ConnectionSource;
  */
 public class SQLiteDatabaseSupport extends DatabaseSupportBase
 {
-	/** Log name */
-    private static final String TAG = "SQLiteDatabaseSupport";
-    static Log log = JavaLogger.getLogger(TAG);
+	private static Logger logger = LogManager.getLogger(SQLiteDatabaseSupport.class);
+	
     /** SQLite memory path */
     private static final String IN_MEMORY_PATH = "jdbc:sqlite::memory:";
     
@@ -47,11 +47,11 @@ public class SQLiteDatabaseSupport extends DatabaseSupportBase
      */
     public SQLiteDatabaseSupport(ConnectionType connectionType)
     {
-    	super(new SqliteDatabaseType(), connectionType, log, TAG);
+    	super(new SqliteDatabaseType(), connectionType, logger);
     }
 
     public SQLiteDatabaseSupport(File databaseDirectory) {
-    	super(new SqliteDatabaseType(), ConnectionType.file, log, TAG);
+    	super(new SqliteDatabaseType(), ConnectionType.file, logger);
     	this.databaseDirectory = databaseDirectory;
     }
 

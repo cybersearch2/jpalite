@@ -16,31 +16,54 @@ package au.com.cybersearch2.classyjpa.entity;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.List;
+
+import javax.persistence.PersistenceException;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import com.j256.ormlite.support.ConnectionSource;
 
 import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
+import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
 
 /**
  * ObjectMonitorTest
  * @author Andrew Bowley
  * 07/05/2014
  */
+@RunWith(MockitoJUnitRunner.class)
 public class ObjectMonitorTest
 {
-    private static RecordCategory[] RECORD_CATEGORY_ARRAY2 = new RecordCategory[2];
-    private static EntityKey[] ENTITY_KEY_ARRAY2 = new EntityKey[2];
+    @Mock
+    private EntityStore managedObjects;
+    @Mock
+    private EntityStore removedObjects;
+    @Mock
+    private OrmDaoHelperFactory<RecordCategory> ormDaoHelperFactory;
+    @Mock
+    private OrmDaoHelper<RecordCategory> ormDaoHelper;
+    @Mock
+    private ConnectionSource connectionSource;
+    @Mock
+    private PersistenceConfig persistenceConfig;
+    @Captor
+    private ArgumentCaptor<EntityKey> entityKeyCaptor;   
     private RecordCategory entity1;
     private RecordCategory entity2;
     private Date created;
     private Date modified;
+  
     
     @Before
     public void setUp() throws Exception 
@@ -57,391 +80,309 @@ public class ObjectMonitorTest
     @Test 
     public void test_start_managing_persist()
     {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
         Integer id = Integer.valueOf(1);
+        EntityKey key = new EntityKey(RecordCategory.class, id);
+        when(removedObjects.containsKey(key)).thenReturn(false);
+        when(managedObjects.containsKey(key)).thenReturn(false);
         assertThat(monitor.startManagingEntity(entity1, id, PersistOp.persist) == null);
-        verifyEntity1(monitor, id, false);
-        assertThat(monitor.removedObjects).isNull();
+        verify( managedObjects).put(entityKeyCaptor.capture(), eq(entity1));
+        assertThat(entityKeyCaptor.getValue().isDirty()).isFalse();
     }
 
     @Test 
     public void test_start_managing_merge()
     {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
         Integer id = Integer.valueOf(1);
+        EntityKey key = new EntityKey(RecordCategory.class, id);
+        when(removedObjects.containsKey(key)).thenReturn(false);
+        when(managedObjects.containsKey(key)).thenReturn(false);
         assertThat(monitor.startManagingEntity(entity1, id, PersistOp.merge) == null);
-        verifyEntity1(monitor, id, true);
-        assertThat(monitor.removedObjects).isNull();
+        verify( managedObjects).put(entityKeyCaptor.capture(), eq(entity1));
+        assertThat(entityKeyCaptor.getValue().isDirty()).isTrue();
     }
-
+    
     @Test 
     public void test_start_managing_refresh()
     {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
         Integer id = Integer.valueOf(1);
+        EntityKey key = new EntityKey(RecordCategory.class, id);
+        when(removedObjects.containsKey(key)).thenReturn(false);
+        when(managedObjects.containsKey(key)).thenReturn(true);
         assertThat(monitor.startManagingEntity(entity1, id, PersistOp.refresh) == null);
-        assertThat(monitor.managedObjects.isEmpty()).isTrue();
-        assertThat(monitor.removedObjects).isNull();
+        verify( managedObjects).put(entityKeyCaptor.capture(), eq(entity1));
+        assertThat(entityKeyCaptor.getValue().isDirty()).isFalse();
     }
-
+    
     @Test 
     public void test_start_managing_contains()
     {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
         Integer id = Integer.valueOf(1);
-        assertThat(monitor.startManagingEntity(entity1, id, PersistOp.contains) == null);
-        assertThat(monitor.removedObjects).isNull();
+        EntityKey key = new EntityKey(RecordCategory.class, id);
+        when(removedObjects.containsKey(key)).thenReturn(false);
+        when(managedObjects.containsKey(key)).thenReturn(true);
+        when(managedObjects.get(key)).thenReturn(entity1);
+        assertThat(monitor.startManagingEntity(entity1, id, PersistOp.contains) == entity1);
     }
 
-
-    @SuppressWarnings("unchecked")
     @Test 
     public void test_start_managing_persist_already_managed()
     {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
         Integer id1 = Integer.valueOf(1);
-        monitor.managedObjects = mock(HashMap.class);
-        when(monitor.managedObjects.containsKey(any())).thenReturn(true);
-        when(monitor.managedObjects.get(any(EntityKey.class))).thenReturn(entity2);
+        EntityKey key = new EntityKey(RecordCategory.class, id1);
+        when(removedObjects.containsKey(key)).thenReturn(false);
+        when(managedObjects.containsKey(entityKeyCaptor.capture())).thenReturn(true);
+        when(managedObjects.get(key)).thenReturn(entity2);
         assertThat(monitor.startManagingEntity(entity1, id1, PersistOp.persist).equals(entity2));
-        ArgumentCaptor<EntityKey> keyArgument = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.managedObjects).containsKey(keyArgument.capture());
-        verify(monitor.managedObjects).get(keyArgument.getValue());
-        assertThat(keyArgument.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
-        assertThat(keyArgument.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
-        assertThat(keyArgument.getValue().isDirty()).isFalse();
-        assertThat(monitor.removedObjects).isNull();
+        assertThat(entityKeyCaptor.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
+        assertThat(entityKeyCaptor.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
+        assertThat(entityKeyCaptor.getValue().isDirty()).isFalse();
     }
     
-    @SuppressWarnings("unchecked")
     @Test 
     public void test_start_managing_merge_already_managed()
     {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
         Integer id1 = Integer.valueOf(1);
         prepareMerge();
-        monitor.managedObjects = mock(HashMap.class);
-        when(monitor.managedObjects.containsKey(any())).thenReturn(true);
-        when(monitor.managedObjects.get(any(EntityKey.class))).thenReturn(entity1);
+        EntityKey key = new EntityKey(RecordCategory.class, id1);
+        when(removedObjects.containsKey(key)).thenReturn(false);
+        when(managedObjects.containsKey(entityKeyCaptor.capture())).thenReturn(true);
+        when(managedObjects.get(key)).thenReturn(entity1);
         assertThat(monitor.startManagingEntity(entity2, id1, PersistOp.merge).equals(entity2));
-        ArgumentCaptor<EntityKey> keyArgument = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.managedObjects).containsKey(keyArgument.capture());
-        verify(monitor.managedObjects).get(keyArgument.getValue());
-        verify(monitor.managedObjects).remove(keyArgument.getValue());
-        assertThat(keyArgument.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
-        assertThat(keyArgument.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
-        assertThat(keyArgument.getValue().isDirty()).isTrue();
-        verify(monitor.managedObjects).put(keyArgument.getValue(), entity2);
+        verify(managedObjects).remove(entityKeyCaptor.getValue());
+        assertThat(entityKeyCaptor.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
+        assertThat(entityKeyCaptor.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
+        assertThat(entityKeyCaptor.getValue().isDirty()).isTrue();
+        verify(managedObjects).put(entityKeyCaptor.getValue(), entity2);
         verifyMerge();
-        assertThat(monitor.removedObjects).isNull();
     }
     
-    @SuppressWarnings("unchecked")
     @Test 
     public void test_start_managing_refresh_already_managed()
     {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
         Integer id1 = Integer.valueOf(1);
-        monitor.managedObjects = mock(HashMap.class);
-        when(monitor.managedObjects.containsKey(any())).thenReturn(true);
-        when(monitor.managedObjects.get(any(EntityKey.class))).thenReturn(entity1);
+        EntityKey key = new EntityKey(RecordCategory.class, id1);
+        when(removedObjects.containsKey(key)).thenReturn(false);
+        when(managedObjects.containsKey(entityKeyCaptor.capture())).thenReturn(true);
         assertThat(monitor.startManagingEntity(entity2, id1, PersistOp.refresh).equals(entity2));
-        ArgumentCaptor<EntityKey> keyArgument = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.managedObjects).containsKey(keyArgument.capture());
-        verify(monitor.managedObjects).remove(keyArgument.getValue());
-        assertThat(keyArgument.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
-        assertThat(keyArgument.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
-        assertThat(keyArgument.getValue().isDirty()).isFalse();
-        verify(monitor.managedObjects).put(keyArgument.getValue(), entity2);
-        assertThat(monitor.removedObjects).isNull();
+        verify(managedObjects).remove(entityKeyCaptor.getValue());
+        assertThat(entityKeyCaptor.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
+        assertThat(entityKeyCaptor.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
+        assertThat(entityKeyCaptor.getValue().isDirty()).isFalse();
+        verify(managedObjects).put(entityKeyCaptor.getValue(), entity2);
     }
     
-    @SuppressWarnings("unchecked")
     @Test 
     public void test_start_managing_contains_already_managed()
     {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
         Integer id1 = Integer.valueOf(1);
-        monitor.managedObjects = mock(HashMap.class);
-        when(monitor.managedObjects.containsKey(any())).thenReturn(true);
-        when(monitor.managedObjects.get(any(EntityKey.class))).thenReturn(entity2);
+        EntityKey key = new EntityKey(RecordCategory.class, id1);
+        when(removedObjects.containsKey(key)).thenReturn(false);
+        when(managedObjects.containsKey(entityKeyCaptor.capture())).thenReturn(true);
+        when(managedObjects.get(key)).thenReturn(entity2);
         assertThat(monitor.startManagingEntity(entity1, id1, PersistOp.contains).equals(entity2));
-        ArgumentCaptor<EntityKey> keyArgument = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.managedObjects).containsKey(keyArgument.capture());
-        verify(monitor.managedObjects).get(keyArgument.getValue());
-        assertThat(keyArgument.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
-        assertThat(keyArgument.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
-        assertThat(keyArgument.getValue().isDirty()).isFalse();
-        assertThat(monitor.removedObjects).isNull();
+        verify(managedObjects).get(entityKeyCaptor.getValue());
+        assertThat(entityKeyCaptor.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
+        assertThat(entityKeyCaptor.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
+        assertThat(entityKeyCaptor.getValue().isDirty()).isFalse();
     }
     
-    @SuppressWarnings("unchecked")
-    @Test 
-    public void test_start_managing_persist_removed_objects_populated()
-    {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
-        Integer id1 = Integer.valueOf(1);
-        monitor.removedObjects = mock(HashMap.class);
-        when(monitor.removedObjects.containsKey(any())).thenReturn(false);
-        assertThat(monitor.startManagingEntity(entity1, id1, PersistOp.persist) == null);
-        ArgumentCaptor<EntityKey> keyArgument = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.removedObjects).containsKey(keyArgument.capture());
-        verifyEntity1(monitor, id1, false);
-        assertThat(keyArgument.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
-        assertThat(keyArgument.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Test 
-    public void test_start_managing_merge_removed_objects_populated()
-    {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
-        Integer id1 = Integer.valueOf(1);
-        monitor.removedObjects = mock(HashMap.class);
-        when(monitor.removedObjects.containsKey(any())).thenReturn(false);
-        assertThat(monitor.startManagingEntity(entity1, id1, PersistOp.merge) == null);
-        ArgumentCaptor<EntityKey> keyArgument = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.removedObjects).containsKey(keyArgument.capture());
-        verifyEntity1(monitor, id1, true);
-        assertThat(keyArgument.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
-        assertThat(keyArgument.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Test 
-    public void test_start_managing_refesh_removed_objects_populated()
-    {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
-        Integer id1 = Integer.valueOf(1);
-        monitor.removedObjects = mock(HashMap.class);
-        when(monitor.removedObjects.containsKey(any())).thenReturn(false);
-        assertThat(monitor.startManagingEntity(entity1, id1, PersistOp.refresh) == null);
-        ArgumentCaptor<EntityKey> keyArgument = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.removedObjects).containsKey(keyArgument.capture());
-        assertThat(keyArgument.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
-        assertThat(keyArgument.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
-    }
-    
-    @SuppressWarnings("unchecked")
     @Test 
     public void test_start_managing_persist_removed_object_match()
     {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
         Integer id1 = Integer.valueOf(1);
-        monitor.removedObjects = mock(HashMap.class);
-        when(monitor.removedObjects.containsKey(any())).thenReturn(true);
+        when(removedObjects.containsKey(entityKeyCaptor.capture())).thenReturn(true);
         assertThat(monitor.startManagingEntity(entity1, id1, PersistOp.persist) == null);
-        ArgumentCaptor<EntityKey> keyArgument = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.removedObjects).containsKey(keyArgument.capture());
-        verify(monitor.removedObjects).remove(keyArgument.getValue());
-        verifyEntity1(monitor, id1, false);
-        assertThat(keyArgument.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
-        assertThat(keyArgument.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
+        verify(removedObjects).remove(entityKeyCaptor.getValue());
+        assertThat(entityKeyCaptor.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
+        assertThat(entityKeyCaptor.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
     }
-
-    @SuppressWarnings("unchecked")
+    
     @Test 
     public void test_start_managing_merge_removed_object_match()
     {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
         Integer id1 = Integer.valueOf(1);
-        monitor.removedObjects = mock(HashMap.class);
-        when(monitor.removedObjects.containsKey(any())).thenReturn(true);
+        when(removedObjects.containsKey(any())).thenReturn(true);
         try
         {
             monitor.startManagingEntity(entity1, id1, PersistOp.merge);
-            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+            failBecauseExceptionWasNotThrown(PersistenceException.class);
         }
-        catch(IllegalArgumentException e)
+        catch(PersistenceException e)
         {
             assertThat(e.getMessage()).contains(RecordCategory.class.getName());
             assertThat(e.getMessage()).contains(id1.toString());
         }
     }
     
-    @SuppressWarnings("unchecked")
     @Test 
     public void test_start_managing_refresh_removed_object_match()
     {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
         Integer id1 = Integer.valueOf(1);
-        monitor.removedObjects = mock(HashMap.class);
-        when(monitor.removedObjects.containsKey(any())).thenReturn(true);
+        when(removedObjects.containsKey(any())).thenReturn(true);
         try
         {
             monitor.startManagingEntity(entity1, id1, PersistOp.refresh);
-            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+            failBecauseExceptionWasNotThrown(PersistenceException.class);
         }
-        catch(IllegalArgumentException e)
+        catch(PersistenceException e)
         {
             assertThat(e.getMessage()).contains(RecordCategory.class.getName());
             assertThat(e.getMessage()).contains(id1.toString());
         }
     }
- 
-    @SuppressWarnings("unchecked")
+    
     @Test 
     public void test_start_managing_consists_removed_object_match()
     {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
         Integer id1 = Integer.valueOf(1);
-        monitor.removedObjects = mock(HashMap.class);
-        when(monitor.removedObjects.containsKey(any())).thenReturn(true);
-        when(monitor.removedObjects.get(any(EntityKey.class))).thenReturn(entity2);
+        when(removedObjects.containsKey(entityKeyCaptor.capture())).thenReturn(true);
+        when(removedObjects.get(any(EntityKey.class))).thenReturn(entity2);
         assertThat(monitor.startManagingEntity(entity1, id1, PersistOp.contains).equals(entity2));
-        ArgumentCaptor<EntityKey> keyArgument = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.removedObjects).containsKey(keyArgument.capture());
-        verify(monitor.removedObjects).get(keyArgument.getValue());
-         assertThat(keyArgument.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
-        assertThat(keyArgument.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
+        verify(removedObjects).get(entityKeyCaptor.getValue());
+        assertThat(entityKeyCaptor.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
+        assertThat(entityKeyCaptor.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
     }
-
+ 
     @Test
     public void test_monitor_new_entity()
     {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
-        Integer id1 = Integer.valueOf(1);
-        assertThat(monitor.monitorNewEntity(entity1, id1, id1)).isTrue();
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
+        Integer id = Integer.valueOf(1);
+        EntityKey key = new EntityKey(RecordCategory.class, id);
+        when(managedObjects.containsKey(key)).thenReturn(false, false);
+        assertThat(monitor.monitorNewEntity(entity1, id, id)).isFalse();
     }
     
-    @SuppressWarnings("unchecked")
     @Test
     public void test_monitor_new_entity_primary_key_different()
     {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
-        Integer id1 = Integer.valueOf(1);
-        Integer id2 = Integer.valueOf(2);
-        monitor.managedObjects = mock(HashMap.class);
-        when(monitor.managedObjects.containsKey(isA(EntityKey.class))).thenReturn(false);
-        assertThat(monitor.monitorNewEntity(entity2, id1, id2)).isTrue();
-        ArgumentCaptor<EntityKey> keyArgument1 = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.managedObjects).remove(keyArgument1.capture());
-        ArgumentCaptor<EntityKey> keyArgument2 = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.managedObjects).put(keyArgument2.capture(), isA(RecordCategory.class));
-        assertThat(keyArgument1.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
-        assertThat(keyArgument1.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
-        assertThat(keyArgument2.getValue().primaryKeyHash).isEqualTo(id2.hashCode());
-   }
-    
-    @SuppressWarnings("unchecked")
-    @Test
-    public void test_monitor_new_entity_primary_key_already_managed()
-    {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
-        Integer id1 = Integer.valueOf(1);
-        Integer id2 = Integer.valueOf(2);
-        monitor.managedObjects = mock(HashMap.class);
-        when(monitor.managedObjects.containsKey(isA(EntityKey.class))).thenReturn(true);
-        when(monitor.managedObjects.get(isA(EntityKey.class))).thenReturn(new RecordCategory());
-        assertThat(monitor.monitorNewEntity(entity2, id1, id2)).isFalse();
-        ArgumentCaptor<EntityKey> keyArgument1 = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.managedObjects).remove(keyArgument1.capture());
-        ArgumentCaptor<EntityKey> keyArgument2 = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.managedObjects).containsKey(keyArgument2.capture());
-        assertThat(keyArgument1.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
-        assertThat(keyArgument1.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
-        assertThat(keyArgument2.getValue().primaryKeyHash).isEqualTo(id2.hashCode());
-   }
-    
-    @Test
-    public void test_monitor_new_entity_primary_key1_Null()
-    {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
-        Integer id1 = Integer.valueOf(1);
-        assertThat(monitor.monitorNewEntity(entity1, null, id1)).isTrue();
-        verifyEntity1(monitor, id1, false);
-   }
-    
-    @Test
-    public void test_monitor_new_entity_no_primary_key()
-    {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
-        Integer id1 = null;
-        assertThat(monitor.monitorNewEntity(entity1, id1, id1)).isFalse();
-    }
- 
-    @SuppressWarnings("unchecked")
-    @Test 
-    public void test_mark_for_removal()
-    {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
-        monitor.managedObjects = mock(HashMap.class);
-        monitor.removedObjects = mock(HashMap.class);
-        Integer id1 = Integer.valueOf(1);
-        when(monitor.managedObjects.containsKey(isA(EntityKey.class))).thenReturn(true);
-        when(monitor.managedObjects.get(isA(EntityKey.class))).thenReturn(entity1);
-        monitor.markForRemoval(RecordCategory.class, id1);
-        ArgumentCaptor<EntityKey> keyArgument1 = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.managedObjects).containsKey(keyArgument1.capture());
-        verify(monitor.managedObjects).remove(keyArgument1.getValue());
-        verify(monitor.removedObjects).put(keyArgument1.getValue(), entity1);
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Test 
-    public void test_mark_for_removal_unmanaged()
-    {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
-        monitor.managedObjects = mock(HashMap.class);
-        monitor.removedObjects = mock(HashMap.class);
-        Integer id1 = Integer.valueOf(1);
-        when(monitor.managedObjects.containsKey(isA(EntityKey.class))).thenReturn(false);
-        try
-        {
-            monitor.markForRemoval(RecordCategory.class, id1);
-            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
-        }
-        catch(IllegalArgumentException e)
-        {
-            assertThat(e.getMessage()).contains(RecordCategory.class.getName());
-            assertThat(e.getMessage()).contains(id1.toString());
-        }
-        ArgumentCaptor<EntityKey> keyArgument1 = ArgumentCaptor.forClass(EntityKey.class);
-        verify(monitor.managedObjects).containsKey(keyArgument1.capture());
-        assertThat(keyArgument1.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
-        assertThat(keyArgument1.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void test_release()
-    {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
-        monitor.managedObjects = mock(HashMap.class);
-        monitor.removedObjects = mock(HashMap.class);
-        monitor.release();
-        verify(monitor.managedObjects).clear();
-        verify(monitor.removedObjects).clear();
-    }
-
-    @Test
-    public void test_get_objects_to_update()
-    {
-        OrmEntityMonitor monitor = new OrmEntityMonitor();
-        monitor.managedObjects = new  HashMap<EntityKey, OrmEntity>();
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
         Integer id1 = Integer.valueOf(1);
         Integer id2 = Integer.valueOf(2);
         EntityKey key1 = new EntityKey(RecordCategory.class, id1);
         EntityKey key2 = new EntityKey(RecordCategory.class, id2);
-        key2.setDirty(true);
-        monitor.managedObjects.put(key1, entity1);
-        monitor.managedObjects.put(key2, entity2);
-        List<OrmEntity> list = monitor.getObjectsToUpdate();
-        assertThat(list).isNotNull();
-        assertThat(list.size()).isEqualTo(1);
-        assertThat(list.get(0)).isEqualTo(entity2);
-        assertThat(key2.isDirty()).isFalse();
+        when(managedObjects.containsKey(key2)).thenReturn(false, false);
+        when(managedObjects.containsKey(key1)).thenReturn(false);
+        assertThat(monitor.monitorNewEntity(entity1, id1, id2)).isTrue();
+        verify(managedObjects).put(entityKeyCaptor.capture(), eq(entity1));
+        assertThat(entityKeyCaptor.getValue().primaryKeyHash).isEqualTo(2);
+        assertThat(entityKeyCaptor.getValue().isDirty()).isFalse();
     }
     
-    private void verifyEntity1(OrmEntityMonitor monitor, Integer id, boolean expectedDirtyFlag)
+    @Test
+    public void test_monitor_new_entity_primary_key_already_managed()
     {
-        assertThat(monitor.managedObjects).isNotNull();
-        assertThat(monitor.managedObjects.size()).isEqualTo(1);
-        assertThat(monitor.managedObjects.values().toArray(RECORD_CATEGORY_ARRAY2)[0]).isEqualTo(entity1);
-        EntityKey key = monitor.managedObjects.keySet().toArray(ENTITY_KEY_ARRAY2)[0];
-        assertThat(key.entityClassHash).isEqualTo(RecordCategory.class.hashCode());
-        assertThat(key.primaryKeyHash).isEqualTo(id.hashCode());
-        assertThat(key.isDirty()).isEqualTo(expectedDirtyFlag);
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
+        Integer id1 = Integer.valueOf(1);
+        Integer id2 = Integer.valueOf(2);
+        EntityKey key1 = new EntityKey(RecordCategory.class, id1);
+        EntityKey key2 = new EntityKey(RecordCategory.class, id2);
+        when(managedObjects.containsKey(key2)).thenReturn(false, false);
+        when(managedObjects.containsKey(key1)).thenReturn(true);
+        when(removedObjects.containsKey(key2)).thenReturn(false);
+        assertThat(monitor.monitorNewEntity(entity1, id1, id2)).isTrue();
+        verify(managedObjects).remove(key1);
+        verify(managedObjects).put(entityKeyCaptor.capture(), eq(entity1));
+        assertThat(entityKeyCaptor.getValue().primaryKeyHash).isEqualTo(2);
+        assertThat(entityKeyCaptor.getValue().isDirty()).isFalse();
+    }
+    
+    @Test
+    public void test_monitor_new_entity_primary_key1_Null()
+    {
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
+        Integer id2 = Integer.valueOf(1);
+        EntityKey key2 = new EntityKey(RecordCategory.class, id2);
+        when(managedObjects.containsKey(key2)).thenReturn(false, false);
+        when(removedObjects.containsKey(key2)).thenReturn(false);
+        assertThat(monitor.monitorNewEntity(entity1, null, id2)).isTrue();
+        verify(managedObjects).put(entityKeyCaptor.capture(), eq(entity1));
+        assertThat(entityKeyCaptor.getValue().primaryKeyHash).isEqualTo(1);
+        assertThat(entityKeyCaptor.getValue().isDirty()).isFalse();
+    }
+      
+    @Test
+    public void test_monitor_new_entity_no_primary_key()
+    {
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
+        Integer id1 = null;
+        assertThat(monitor.monitorNewEntity(entity1, id1, id1)).isFalse();
+    }
+ 
+     @Test 
+    public void test_mark_for_removal()
+    {
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
+        Integer id1 = Integer.valueOf(1);
+        EntityKey key = new EntityKey(RecordCategory.class, id1);
+        when(managedObjects.containsKey(key)).thenReturn(true);
+        when(managedObjects.remove(key)).thenReturn(entity1);
+        monitor.markForRemoval(RecordCategory.class, id1);
+        verify(removedObjects).put(entityKeyCaptor.capture(), eq(entity1));
+        assertThat(entityKeyCaptor.getValue().primaryKeyHash).isEqualTo(1);
+        assertThat(entityKeyCaptor.getValue().isDirty()).isFalse();
+    }
+    
+    @Test 
+    public void test_mark_for_removal_unmanaged()
+    {
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
+        Integer id1 = Integer.valueOf(1);
+        when(managedObjects.containsKey(entityKeyCaptor.capture())).thenReturn(false);
+        try
+        {
+            monitor.markForRemoval(RecordCategory.class, id1);
+            failBecauseExceptionWasNotThrown(PersistenceException.class);
+        }
+        catch(PersistenceException e)
+        {
+            assertThat(e.getMessage()).contains(RecordCategory.class.getName());
+            assertThat(e.getMessage()).contains(id1.toString());
+        }
+        assertThat(entityKeyCaptor.getValue().entityClassHash).isEqualTo(RecordCategory.class.hashCode());
+        assertThat(entityKeyCaptor.getValue().primaryKeyHash).isEqualTo(id1.hashCode());
+    }
+
+    @Test
+    public void test_release()
+    {
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
+        monitor.release();
+        verify(managedObjects).release();
+        verify(removedObjects).release();
+    }
+     
+    @Test
+    public void test_update_all_managed_objects()
+    {
+        OrmEntityMonitor monitor = new OrmEntityMonitor(connectionSource, persistenceConfig, managedObjects, removedObjects);
+        Integer id1 = Integer.valueOf(1);
+        Integer id2 = Integer.valueOf(2);
+        EntityKey key1 = new EntityKey(RecordCategory.class, id1);
+        EntityKey key2 = new EntityKey(RecordCategory.class, id2);
+        key1.setDirty(true);
+        key2.setDirty(true);
+        List<OrmEntity> toUpdate = new ArrayList<>();
+        toUpdate.add(entity1);
+        toUpdate.add(entity2);
+        when(managedObjects.getObjectsToUpdate()).thenReturn(toUpdate);
+        when(persistenceConfig.getHelperFactory(RecordCategory.class)).thenReturn(ormDaoHelperFactory);
+        when(ormDaoHelperFactory.getOrmDaoHelper(connectionSource)).thenReturn(ormDaoHelper);
+        when(ormDaoHelper.update(entity1)).thenReturn(1);
+        when(ormDaoHelper.update(entity2)).thenReturn(1);
+        monitor.updateAllManagedObjects();
     }
     
     private void prepareMerge()

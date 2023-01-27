@@ -15,17 +15,11 @@ package au.com.cybersearch2.classyjpa.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.sql.Savepoint;
-import java.util.ArrayList;
 import java.util.Map;
 
 import javax.persistence.EntityExistsException;
@@ -39,7 +33,9 @@ import javax.persistence.TypedQuery;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.support.DatabaseConnection;
@@ -47,70 +43,63 @@ import com.j256.ormlite.support.DatabaseConnection;
 import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
 import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
 import au.com.cybersearch2.classyjpa.query.EntityQuery;
-import au.com.cybersearch2.classyjpa.transaction.EntityTransactionImpl;
-import au.com.cybersearch2.classyjpa.transaction.TransactionCallable;
+import au.com.cybersearch2.classyjpa.transaction.TransactionState;
+import au.com.cybersearch2.classyjpa.transaction.TransactionStateFactory;
 
 /**
  * ClassyEntityManagerTest
  * @author Andrew Bowley
  * 02/05/2014
  */
+@RunWith(MockitoJUnitRunner.class)
 public class EntityManagerImplTest
 {
-	private static String DATABASE_INFO_NAME = "";
-
 	private static class TestReturnType {
 		
 	}
 	
+	@Mock
     private ConnectionSource connectionSource;
-    private Map<String,OrmDaoHelperFactory<? extends OrmEntity>> helperFactoryMap;
+	@Mock
+    private Map<String,OrmDaoHelperFactory<RecordCategory>> helperFactoryMap;
+	@Mock
+	private Map<String,OrmDaoHelperFactory<? extends OrmEntity>> genericHelperFactoryMap;
+	@Mock
+	private OrmDaoHelperFactory<RecordCategory> ormDaoHelperFactory;
+    @Mock
     private PersistenceConfig persistenceConfig;
-    @SuppressWarnings("rawtypes")
-    private OrmDaoHelper ormDaoHelper;
-    private EntityTransaction transaction;
-    private EntityManagerImpl entityManagerImpl;
-    private OrmEntityMonitor objectMonitor;
-    private TransactionCallable onPrecommit;
+    @Mock
+    private OrmDaoHelper<RecordCategory> ormDaoHelper;
+    @Mock
+    private TransactionStateFactory transStateFactory;
+    @Mock
+    private MonitoredTransaction transaction;
+    @Mock
+    TransactionState transState;
+    @Mock
+    private OrmEntityMonitor entityMonitor;
+    @Mock
     private DatabaseConnection connection;
-    private PersistenceDao<? extends OrmEntity> dao;
-    
-    @SuppressWarnings("unchecked")
+    @Mock
+    private PersistenceDao<RecordCategory> dao;
+    @Mock
+    private EntityQuery<RecordCategory> entityQuery;
+    @Mock
+    private TypedQuery<TestReturnType> query;
+    private EntityManagerImpl entityManagerImpl;
+     
     @Before
     public void setUp() throws Exception 
     {
-        connectionSource = mock(ConnectionSource.class);
-        helperFactoryMap = mock(Map.class);
-        @SuppressWarnings("rawtypes")
-        OrmDaoHelperFactory ormDaoHelperFactory = mock(OrmDaoHelperFactory.class);
-        when(helperFactoryMap.get(RecordCategory.class.getName())).thenReturn(ormDaoHelperFactory);
-        dao = mock(PersistenceDao.class);
-        when(ormDaoHelperFactory.getDao(connectionSource)).thenReturn(dao);
-        ormDaoHelper = mock(OrmDaoHelper.class);
-        when(ormDaoHelperFactory.getOrmDaoHelper(connectionSource)).thenReturn(ormDaoHelper);
-        transaction = mock(EntityTransactionImpl.class);
-        objectMonitor = mock(OrmEntityMonitor.class);
-        connection = mock(DatabaseConnection.class);
-        when(connectionSource.getReadWriteConnection(DATABASE_INFO_NAME)).thenReturn(connection);
-        when(connection.isAutoCommitSupported()).thenReturn(true);
-        when(connection.isAutoCommit()).thenReturn(true);
-        Savepoint savePoint = mock(Savepoint.class);
-        when(connection.setSavePoint(isA(String.class))).thenReturn(savePoint);
-        when(savePoint.getSavepointName()).thenReturn("mySavePoint");
-        persistenceConfig = mock(PersistenceConfig.class);
-        when(persistenceConfig.getHelperFactory(RecordCategory.class)).thenReturn(ormDaoHelperFactory);
-        entityManagerImpl = new EntityManagerImpl(connectionSource, persistenceConfig);
-        onPrecommit = entityManagerImpl.onTransactionPreCommitCallback;
-        entityManagerImpl.entityTransaction = transaction;
-        entityManagerImpl.objectMonitor = objectMonitor;
+    	when(transaction.getEntityMonitor()).thenReturn(entityMonitor);
+    	when(transaction.getConnectionSource()).thenReturn(connectionSource);
+        entityManagerImpl = new EntityManagerImpl(transaction, persistenceConfig);
     }
 
     @Test
     public void test_constructor() throws Exception
     {
-        assertThat(entityManagerImpl).isNotNull();
-        assertThat(entityManagerImpl.isOpen).isTrue();
-        assertThat(onPrecommit).isNotNull();
+        assertThat(entityManagerImpl.isOpen()).isTrue();
     }
     
     @Test 
@@ -118,12 +107,13 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.persist)).thenReturn(null);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.persist)).thenReturn(null);
         when(ormDaoHelper.entityExists(entity)).thenReturn(false);
         when(transaction.isActive()).thenReturn(true);
         when(ormDaoHelper.create(entity)).thenReturn(1);
-        when(objectMonitor.monitorNewEntity(entity, id, id)).thenReturn(true);
+        when(entityMonitor.monitorNewEntity(entity, id, id)).thenReturn(true);
         entityManagerImpl.persist(entity);
         verify(transaction, times(0)).begin();
     }
@@ -133,12 +123,13 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.persist)).thenReturn(null);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.persist)).thenReturn(null);
         when(ormDaoHelper.entityExists(entity)).thenReturn(false);
         when(transaction.isActive()).thenReturn(false);
         when(ormDaoHelper.create(entity)).thenReturn(1);
-        when(objectMonitor.monitorNewEntity(entity, id, id)).thenReturn(true);
+        when(entityMonitor.monitorNewEntity(entity, id, id)).thenReturn(true);
         entityManagerImpl.persist(entity);
         verify(transaction).begin();
     }
@@ -148,12 +139,12 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(0);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(0);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.persist)).thenReturn(null);
-        when(ormDaoHelper.entityExists(entity)).thenReturn(false);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.persist)).thenReturn(null);
         when(transaction.isActive()).thenReturn(false);
         when(ormDaoHelper.create(entity)).thenReturn(1);
-        when(objectMonitor.monitorNewEntity(entity, id, id)).thenReturn(false);
+        when(entityMonitor.monitorNewEntity(entity, id, id)).thenReturn(false);
         try
         {
             entityManagerImpl.persist(entity);
@@ -173,10 +164,10 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.contains)).thenReturn(entity);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.contains)).thenReturn(entity);
         assertThat(entityManagerImpl.contains(entity)).isEqualTo(true);
-        verifyNoInteractions(transaction);
     }
 
     @Test 
@@ -184,11 +175,11 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.contains)).thenReturn(null);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.contains)).thenReturn(null);
         when(ormDaoHelper.entityExists(entity)).thenReturn(true);
         assertThat(entityManagerImpl.contains(entity)).isEqualTo(true);
-        verifyNoInteractions(transaction);
     }
 
     @Test 
@@ -196,22 +187,20 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.contains)).thenReturn(null);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.contains)).thenReturn(null);
         when(ormDaoHelper.entityExists(entity)).thenReturn(false);
         assertThat(entityManagerImpl.contains(entity)).isEqualTo(false);
-        verifyNoInteractions(transaction);
     }
     
     @Test 
     public void test_contains_extract_null_id() throws Exception
     { 
         RecordCategory entity = prepareHelperMap();
-        Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(0);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.contains)).thenReturn(null);
         assertThat(entityManagerImpl.contains(entity)).isEqualTo(false);
-        verifyNoInteractions(transaction);
     }
 
     @Test 
@@ -219,8 +208,9 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.merge)).thenReturn(entity);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.merge)).thenReturn(entity);
         when(transaction.isActive()).thenReturn(true);
         assertThat(entityManagerImpl.merge(entity)).isEqualTo(entity);
         verify(transaction, times(0)).begin();
@@ -231,8 +221,9 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.merge)).thenReturn(entity);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.merge)).thenReturn(entity);
         when(transaction.isActive()).thenReturn(false);
         assertThat(entityManagerImpl.merge(entity)).isEqualTo(entity);
         verify(transaction).begin();
@@ -243,8 +234,9 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.refresh)).thenReturn(entity);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.refresh)).thenReturn(entity);
         when(transaction.isActive()).thenReturn(true);
         when(ormDaoHelper.refresh(entity)).thenReturn(1);
         entityManagerImpl.refresh(entity);
@@ -256,8 +248,9 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.refresh)).thenReturn(entity);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.refresh)).thenReturn(entity);
         when(transaction.isActive()).thenReturn(false);
         when(ormDaoHelper.refresh(entity)).thenReturn(1);
         entityManagerImpl.refresh(entity);
@@ -269,12 +262,13 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
         when(transaction.isActive()).thenReturn(true);
         when(ormDaoHelper.delete(entity)).thenReturn(1);
         entityManagerImpl.remove(entity);
         verify(transaction, times(0)).begin();
-        verify(objectMonitor).markForRemoval(RecordCategory.class, id);
+        verify(entityMonitor).markForRemoval(RecordCategory.class, id);
     }
  
     @Test 
@@ -282,12 +276,13 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
         when(transaction.isActive()).thenReturn(false);
         when(ormDaoHelper.delete(entity)).thenReturn(1);
         entityManagerImpl.remove(entity);
         verify(transaction).begin();
-        verify(objectMonitor).markForRemoval(RecordCategory.class, id);
+        verify(entityMonitor).markForRemoval(RecordCategory.class, id);
     }
  
     @Test 
@@ -296,8 +291,9 @@ public class EntityManagerImplTest
         RecordCategory managed = new RecordCategory();
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.persist)).thenReturn(managed);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.persist)).thenReturn(managed);
         try
         {
             entityManagerImpl.persist(entity);
@@ -315,8 +311,9 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.refresh)).thenReturn(null);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.refresh)).thenReturn(null);
         try
         {
             entityManagerImpl.refresh(entity);
@@ -334,8 +331,9 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.persist)).thenReturn(null);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.persist)).thenReturn(null);
         when(ormDaoHelper.entityExists(entity)).thenReturn(true);
         try
         {
@@ -352,7 +350,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_persist_after_close() throws Exception
     { 
-        entityManagerImpl.isOpen = false;
+        entityManagerImpl.setOpen(false);
         try
         {
             entityManagerImpl.persist(prepareHelperMap());
@@ -368,7 +366,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_persist_null_entity() throws Exception
     { 
-        entityManagerImpl.isOpen = false;
+        entityManagerImpl.setOpen(false);
         try
         {
             entityManagerImpl.persist(null);
@@ -383,7 +381,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_merge_after_close() throws Exception
     { 
-        entityManagerImpl.isOpen = false;
+        entityManagerImpl.setOpen(false);
         try
         {
             entityManagerImpl.merge(prepareHelperMap());
@@ -399,7 +397,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_refresh_after_close() throws Exception
     { 
-        entityManagerImpl.isOpen = false;
+        entityManagerImpl.setOpen(false);
         try
         {
             entityManagerImpl.refresh(prepareHelperMap());
@@ -415,7 +413,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_remove_after_close() throws Exception
     { 
-        entityManagerImpl.isOpen = false;
+        entityManagerImpl.setOpen(false);
         try
         {
             entityManagerImpl.remove(prepareHelperMap());
@@ -431,7 +429,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_find_after_close() throws Exception
     { 
-        entityManagerImpl.isOpen = false;
+        entityManagerImpl.setOpen(false);
         Integer primaryKey = Integer.valueOf(1);
         try
         {
@@ -448,7 +446,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_get_reference_after_close() throws Exception
     { 
-        entityManagerImpl.isOpen = false;
+        entityManagerImpl.setOpen(false);
         Integer primaryKey = Integer.valueOf(1);
         try
         {
@@ -465,7 +463,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_flush_after_close() throws Exception
     { 
-        entityManagerImpl.isOpen = false;
+        entityManagerImpl.setOpen(false);
         try
         {
             entityManagerImpl.flush();
@@ -481,7 +479,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_clear_after_close() throws Exception
     { 
-        entityManagerImpl.isOpen = false;
+        entityManagerImpl.setOpen(false);
         try
         {
             entityManagerImpl.clear();
@@ -497,7 +495,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_contains_after_close() throws Exception
     { 
-        entityManagerImpl.isOpen = false;
+        entityManagerImpl.setOpen(false);
         try
         {
             entityManagerImpl.contains(prepareHelperMap());
@@ -513,7 +511,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_getDelegate_after_close() throws Exception
     { 
-        entityManagerImpl.isOpen = false;
+        entityManagerImpl.setOpen(false);
         try
         {
             entityManagerImpl.getDelegate();
@@ -529,13 +527,14 @@ public class EntityManagerImplTest
     @Test 
     public void test_persist_unregistered_class() throws Exception
     { 
-        when(persistenceConfig.getHelperFactory(RecordCategory.class)).thenReturn(null);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenThrow(
+           new PersistenceException("Class " + RecordCategory.class.getName() + " not an entity in this persistence context"));
         try
         {
             entityManagerImpl.persist(new RecordCategory());
-            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+            failBecauseExceptionWasNotThrown(PersistenceException.class);
         }
-        catch(IllegalArgumentException e)
+        catch(PersistenceException e)
         {
             assertThat(e.getMessage()).contains(RecordCategory.class.getName());
         }
@@ -546,8 +545,9 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.persist)).thenReturn(null);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.persist)).thenReturn(null);
         when(ormDaoHelper.create(entity)).thenReturn(0);
         try
         {
@@ -566,9 +566,9 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.refresh)).thenReturn(entity);
-        when(ormDaoHelper.create(entity)).thenReturn(0);
+        when(entityMonitor.startManagingEntity(entity, id, PersistOp.refresh)).thenReturn(entity);
         try
         {
             entityManagerImpl.refresh(entity);
@@ -586,9 +586,8 @@ public class EntityManagerImplTest
     { 
         RecordCategory entity = prepareHelperMap();
         Integer id = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.extractId(entity)).thenReturn(id);
-        when(objectMonitor.startManagingEntity(entity, id, PersistOp.refresh)).thenReturn(entity);
-        when(ormDaoHelper.create(entity)).thenReturn(0);
         try
         {
             entityManagerImpl.remove(entity);
@@ -600,39 +599,22 @@ public class EntityManagerImplTest
             assertThat(e.getMessage()).contains("result count 0");
         }
     }
- 
-    @Test 
-    public void test_pre_commit_dao_returns_0() throws Exception
-    { 
-        RecordCategory entity = new RecordCategory();
-        when(transaction.isActive()).thenReturn(true);
-        prepareDoUpdates(entity, 0);
-        try
-        {
-            onPrecommit.call(connection);
-            failBecauseExceptionWasNotThrown(PersistenceException.class);
-        }
-        catch(PersistenceException e)
-        {
-            assertThat(e.getMessage()).contains("update");
-            assertThat(e.getMessage()).contains("result count 0");
-        }
-    }
- 
+
     @Test
     public void test_find() throws Exception
     {
         RecordCategory entity = prepareHelperMap();
         Integer primaryKey = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.queryForId(primaryKey)).thenReturn(entity);
         assertThat(entityManagerImpl.find(RecordCategory.class, primaryKey)).isEqualTo(entity);
-        verifyNoInteractions(transaction);
     }
 
     @Test
     public void test_find_not_found() throws Exception
     {
         Integer primaryKey = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.queryForId(primaryKey)).thenReturn(null);
         assertThat(entityManagerImpl.find(RecordCategory.class, primaryKey)).isEqualTo(null);
     }
@@ -642,15 +624,16 @@ public class EntityManagerImplTest
     {
         RecordCategory entity = prepareHelperMap();
         Integer primaryKey = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.queryForId(primaryKey)).thenReturn(entity);
         assertThat(entityManagerImpl.getReference(RecordCategory.class, primaryKey)).isEqualTo(entity);
-        verifyNoInteractions(transaction);
     }
     
     @Test
     public void test_get_reference_not_found() throws Exception
     {
         Integer primaryKey = Integer.valueOf(1);
+        when(entityMonitor.getOrmDaoHelperForClass(RecordCategory.class)).thenReturn(ormDaoHelper);
         when(ormDaoHelper.queryForId(primaryKey)).thenReturn(null);
         try
         {
@@ -667,12 +650,10 @@ public class EntityManagerImplTest
     @Test
     public void test_flush_active() throws Exception
     {
-        RecordCategory entity = new RecordCategory();
         when(transaction.isActive()).thenReturn(true);
-        prepareDoUpdates(entity, 1);
-        assertThat(onPrecommit.call(connection)).isEqualTo(Boolean.TRUE);
         entityManagerImpl.flush();
         verify(transaction).commit();
+        verify(transaction).begin();
      }
 
     @Test
@@ -686,14 +667,11 @@ public class EntityManagerImplTest
     @Test
     public void test_close_active() throws Exception
     {
-        RecordCategory entity = new RecordCategory();
         when(transaction.isActive()).thenReturn(true);
-        prepareDoUpdates(entity, 1);
-        assertThat(onPrecommit.call(connection)).isEqualTo(Boolean.TRUE);
         entityManagerImpl.close();
-        assertThat(entityManagerImpl.isOpen).isFalse();
+        assertThat(entityManagerImpl.isOpen()).isFalse();
         verify(transaction).commit();
-        verify(objectMonitor).release();
+        verify(entityMonitor).release();
      }
 
     @Test
@@ -701,20 +679,8 @@ public class EntityManagerImplTest
     {
         when(transaction.isActive()).thenReturn(false);
         entityManagerImpl.close();
-        verify(objectMonitor).release();
+        verify(entityMonitor).release();
     }
-
-    @Test
-    public void test_close_io_exception() throws Exception
-    {
-        RecordCategory entity = new RecordCategory();
-        when(transaction.isActive()).thenReturn(true);
-        prepareDoUpdates(entity, 1);
-        Mockito.doThrow(new IOException()).when(connectionSource).close();
-        entityManagerImpl.close();
-        verify(transaction).commit();
-        verify(objectMonitor).release();
-     }
 
     @Test
     public void test_clear_active() throws Exception
@@ -722,7 +688,7 @@ public class EntityManagerImplTest
         when(transaction.isActive()).thenReturn(true);
         entityManagerImpl.clear();
         verify(transaction).rollback();
-        verify(objectMonitor).release();
+        verify(entityMonitor).release();
         verify(transaction).begin();
      }
 
@@ -732,16 +698,17 @@ public class EntityManagerImplTest
         when(transaction.isActive()).thenReturn(false);
         entityManagerImpl.clear();
         verify(transaction, never()).rollback();
-        verify(objectMonitor).release();
+        verify(entityMonitor).release();
         verify(transaction).begin();
      }
 
     @Test
     public void test_get_delegate() throws Exception
     {
+    	when(persistenceConfig.getHelperFactoryMap()).thenReturn(genericHelperFactoryMap);
         EntityManagerDelegate delegate = (EntityManagerDelegate) entityManagerImpl.getDelegate();
         assertThat(delegate.connectionSource).isEqualTo(connectionSource);
-        //assertThat(delegate.helperFactoryMap).isEqualTo(helperFactoryMap);
+        assertThat(delegate.helperFactoryMap).isEqualTo(genericHelperFactoryMap);
         assertThat(delegate.getTransaction()).isEqualTo(transaction);
     }
 
@@ -753,16 +720,12 @@ public class EntityManagerImplTest
         assertThat(testTransaction).isNotEqualTo(transaction);
         testTransaction.begin();
         testTransaction.commit();
-        Mockito.verifyNoInteractions(transaction);
         testTransaction.setRollbackOnly();
         verify(transaction).setRollbackOnly();
-        RecordCategory entity = new RecordCategory();
         when(transaction.isActive()).thenReturn(true);
-        prepareDoUpdates(entity, 1);
-        assertThat(onPrecommit.call(connection)).isEqualTo(Boolean.TRUE);
         entityManagerImpl.close();
         verify(transaction).commit(); // Will cause rollback because rollback only flagged
-        verify(objectMonitor).release();
+        verify(entityMonitor).release();
     }
     
     @Test
@@ -774,12 +737,10 @@ public class EntityManagerImplTest
         assertThat(entityManagerImpl.getTransaction()).isEqualTo(transaction);
     }
     
-    @SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
     public void test_create_named_query() 
     {
         String QUERY_NAME = "my_query";
-        EntityQuery entityQuery = mock(EntityQuery.class);
         when(persistenceConfig.createNamedQuery(QUERY_NAME, RecordCategory.class, connectionSource)).thenReturn(entityQuery);
         Query result = entityManagerImpl.createNamedQuery(QUERY_NAME, RecordCategory.class);
         assertThat(result).isNotNull();
@@ -790,8 +751,6 @@ public class EntityManagerImplTest
     public void test_create_sql_named_query() 
     {
         String QUERY_NAME = "my_sql_query";
-		@SuppressWarnings("unchecked")
-		TypedQuery<TestReturnType> query = mock(TypedQuery.class);
         when(persistenceConfig.createNamedQuery(QUERY_NAME, TestReturnType.class, connectionSource)).thenReturn(query);
         Query result = entityManagerImpl.createNamedQuery(QUERY_NAME, TestReturnType.class);
         assertThat(result).isNotNull();
@@ -834,7 +793,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_set_flush_mode_after_close() throws Exception
     { 
-        entityManagerImpl.isOpen = false;
+        entityManagerImpl.setOpen(false);
         try
         {
             entityManagerImpl.setFlushMode(FlushModeType.COMMIT);
@@ -850,7 +809,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_get_flush_mode_after_close() throws Exception
     { 
-        entityManagerImpl.isOpen = false;
+        entityManagerImpl.setOpen(false);
         try
         {
             entityManagerImpl.getFlushMode();
@@ -880,7 +839,7 @@ public class EntityManagerImplTest
     @Test 
     public void test_lock() throws Exception
     { 
-        entityManagerImpl.isOpen = false;
+        entityManagerImpl.setOpen(false);
         try
         {
             entityManagerImpl.lock(new Object(), LockModeType.READ);
@@ -892,29 +851,10 @@ public class EntityManagerImplTest
         }
     }
   
-    private void prepareDoUpdates(RecordCategory entity, int resultCode) throws Exception
-    {
-        ArrayList<OrmEntity> objects = new ArrayList<>();
-        objects.add(entity);
-        when(objectMonitor.getObjectsToUpdate()).thenReturn(objects);
-        when(ormDaoHelper.update(entity)).thenReturn(resultCode);
-    }
-    
     private RecordCategory prepareHelperMap()
     {
         RecordCategory entity = new RecordCategory();
         return entity;
         
     }
-    /*
-    private RecordCategory populateManagedObjects()
-    {
-        RecordCategory entity = new RecordCategory();
-        ArrayList<Object> objects = new ArrayList<>();
-        objects.add(entity);
-        when(objectMonitor.getManagedObjects()).thenReturn(objects);
-        return entity;
-        
-    }
-    */
 }

@@ -34,12 +34,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.logging.Level;
 
 import javax.persistence.PersistenceException;
 
-import au.com.cybersearch2.classylog.JavaLogger;
-import au.com.cybersearch2.classylog.Log;
+import com.j256.ormlite.logger.Level;
+import com.j256.ormlite.logger.Logger;
+
+import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
+import au.com.cybersearch2.classylog.LogManager;
 
 import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.CloseableWrappedIterable;
@@ -83,9 +85,9 @@ public class PersistenceDao<T extends OrmEntity> implements Dao<T, Integer> {
 	 * We use debug here because we don't want these messages to be logged by default. The user will need to turn on
 	 * logging for this class to FINE to see the messages.
 	 */
-	private static final Level LOG_LEVEL = Level.FINE;
-    private static final String TAG = "PersistenceDao";
-    static Log log = JavaLogger.getLogger(TAG);
+	private static final Level LOG_LEVEL = Level.DEBUG;
+	
+	private static Logger logger = LogManager.getLogger(PersistenceConfig.class);
 
 	private Dao<T, Integer> dao;
 
@@ -1004,16 +1006,16 @@ public class PersistenceDao<T extends OrmEntity> implements Dao<T, Integer> {
 	 *@param message
 	 */
 	private void logMessage(Exception e, String message) {
-	    if (log.isLoggable(TAG, LOG_LEVEL))
+	    if (logger.isLevelEnabled(LOG_LEVEL))
 	    {
-	        if (LOG_LEVEL == Level.SEVERE)
-	            log.error(TAG, message, e);
+	        if (LOG_LEVEL == Level.ERROR)
+	            logger.error(message, e);
 	        else if (LOG_LEVEL == Level.WARNING)
-	            log.warn(TAG, message, e);
+	        	logger.warn(message, e);
             else if (LOG_LEVEL == Level.INFO)
-                log.info(TAG, message, e);
+            	logger.info(message, e);
             else
-                log.debug(TAG, message, e);
+            	logger.debug(message, e);
 	    }
 	}
 

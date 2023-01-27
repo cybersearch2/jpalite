@@ -36,7 +36,7 @@ public class TestDatabaseAdminImpl extends DatabaseAdminImpl
             PersistenceAdmin persistenceAdmin,
             ResourceEnvironment resourceEnvironment)
     {
-        super(puName, persistenceAdmin, resourceEnvironment, null);
+        super(persistenceAdmin, resourceEnvironment, null);
 
     }
 

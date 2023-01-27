@@ -16,104 +16,100 @@ package au.com.cybersearch2.classydb;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
-import java.util.logging.Level;
 
 import javax.persistence.PersistenceException;
 
 import au.com.cybersearch2.classyapp.ResourceEnvironment;
 import au.com.cybersearch2.classydb.SqlParser.StatementCallback;
 import au.com.cybersearch2.classyjpa.transaction.TransactionCallable;
-import au.com.cybersearch2.classylog.JavaLogger;
-import au.com.cybersearch2.classylog.Log;
+
+import com.j256.ormlite.logger.Level;
+import com.j256.ormlite.logger.Logger;
+import au.com.cybersearch2.classylog.LogManager;
 
 import com.j256.ormlite.support.DatabaseConnection;
 
 /**
- * NativeScriptDatabaseWork
- * Implementation of TransactionCallable interface to be executed upon transaction commit.
- * Executes SQL statements contained in a script file. Each statement must be delimited with a semi-colon ';'.
- * @author Andrew Bowley
- * 31/07/2014
+ * NativeScriptDatabaseWork Implementation of TransactionCallable interface to
+ * be executed upon transaction commit. Executes SQL statements contained in a
+ * script file. Each statement must be delimited with a semi-colon ';'.
+ * 
+ * @author Andrew Bowley 31/07/2014
  */
-public class NativeScriptDatabaseWork implements TransactionCallable
-{
-    private static final String TAG = "NativeScriptDatabaseWork";
-    private static Log log = JavaLogger.getLogger(TAG);
-    
-    final String[] filenames;
-    /** Resource environment provides system-specific file open method. */
-    protected ResourceEnvironment resourceEnvironment;
-    
-    /**
-     * Create NativeScriptDatabaseWork object
-     * @param resourceEnvironment Resource environment
-     * @param filenames SQL script file names 
-     */
-    public NativeScriptDatabaseWork(ResourceEnvironment resourceEnvironment, String... filenames)
-    {
-        this.resourceEnvironment = resourceEnvironment;
-        this.filenames = filenames == null ? new String[]{} : filenames;
-    }
+public class NativeScriptDatabaseWork implements TransactionCallable {
+	private static Logger logger = LogManager.getLogger(NativeScriptDatabaseWork.class);
+
+	private final String[] filenames;
+	/** Resource environment provides system-specific file open method. */
+	private final ResourceEnvironment resourceEnvironment;
+
+	/**
+	 * Create NativeScriptDatabaseWork object
+	 * 
+	 * @param resourceEnvironment Resource environment
+	 * @param filenames           SQL script file names
+	 */
+	public NativeScriptDatabaseWork(ResourceEnvironment resourceEnvironment, String... filenames) {
+		this.resourceEnvironment = resourceEnvironment;
+		this.filenames = filenames == null ? new String[] {} : filenames;
+	}
 
 	/**
 	 * Execute SQL statements contained in a script file
+	 * 
 	 * @see au.com.cybersearch2.classyjpa.transaction.TransactionCallable#call(com.j256.ormlite.support.DatabaseConnection)
 	 */
 	@Override
-	public Boolean call(final DatabaseConnection databaseConnection) throws Exception 
-	{   // Execute SQL statement in SqlParser callback
-        StatementCallback callback = new StatementCallback(){
-            
-            @Override
-            public void onStatement(String statement) throws SQLException {
-                databaseConnection.executeStatement(statement, DatabaseConnection.DEFAULT_RESULT_FLAGS);
-            }};
-        boolean success = false;
-        for (String filename: filenames)
-        {
-            if ((filename == null) || (filename.length() == 0))
-                continue;
-            success = false;
-            InputStream instream = null;
-            try
-            {
-                instream = resourceEnvironment.openResource(filename);
-                if (instream == null)
-                	throw new PersistenceException("Native script file " + filename + " not found");
-                SqlParser sqlParser = new SqlParser();
-                sqlParser.parseStream(instream, callback);
-                success = true;
-                if (log.isLoggable(TAG, Level.FINE))
-                    log.debug(TAG, "Executed " + sqlParser.getCount() + " statements from " + filename);
-            }
-            catch(SQLException e)
-            {
-            	throw new PersistenceException("Error executing native script " + filename, e);
-            }
-            finally
-            {
-                close(instream, filename);
-            }
-        }
-        return success;
+	public Boolean call(final DatabaseConnection databaseConnection) throws Exception { // Execute SQL statement in
+																						// SqlParser callback
+		StatementCallback callback = new StatementCallback() {
+
+			@Override
+			public void onStatement(String statement) throws SQLException {
+				databaseConnection.executeStatement(statement, DatabaseConnection.DEFAULT_RESULT_FLAGS);
+			}
+		};
+		boolean success = false;
+		for (String filename : filenames) {
+			if ((filename == null) || (filename.length() == 0))
+				continue;
+			success = false;
+			InputStream instream = null;
+			try {
+				instream = resourceEnvironment.openResource(filename);
+				if (instream == null)
+					throw new PersistenceException("Native script file " + filename + " not found");
+				SqlParser sqlParser = new SqlParser();
+				sqlParser.parseStream(instream, callback);
+				success = true;
+				if (logger.isLevelEnabled(Level.DEBUG))
+					logger.debug("Executed " + sqlParser.getCount() + " statements from " + filename);
+			} catch (SQLException e) {
+				throw new PersistenceException("Error executing native script " + filename, e);
+			} finally {
+				close(instream, filename);
+			}
+		}
+		return success;
+	}
+
+	protected ResourceEnvironment getResourceEnvironment() {
+		return resourceEnvironment;
 	}
 
 	/**
 	 * Quietly close file stream
+	 * 
 	 * @param instream InputStream
 	 * @param filename
 	 */
-    private void close(InputStream instream, String filename) 
-    {
-        if (instream != null)
-            try
-            {
-                instream.close();
-            }
-            catch (IOException e)
-            {
-                log.warn(TAG, "Error closing file " + filename, e);
-            }
-    }
+	private void close(InputStream instream, String filename) {
+		if (instream != null)
+			try {
+				instream.close();
+			} catch (IOException e) {
+				logger.warn("Error closing file " + filename, e);
+			}
+	}
 
 }

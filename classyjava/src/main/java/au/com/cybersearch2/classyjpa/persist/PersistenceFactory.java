@@ -170,7 +170,7 @@ public class PersistenceFactory
     /**
      * Returns object to which persistence.xml is unmarshalled
      * @param  resourceEnv Resource environment
-     * @return Map&lt;String, PersistenceUnitInfo&gt; - maps each peristence unit data to it's name
+     * @return Map&lt;String, PersistenceUnitInfo&gt; - maps each persistence unit data to it's name
      * @throws IOException for error reading persistence.xml
      * @throws XmlPullParserException for error parsing persistence.xml
      */
@@ -219,7 +219,7 @@ public class PersistenceFactory
             PersistenceAdminImpl persistenceAdmin = new PersistenceAdminImpl(name, databaseSupport, persistenceConfig);
             persistenceImplMap.put(name, persistenceAdmin);
             OpenHelper openHelper = getOpenHelperCallbacks(persistenceConfig.getPuInfo().getProperties());
-            DatabaseAdminImpl databaseAdmin = new DatabaseAdminImpl(name, persistenceAdmin, resourceEnvironment, openHelper);
+            DatabaseAdminImpl databaseAdmin = new DatabaseAdminImpl(persistenceAdmin, resourceEnvironment, openHelper);
             databaseAdminImplMap.put(name, databaseAdmin);
         }
         databaseSupport.initialize();

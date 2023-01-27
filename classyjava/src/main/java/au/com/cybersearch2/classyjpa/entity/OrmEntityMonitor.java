@@ -14,35 +14,61 @@
 package au.com.cybersearch2.classyjpa.entity;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import javax.persistence.PersistenceException;
 
 import org.apache.commons.beanutils.PropertyUtils;
 
+import com.j256.ormlite.support.ConnectionSource;
+
+import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
+
 /**
  * ObjectMonitor
- * Delegated by ClassyEntityManager to manage entity objects.
+ * Delegated by Entity Manager to manage entity objects.
  * Note: This class is not thread safe. It assumes that the owning EntityManager runs in a single thread 
  * @author Andrew Bowley
  * 06/05/2014
  */
-public class OrmEntityMonitor
+public class OrmEntityMonitor implements DaoHelperForClass
 {
+    /** PersistenceUnitAdmin Unit configuration */
+    private final PersistenceConfig persistenceConfig;
+    /** Open connection source */
+    private final ConnectionSource connectionSource;
+    
     /** Map managed entity objects by key */
-    protected Map<EntityKey, OrmEntity> managedObjects;
+    private final EntityStore managedObjects;
     /** Map removed entity objects by key */
-    protected Map<EntityKey, OrmEntity> removedObjects;
+    private final EntityStore removedObjects;
 
     /**
-     * Create ObjectMonitor object
+     * Create OrmEntityMonitor object
+     * @param connectionSource Open connection source
+     * @param persistenceConfig PersistenceUnitAdmin Unit configuration
      */
-    public OrmEntityMonitor()
+    public OrmEntityMonitor(ConnectionSource connectionSource, 
+    		                PersistenceConfig persistenceConfig)
     {
-    }
+    	this.connectionSource = connectionSource;
+    	this.persistenceConfig = persistenceConfig;
+    	managedObjects = new EntityStore();
+    	removedObjects = new EntityStore();
+   }
+
+    /**
+     * OrmEntityMonitor dependency injection constructor
+     */
+    protected OrmEntityMonitor(ConnectionSource connectionSource, 
+    		                   PersistenceConfig persistenceConfig,
+       		                   EntityStore managedObjects,
+       		                   EntityStore removedObjects)
+    {
+    	this.connectionSource = connectionSource;
+    	this.persistenceConfig = persistenceConfig;
+    	this.managedObjects = managedObjects;
+    	this.removedObjects = removedObjects;
+   }
 
     /**
      * Start Managing entity
@@ -61,27 +87,18 @@ public class OrmEntityMonitor
             throw new IllegalArgumentException("Parameter \"entity\" is null");
         if (persistOp == null)
             throw new IllegalArgumentException("Parameter \"persistOp\" is null");
-        /*
-        if (primaryKey == null)
-        {
-            if ((persistOp == PersistOp.persist) || (persistOp == PersistOp.contains))
-                return null; // New entity will not match to any existing entity and cannot be managed
-            throw new IllegalArgumentException(persistOp.toString() + " entity has null primary key");
-        } */
         EntityKey key = new EntityKey(entity.getClass(), primaryKey);
         // Check if this is a removed object. Throw an exception if attempting to merge or refresh a removed object.
-        if ((removedObjects != null) && removedObjects.containsKey(key))
+        if (removedObjects.containsKey(key))
         {
             if ((persistOp == PersistOp.merge) || (persistOp == PersistOp.refresh))
-                throw new IllegalArgumentException("Entity of class " + entity.getClass().getName() + ", primary key " + primaryKey + " is removed");
+                throw new PersistenceException("Entity of class " + entity.getClass().getName() + ", primary key " + primaryKey + " is removed");
             else if (persistOp == PersistOp.persist) // Unexpected. Unlikely a primary key will be recycled.
                 removedObjects.remove(key);
             else if (persistOp == PersistOp.contains) // Do removed objects qualify as "belongs to the current persistence context"?
                 return (T)removedObjects.get(key);
         }
-        // Map of mangaged objects is lazily created
-        if (managedObjects == null)
-            managedObjects = new HashMap<>();
+        // Map of managed objects is lazily created
         else if (managedObjects.containsKey(key))
         {   // This is an existing managed object
             if ((persistOp == PersistOp.persist) || (persistOp == PersistOp.contains))
@@ -123,72 +140,87 @@ public class OrmEntityMonitor
     public boolean monitorNewEntity(OrmEntity entity, Integer preCreateKey, Integer postCreateKey)
     {
         boolean applyPostCreateKey = false;
-        if (postCreateKey == null)
-            return false;
-        if (preCreateKey == null)
-            applyPostCreateKey = true;
-        else if (!preCreateKey.equals(postCreateKey))
-        {
-            // Remove pre-create key from monitored objects
-            EntityKey key = new EntityKey(entity.getClass(), preCreateKey);
-            managedObjects.remove(key);
-            applyPostCreateKey = true;
+        if (postCreateKey != null) {
+	        EntityKey key = new EntityKey(entity.getClass(), postCreateKey);
+	    	if (!managedObjects.containsKey(key)) {
+	    		// DAO has not created same key as existing managed entity
+		        if (preCreateKey == null) {
+		            applyPostCreateKey = true;
+		        } else if (!preCreateKey.equals(postCreateKey)) {
+		            // Remove pre-create key from monitored objects
+		            key = new EntityKey(entity.getClass(), preCreateKey);
+		            if (managedObjects.containsKey(key))
+		                managedObjects.remove(key);
+		            applyPostCreateKey = true;
+		        }
+	    	}
+	        if (applyPostCreateKey) 
+	        	startManagingEntity(entity, postCreateKey, PersistOp.persist);
         }
-        if (applyPostCreateKey && (startManagingEntity(entity, postCreateKey, PersistOp.persist) != null))
-            return false; // Unexpected. DAO created same key as existing managed entity
-        return true; // True primary key from start or valid primary key created by DAO
+        return applyPostCreateKey; // True primary key from start or valid primary key created by DAO
     }
 
     /**
      * Mark a managed object, identified by class and primaryKey, for removal
      * @param clazz Class of entity
      * @param primaryKey Primary key of entity to remove
-     * @throws IllegalArgumentException if no managed object is matched to specified primary key
+     * @throws PersistenceException if no managed object is matched to specified primary key
      */
     public void markForRemoval(Class<? extends OrmEntity> clazz, int primaryKey) 
     {
         if (clazz == null)
             throw new IllegalArgumentException("Parameter \"clazz\" is null");
-        //if (primaryKey == null)
-        //    throw new IllegalArgumentException("remove failed due entity of class " + clazz.getName() + " does not have primary key");
         EntityKey key = new EntityKey(clazz, primaryKey);
-        if ((managedObjects == null) || !managedObjects.containsKey(key))
-            throw new IllegalArgumentException("remove failed because entity of class " + clazz.getName() + " with primary key " + primaryKey + " is detached");
-        if (removedObjects == null)
-            removedObjects = new HashMap<>();
-        removedObjects.put(key, managedObjects.get(key));
-        managedObjects.remove(key);
+        if (!managedObjects.containsKey(key))
+            throw new PersistenceException("remove failed because entity of class " + clazz.getName() + " with primary key " + primaryKey + " is detached");
+        removedObjects.put(key, managedObjects.remove(key));
     }
 
+    /**
+     * Perform outstanding updates on all managed objects
+     */
+    public void updateAllManagedObjects()
+    {
+        for (OrmEntity entity: managedObjects.getObjectsToUpdate())
+        {
+            OrmDaoHelper<? extends OrmEntity> ormDaoHelper = getOrmDaoHelperForClass(entity.getClass());
+            if (ormDaoHelper.update(entity) == 0)
+                throw new PersistenceException("update operation returned result count 0");
+        }
+    }
+    
     /**
      * Remove references to all managed objects
      */
     public void release() 
     {
-        if (removedObjects != null)
-            removedObjects.clear();
-        if (managedObjects != null) 
-            managedObjects.clear();
+        removedObjects.release();
+        managedObjects.release();
     }
  
     /**
-     * Returns a list of objects which need to be updated
-     * @return List&lt;Object&gt;
+     * Returns ORMLite DAO helper for specified class 
+     * @param clazz Entity class
+     * @return OrmDaoHelper
+     * @throws IllegalStateException if class is unknown to the current PersistenceUnitAdmin Unit.
      */
-    public List<OrmEntity> getObjectsToUpdate()
+    public <T extends OrmEntity> OrmDaoHelper<T> getOrmDaoHelperForClass(Class<T> clazz)
     {
-        List<OrmEntity> result = new ArrayList<>();
-        if (managedObjects != null)
-            for (EntityKey key: managedObjects.keySet())
-            {
-                if (key.isDirty())
-                {
-                	OrmEntity entity = managedObjects.get(key);
-                    key.setDirty(false);
-                    result.add(entity);
-                }
-            }
-        return result;
+        return getOrmDaoHelperFactoryForClass(clazz).getOrmDaoHelper(connectionSource);
+    }
+
+    /**
+     * Returns ORMLite DAO helper for specified class 
+     * @param clazz Entity class
+     * @return OrmDaoHelper
+     * @throws PersistenceException if class is unknown to the current PersistenceUnitAdmin Unit.
+     */
+    private <T extends OrmEntity> OrmDaoHelperFactory<T> getOrmDaoHelperFactoryForClass(Class<T> clazz)
+    {
+        OrmDaoHelperFactory<T> ormDaoHelperFactory = persistenceConfig.getHelperFactory(clazz);
+        if (ormDaoHelperFactory == null)
+            throw new PersistenceException("Class " + clazz.getName() + " not an entity in this persistence context");
+        return ormDaoHelperFactory;
     }
 
     /**

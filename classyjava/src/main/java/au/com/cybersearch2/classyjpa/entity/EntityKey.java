@@ -103,5 +103,10 @@ public class EntityKey implements Comparable<EntityKey>
             return (entityClassHash == ((EntityKey)another).entityClassHash) && (primaryKeyHash == ((EntityKey)another).primaryKeyHash);
         return false;
     }
+
+	@Override
+	public String toString() {
+		return String.format("Class # %d, Key %d", entityClassHash, primaryKeyHash);
+	}
     
 }

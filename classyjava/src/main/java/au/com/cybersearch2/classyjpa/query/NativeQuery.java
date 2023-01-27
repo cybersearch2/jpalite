@@ -13,7 +13,6 @@
     limitations under the License. */
 package au.com.cybersearch2.classyjpa.query;
 
-
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -24,191 +23,183 @@ import javax.persistence.PersistenceException;
 import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
 
-import au.com.cybersearch2.classylog.*;
+import com.j256.ormlite.logger.Logger;
+
+import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
+import au.com.cybersearch2.classylog.LogManager;
 
 /**
- * NativeQuery
- * Implements javax.persistence.Query using native query. Only a subset of PersistenceUnitAdmin API 1.0 methods supported.
- * @author Andrew Bowley
- * 30/05/2014
+ * NativeQuery Implements javax.persistence.Query using native query. Only a
+ * subset of PersistenceUnitAdmin API 1.0 methods supported.
+ * 
+ * @author Andrew Bowley 30/05/2014
  */
-public class NativeQuery<T> extends QueryBase<T>
-{
-    public static final String TAG = "NativeQuery";
-    protected static Log log = JavaLogger.getLogger(TAG);
-    /** Query invoked using Android SQLite interface */
-    protected SqlQuery<T> sqlQuery;
-  
-    /**
-     * Create a NativeQuery object
-     * @param sqlQuery Query invoked using Android SQLite interface
-     */
-    public NativeQuery(SqlQuery<T> sqlQuery)
-    {
-        this.sqlQuery = sqlQuery;
-    }
+public class NativeQuery<T> extends QueryBase<T> {
+	private static Logger logger = LogManager.getLogger(PersistenceConfig.class);
 
-    /**
-     * Execute an update or delete statement. NOT implemented.
-     * @return 0
-     */
-    @Override
-    public int executeUpdate() 
-    {
-        release();
-        return 0; // Updates and deletes are not currently supported.
-    }
+	/** Query invoked using Android SQLite interface */
+	private final SqlQuery<T> sqlQuery;
 
-    /**
-     * Execute a SELECT query and return the query results as a List.
-     * @return List of objects
-     */   
-    @Override
-    public List<T> getResultList() 
-    {
-        if (isClosed) // Only perform query once
-            return new ArrayList<>();
-        try
-        {
-            return sqlQuery.getResultObjectList(startPosition, maxResults);
-        }
-        finally
-        {
-            release();
-        }
-    }
+	/**
+	 * Create a NativeQuery object
+	 * 
+	 * @param sqlQuery Query invoked using Android SQLite interface
+	 */
+	public NativeQuery(SqlQuery<T> sqlQuery) {
+		this.sqlQuery = sqlQuery;
+	}
 
-    /**
-     * Execute a SELECT query that returns a single result.
-     * @return Object
-     * @throws NoResultException if there is no result
-     */
+	/**
+	 * Execute an update or delete statement. NOT implemented.
+	 * 
+	 * @return 0
+	 */
 	@Override
-    public T getSingleResult() 
-    {
-        T result = null;
-        if (isClosed) // Only perform query once
-            throw new NoResultException("getSingleResult() called when query already executed");
-        String message = sqlQuery.toString();
-        try
-        {
-             result = sqlQuery.getResultObject();
-        }
-        catch (PersistenceException e)
-        {
-            message += ": " + ((e.getCause() != null) ? e.getCause().toString() : e.toString());
-            log.error(TAG, message, e);
-        }
-        finally
-        {
-            release();
-        }
-        if (result == null)
-        {
-            throw new NoResultException(message);
-        }
-        return result;
-    }
+	public int executeUpdate() {
+		release();
+		return 0; // Updates and deletes are not currently supported.
+	}
 
-   
-    /**
-     * Bind an argument to a named parameter.
-     * @param param The parameter name
-     * @param value Object
-     * @return The same query instance
-     * @throws IllegalArgumentException if parameter name does not
-     *    correspond to parameter in query string
-     */
-    @Override
-    public TypedQuery<T> setParameter(String param, Object value) 
-    {
-        if (!sqlQuery.setParam(param, value))
-            throw new IllegalArgumentException("Parameter \"" + param + "\" is invalid");
-        return this;
-    }
+	/**
+	 * Execute a SELECT query and return the query results as a List.
+	 * 
+	 * @return List of objects
+	 */
+	@Override
+	public List<T> getResultList() {
+		if (isClosed) // Only perform query once
+			return new ArrayList<>();
+		try {
+			return sqlQuery.getResultObjectList(startPosition, maxResults);
+		} finally {
+			release();
+		}
+	}
 
-    /**
-     * Bind an argument to a positional parameter.
-     * @param position  Starts at 1
-     * @param value Object
-     * @return The same query instance
-     * @throws IllegalArgumentException if position does not
-     *    correspond to positional parameter of query
-     */
-    @Override
-    public TypedQuery<T> setParameter(int position, Object value) 
-    {
-        if (!sqlQuery.setParam(position, value))
-            throw new IllegalArgumentException("Position \"" + position + "\" is invalid");
-        return this;
-    }
+	/**
+	 * Execute a SELECT query that returns a single result.
+	 * 
+	 * @return Object
+	 * @throws NoResultException if there is no result
+	 */
+	@Override
+	public T getSingleResult() {
+		T result = null;
+		if (isClosed) // Only perform query once
+			throw new NoResultException("getSingleResult() called when query already executed");
+		String message = sqlQuery.toString();
+		try {
+			result = sqlQuery.getResultObject();
+		} catch (PersistenceException e) {
+			message += ": " + ((e.getCause() != null) ? e.getCause().toString() : e.toString());
+			logger.error(message, e);
+		} finally {
+			release();
+		}
+		if (result == null) {
+			throw new NoResultException(message);
+		}
+		return result;
+	}
 
-    /**
-     * Bind an instance of java.util.Date to a named parameter.
-     * @param param The parameter name
-     * @param value Date
-     * @param type Not used
-     * @return The same query instance
-     * @throws IllegalArgumentException if parameter name does not
-     *    correspond to parameter in query string
-     */
-    @Override
-    public TypedQuery<T> setParameter(String param, Date value, TemporalType type) 
-    {
-        if (!sqlQuery.setParam(param, value))
-            throw new IllegalArgumentException("Parameter \"" + param + "\" is invalid");
-        return this;
-    }
+	/**
+	 * Bind an argument to a named parameter.
+	 * 
+	 * @param param The parameter name
+	 * @param value Object
+	 * @return The same query instance
+	 * @throws IllegalArgumentException if parameter name does not correspond to
+	 *                                  parameter in query string
+	 */
+	@Override
+	public TypedQuery<T> setParameter(String param, Object value) {
+		if (!sqlQuery.setParam(param, value))
+			throw new IllegalArgumentException("Parameter \"" + param + "\" is invalid");
+		return this;
+	}
 
-    /**
-     * Bind an instance of java.util.Calendar to a named parameter.
-     * @param param The parameter name
-     * @param value Calendar
-     * @param type Not used
-     * @return The same query instance
-     * @throws IllegalArgumentException if parameter name does not
-     *    correspond to parameter in query string
-     */
-    @Override
-    public TypedQuery<T> setParameter(String param, Calendar value, TemporalType type) 
-    {
-        if (!sqlQuery.setParam(param, value.getTime()))
-            throw new IllegalArgumentException("Parameter \"" + param + "\" is invalid");
-        return this;
-    }
+	/**
+	 * Bind an argument to a positional parameter.
+	 * 
+	 * @param position Starts at 1
+	 * @param value    Object
+	 * @return The same query instance
+	 * @throws IllegalArgumentException if position does not correspond to
+	 *                                  positional parameter of query
+	 */
+	@Override
+	public TypedQuery<T> setParameter(int position, Object value) {
+		if (!sqlQuery.setParam(position, value))
+			throw new IllegalArgumentException("Position \"" + position + "\" is invalid");
+		return this;
+	}
 
-    /**
-     * Bind an instance of java.util.Date to a positional parameter.
-     * @param position  Starts at 1
-     * @param value Date
-     * @param type Not used
-     * @return The same query instance
-     * @throws IllegalArgumentException if position does not
-     *    correspond to positional parameter of query
-     */
-    @Override
-    public TypedQuery<T> setParameter(int position, Date value, TemporalType type) 
-    {
-        if (!sqlQuery.setParam(position, value))
-            throw new IllegalArgumentException("Position \"" + position + "\" is invalid");
-        return this;
-    }
+	/**
+	 * Bind an instance of java.util.Date to a named parameter.
+	 * 
+	 * @param param The parameter name
+	 * @param value Date
+	 * @param type  Not used
+	 * @return The same query instance
+	 * @throws IllegalArgumentException if parameter name does not correspond to
+	 *                                  parameter in query string
+	 */
+	@Override
+	public TypedQuery<T> setParameter(String param, Date value, TemporalType type) {
+		if (!sqlQuery.setParam(param, value))
+			throw new IllegalArgumentException("Parameter \"" + param + "\" is invalid");
+		return this;
+	}
 
-    /**
-     * Bind an instance of java.util.Calendar to a positional parameter.
-     * @param position  Starts at 1
-     * @param value Calendar
-     * @param type Not used
-     * @return The same query instance
-     * @throws IllegalArgumentException if position does not
-     *    correspond to positional parameter of query
-     */
-    @Override
-    public TypedQuery<T> setParameter(int position, Calendar value, TemporalType type) 
-    {
-        if (!sqlQuery.setParam(position, value.getTime()))
-            throw new IllegalArgumentException("Position \"" + position + "\" is invalid");
-        return this;
-    }
+	/**
+	 * Bind an instance of java.util.Calendar to a named parameter.
+	 * 
+	 * @param param The parameter name
+	 * @param value Calendar
+	 * @param type  Not used
+	 * @return The same query instance
+	 * @throws IllegalArgumentException if parameter name does not correspond to
+	 *                                  parameter in query string
+	 */
+	@Override
+	public TypedQuery<T> setParameter(String param, Calendar value, TemporalType type) {
+		if (!sqlQuery.setParam(param, value.getTime()))
+			throw new IllegalArgumentException("Parameter \"" + param + "\" is invalid");
+		return this;
+	}
+
+	/**
+	 * Bind an instance of java.util.Date to a positional parameter.
+	 * 
+	 * @param position Starts at 1
+	 * @param value    Date
+	 * @param type     Not used
+	 * @return The same query instance
+	 * @throws IllegalArgumentException if position does not correspond to
+	 *                                  positional parameter of query
+	 */
+	@Override
+	public TypedQuery<T> setParameter(int position, Date value, TemporalType type) {
+		if (!sqlQuery.setParam(position, value))
+			throw new IllegalArgumentException("Position \"" + position + "\" is invalid");
+		return this;
+	}
+
+	/**
+	 * Bind an instance of java.util.Calendar to a positional parameter.
+	 * 
+	 * @param position Starts at 1
+	 * @param value    Calendar
+	 * @param type     Not used
+	 * @return The same query instance
+	 * @throws IllegalArgumentException if position does not correspond to
+	 *                                  positional parameter of query
+	 */
+	@Override
+	public TypedQuery<T> setParameter(int position, Calendar value, TemporalType type) {
+		if (!sqlQuery.setParam(position, value.getTime()))
+			throw new IllegalArgumentException("Position \"" + position + "\" is invalid");
+		return this;
+	}
 
 }

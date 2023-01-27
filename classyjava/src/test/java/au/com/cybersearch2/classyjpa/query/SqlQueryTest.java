@@ -77,8 +77,8 @@ public class SqlQueryTest
     @Test
     public void test_getResultObjectList()
     {
-        sqlQuery.selectionArgs.add(queryInfo.selectionArgs[0]);
-        sqlQuery.selectionArgs.add(queryInfo.selectionArgs[1]);
+        sqlQuery.getSelectionArgs().add(queryInfo.selectionArgs[0]);
+        sqlQuery.getSelectionArgs().add(queryInfo.selectionArgs[1]);
         queryInfo.selectionArgs = null;
         Employee employee = new Employee();
         when(persistenceAdmin.getResultList(queryInfo, 0, 0)).thenReturn(Collections.singletonList(employee));
@@ -94,8 +94,8 @@ public class SqlQueryTest
     @Test
     public void test_getResultObject()
     {
-        sqlQuery.selectionArgs.add(queryInfo.selectionArgs[0]);
-        sqlQuery.selectionArgs.add(queryInfo.selectionArgs[1]);
+        sqlQuery.getSelectionArgs().add(queryInfo.selectionArgs[0]);
+        sqlQuery.getSelectionArgs().add(queryInfo.selectionArgs[1]);
         queryInfo.selectionArgs = null;
         Employee employee = new Employee();
         when(persistenceAdmin.getSingleResult(queryInfo)).thenReturn(employee);
@@ -115,7 +115,7 @@ public class SqlQueryTest
         assertThat(sqlQuery.setParam(0, "Xerces")).isEqualTo(false);
         assertThat(sqlQuery.setParam(3, "Xenon")).isEqualTo(false);
         assertThat(sqlQuery.setParam(2, CREATED)).isEqualTo(true);
-        assertThat(sqlQuery.selectionArgs.get(1)).isEqualTo("2014-06-25 05:17:23.000000");
+        assertThat(sqlQuery.getSelectionArgs().get(1)).isEqualTo("2014-06-25 05:17:23.000000");
     }
     
     @Test
@@ -125,7 +125,7 @@ public class SqlQueryTest
         assertThat(sqlQuery.setParam("lastname2", "Ng")).isEqualTo(true);
         assertThat(sqlQuery.setParam("XXXX", "Xerces")).isEqualTo(false);
         assertThat(sqlQuery.setParam("lastname2", CREATED)).isEqualTo(true);
-        assertThat(sqlQuery.selectionArgs.get(1)).isEqualTo("2014-06-25 05:17:23.000000");
+        assertThat(sqlQuery.getSelectionArgs().get(1)).isEqualTo("2014-06-25 05:17:23.000000");
     }
  
     @Test

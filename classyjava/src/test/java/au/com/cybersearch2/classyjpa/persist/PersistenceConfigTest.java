@@ -13,10 +13,9 @@
     limitations under the License. */
 package au.com.cybersearch2.classyjpa.persist;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
-import java.util.Map;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -49,12 +48,8 @@ public class PersistenceConfigTest
         PersistenceConfig persistenceConfig = new PersistenceConfig(new SqliteDatabaseType());
         @SuppressWarnings("unchecked")
 		DaoQueryFactory<RecordCategory> daoQueryFactory = mock(DaoQueryFactory.class);
-        @SuppressWarnings({ "unchecked" })
-        Map<String,NamedDaoQuery<?>> namedQueryMap = mock(Map.class);
-        persistenceConfig.namedQueryMap = namedQueryMap;
-        when(namedQueryMap.containsKey(QUERY_NAME)).thenReturn(false);
         persistenceConfig.addNamedQuery(RecordCategory.class, QUERY_NAME, daoQueryFactory);
-        verify(namedQueryMap).put(eq(QUERY_NAME), isA(NamedDaoQuery.class));
+        assertThat(persistenceConfig.getNamedQuery(QUERY_NAME)).isInstanceOf(NamedDaoQuery.class);
     }
     
     @Test
@@ -63,12 +58,14 @@ public class PersistenceConfigTest
         PersistenceConfig persistenceConfig = new PersistenceConfig(new SqliteDatabaseType());
         @SuppressWarnings("unchecked")
 		DaoQueryFactory<RecordCategory> daoQueryFactory = mock(DaoQueryFactory.class);
-        @SuppressWarnings({ "unchecked" })
-        Map<String,NamedDaoQuery<?>> namedQueryMap = mock(Map.class);
-        persistenceConfig.namedQueryMap = namedQueryMap;
-        when(namedQueryMap.containsKey(QUERY_NAME)).thenReturn(true);
         persistenceConfig.addNamedQuery(RecordCategory.class, QUERY_NAME, daoQueryFactory);
-        verify(namedQueryMap, times(0)).put(eq(QUERY_NAME), isA(NamedDaoQuery.class));
+        assertThat(persistenceConfig.getNamedQuery(QUERY_NAME)).isInstanceOf(NamedDaoQuery.class);
+        try {
+            persistenceConfig.addNamedQuery(RecordCategory.class, QUERY_NAME, daoQueryFactory);
+            assertThat(persistenceConfig.getNamedQuery(QUERY_NAME)).isInstanceOf(NamedDaoQuery.class);
+        } catch (Throwable t) {
+        	fail(t.getMessage());
+        }
     }
 
     @Test
@@ -77,12 +74,8 @@ public class PersistenceConfigTest
         PersistenceConfig persistenceConfig = new PersistenceConfig(new SqliteDatabaseType());
         SqlQueryFactory sqlQueryFactory = mock(SqlQueryFactory.class);
         QueryInfo queryInfo = mock(QueryInfo.class);
-        @SuppressWarnings("unchecked")
-        Map<String,NamedSqlQuery> namedSqlQueryMap = mock(Map.class);
-        persistenceConfig.nativeQueryMap = namedSqlQueryMap;
-        when(namedSqlQueryMap.containsKey(QUERY_NAME)).thenReturn(false);
         persistenceConfig.addNamedQuery(QUERY_NAME, queryInfo, sqlQueryFactory);
-        verify(namedSqlQueryMap).put(eq(QUERY_NAME), isA(NamedSqlQuery.class));
+        assertThat(persistenceConfig.getNativeQuery(QUERY_NAME)).isInstanceOf(NamedSqlQuery.class);
     }
     
     @Test
@@ -91,11 +84,13 @@ public class PersistenceConfigTest
         PersistenceConfig persistenceConfig = new PersistenceConfig(new SqliteDatabaseType());
         SqlQueryFactory sqlQueryFactory = mock(SqlQueryFactory.class);
         QueryInfo queryInfo = mock(QueryInfo.class);
-        @SuppressWarnings("unchecked")
-        Map<String,NamedSqlQuery> namedSqlQueryMap = mock(Map.class);
-        persistenceConfig.nativeQueryMap = namedSqlQueryMap;
-        when(namedSqlQueryMap.containsKey(QUERY_NAME)).thenReturn(true);
         persistenceConfig.addNamedQuery(QUERY_NAME, queryInfo, sqlQueryFactory);
-        verify(namedSqlQueryMap, times(0)).put(eq(QUERY_NAME), isA(NamedSqlQuery.class));
+        assertThat(persistenceConfig.getNativeQuery(QUERY_NAME)).isInstanceOf(NamedSqlQuery.class);
+        try {
+            persistenceConfig.addNamedQuery(QUERY_NAME, queryInfo, sqlQueryFactory);
+            assertThat(persistenceConfig.getNativeQuery(QUERY_NAME)).isInstanceOf(NamedSqlQuery.class);
+        } catch (Throwable t) {
+        	fail(t.getMessage());
+        }
     }
 }

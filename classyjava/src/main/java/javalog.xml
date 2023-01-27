@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<Configuration>
+  <Properties>
+    <Property name="java.util.logging.SimpleFormatter.format">%4$s: %5$s [%1$tc]%n</Property>
+  </Properties>
+  <Appenders>
+    <Console>
+      <Level>INFO</Level>
+      <Layout>java.util.logging.SimpleFormatter</Layout>
+      <Encoding>UTF-8</Encoding>
+    </Console>
+    <File>
+      <Level>INFO</Level>
+      <Layout>java.util.logging.XmlFormatter</Layout>
+      <Encoding>UTF-8</Encoding>
+      <Count>10</Count>
+      <Limit>50000</Limit>
+      <Pattern>%h/.jpalite/log%g.log</Pattern>
+      <Append>true</Append>
+      <MaxLocks>100</MaxLocks>
+    </File>
+  </Appenders>
+  <Loggers>
+      <Logger name="au.com.cybersearch2">
+      <Level>WARNING</Level>
+      <UseParentHandlers>true</UseParentHandlers>
+      <AppenderRef ref="Console"/>
+    </Logger>
+      <Logger name="com.j256.ormlite">
+      <Level>INFO</Level>
+      <UseParentHandlers>false</UseParentHandlers>
+      <AppenderRef ref="Console"/>
+    </Logger>
+     <Root level="ERROR">
+      <AppenderRef ref="FILE"/>
+    </Root>
+  </Loggers>
+</Configuration>

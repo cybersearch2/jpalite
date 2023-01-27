@@ -32,7 +32,7 @@ import au.com.cybersearch2.classyjpa.query.DaoQueryTest;
 import au.com.cybersearch2.classyjpa.query.EntityQueryTest;
 import au.com.cybersearch2.classyjpa.query.NativeQueryTest;
 import au.com.cybersearch2.classyjpa.query.SqlQueryTest;
-import au.com.cybersearch2.classyjpa.transaction.ClassyEntityTransactionTest;
+import au.com.cybersearch2.classyjpa.transaction.EntityTransactionImplTest;
 import au.com.cybersearch2.classyjpa.transaction.TransactionStateTest;
 
 /**
@@ -58,7 +58,7 @@ import au.com.cybersearch2.classyjpa.transaction.TransactionStateTest;
     EntityQueryTest.class,
     NativeQueryTest.class,
     SqlQueryTest.class,
-    ClassyEntityTransactionTest.class,
+    EntityTransactionImplTest.class,
     ClassAnalyserTest.class
 })
 public class JUnitTestSuite 

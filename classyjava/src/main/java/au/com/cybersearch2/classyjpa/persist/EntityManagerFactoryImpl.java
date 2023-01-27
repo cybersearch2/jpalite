@@ -21,6 +21,9 @@ import com.j256.ormlite.support.ConnectionSource;
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.EntityManagerLiteFactory;
 import au.com.cybersearch2.classyjpa.entity.EntityManagerImpl;
+import au.com.cybersearch2.classyjpa.entity.MonitoredTransaction;
+import au.com.cybersearch2.classyjpa.entity.OrmEntityMonitor;
+import au.com.cybersearch2.classyjpa.transaction.TransactionStateFactory;
 
 /**
  * EntityManagerFactoryImpl
@@ -61,9 +64,10 @@ public class EntityManagerFactoryImpl implements EntityManagerLiteFactory
     public EntityManagerLite createEntityManager() 
     {
         checkEntityManagerFactoryClosed("createEntityManager");
-        return new EntityManagerImpl(
-                connectionSource, 
-                persistenceConfig);
+        MonitoredTransaction transaction = 
+        	new MonitoredTransaction(new TransactionStateFactory(connectionSource),
+        			                 new OrmEntityMonitor(connectionSource, persistenceConfig));
+        return new EntityManagerImpl(transaction, persistenceConfig);
     }
 
     /**

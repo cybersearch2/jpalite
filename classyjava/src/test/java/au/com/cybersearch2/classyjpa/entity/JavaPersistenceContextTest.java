@@ -121,9 +121,9 @@ public class JavaPersistenceContextTest
         Transcript transcript = new Transcript();
         PersistenceWork persistenceWork = new TestPersistenceWork(transcript);
         JavaPersistenceContext jpaContext = new JavaPersistenceContext(persistenceWork, testMocks.entityManagerProvider);
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.PENDING);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.PENDING);
         Boolean success = jpaContext.doTask();
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.RUNNING);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.RUNNING);
         transcript.assertEventsSoFar("background task");
         verify(testMocks.transaction).begin();
         verify(testMocks.entityManager).close();
@@ -140,7 +140,7 @@ public class JavaPersistenceContextTest
         JavaPersistenceContext jpaContext = new JavaPersistenceContext(persistenceWork, testMocks.entityManagerProvider);
         jpaContext.onPostExecute(Boolean.TRUE);
         transcript.assertEventsSoFar("onPostExecute true");
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FINISHED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FINISHED);
     }
 
     @Test 
@@ -153,9 +153,9 @@ public class JavaPersistenceContextTest
         testMocks.entityManager = mock(EntityManagerLite.class);
         when(testMocks.entityManager.getTransaction()).thenReturn(testMocks.transaction);
         JavaPersistenceContext jpaContext = new JavaPersistenceContext(persistenceWork, testMocks.entityManagerProvider);
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.PENDING);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.PENDING);
         Boolean success = jpaContext.doTask();
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.RUNNING);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.RUNNING);
         transcript.assertEventsSoFar("background task");
         verify(testMocks.transaction).begin();
         verify(testMocks.entityManager).close();
@@ -164,7 +164,7 @@ public class JavaPersistenceContextTest
         assertThat(jpaContext.getTransactionInfo().isUserTransaction()).isFalse();
         jpaContext.onPostExecute(Boolean.TRUE);
         transcript.assertEventsSoFar("background task", "onPostExecute true");
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FINISHED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FINISHED);
     }
 
     @Test 
@@ -190,10 +190,10 @@ public class JavaPersistenceContextTest
             jpaContext.setExecutionException(new ExecutionException(e));
             persistenceException = e;
         }
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.RUNNING);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.RUNNING);
         jpaContext.onPostExecute(Boolean.FALSE);
         transcript.assertEventsSoFar("onRollback " + persistenceException.toString());
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FAILED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FAILED);
     }
 
 
@@ -215,7 +215,7 @@ public class JavaPersistenceContextTest
         assertThat(success).isFalse();
         jpaContext.onPostExecute(Boolean.FALSE);
         transcript.assertEventsSoFar("background task", "onRollback " + persistException.toString());
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FAILED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FAILED);
     }
     
     @Test 
@@ -231,7 +231,7 @@ public class JavaPersistenceContextTest
         assertThat(success).isFalse();
         jpaContext.onPostExecute(Boolean.FALSE);
         transcript.assertEventsSoFar("background task", "onRollback " + exception.toString());
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FAILED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FAILED);
     }
 
     @Test 
@@ -250,7 +250,7 @@ public class JavaPersistenceContextTest
         assertThat(success).isFalse();
         jpaContext.onPostExecute(Boolean.FALSE);
         transcript.assertEventsSoFar("background task", "onRollback " + persistException.toString());
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FAILED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FAILED);
     }
 
     @Test 
@@ -265,7 +265,7 @@ public class JavaPersistenceContextTest
         assertThat(success).isNull();
         jpaContext.onPostExecute(null);
         transcript.assertEventsSoFar("onRollback " + exception.toString());
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FAILED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FAILED);
     }
 
     @Test 
@@ -296,7 +296,7 @@ public class JavaPersistenceContextTest
         transcript.assertEventsSoFar("onRollback " + exception.toString());
         verify(testMocks.transaction, never()).begin();
         verify(testMocks.transaction, never()).rollback();
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FAILED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FAILED);
     }
 
     @Test 
@@ -321,7 +321,7 @@ public class JavaPersistenceContextTest
         jpaContext.onPostExecute(Boolean.FALSE);
         transcript.assertEventsSoFar("background task", "onRollback " + exception.toString());
         verify(testMocks.transaction).rollback();
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FAILED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FAILED);
     }
     
    @Test 
@@ -346,7 +346,7 @@ public class JavaPersistenceContextTest
         jpaContext.onPostExecute(Boolean.FALSE);
         transcript.assertEventsSoFar("background task", "onRollback " + exception.toString());
         verify(testMocks.transaction, never()).rollback();
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FAILED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FAILED);
     }
     
     @Test 
@@ -374,7 +374,7 @@ public class JavaPersistenceContextTest
         verify(testMocks.transaction).begin();
         verify(testMocks.transaction).rollback();
         verify(testMocks.entityManager, never()).close();
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FAILED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FAILED);
     }
     
     @Test 
@@ -404,7 +404,7 @@ public class JavaPersistenceContextTest
         transcript.assertEventsSoFar("background task", "onRollback " + persistException.toString());
         verify(testMocks.transaction).begin();
         verify(testMocks.transaction).rollback();
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FAILED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FAILED);
     }
     
    @Test 
@@ -437,7 +437,7 @@ public class JavaPersistenceContextTest
         verify(testMocks.transaction, times(0)).begin();
         verify(testMocks.transaction, times(0)).rollback();
         verify(testMocks.entityManager, never()).close();
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FAILED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FAILED);
     }
     
     @Test 
@@ -464,7 +464,7 @@ public class JavaPersistenceContextTest
         transcript.assertEventsSoFar("background task", "onPostExecute true");
         verify(entityManagerImpl).close();
         verify(testMocks.transaction, times(0)).getRollbackOnly();
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FINISHED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FINISHED);
         assertThat(jpaContext.getTransactionInfo().isUserTransaction()).isTrue();
     }    
 
@@ -495,7 +495,7 @@ public class JavaPersistenceContextTest
         transcript.assertEventsSoFar("background task", "onPostExecute false");
         verify(entityManagerImpl).close();
         verify(testMocks.transaction, times(0)).getRollbackOnly();
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FAILED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FAILED);
     }    
 
     @Test
@@ -547,7 +547,7 @@ public class JavaPersistenceContextTest
         verify(testMocks.transaction).setRollbackOnly();
         transcript.assertEventsInclude("onRollback " + exception.toString());
         verify(testMocks.entityManager).close();
-        assertThat(jpaContext.status).isEqualTo(WorkStatus.FAILED);
+        assertThat(jpaContext.getStatus()).isEqualTo(WorkStatus.FAILED);
     }
 
 }
