@@ -29,10 +29,16 @@ import javax.persistence.Query;
 import javax.persistence.TemporalType;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
+import au.com.cybersearch2.log.LogRecordHandler;
+import au.com.cybersearch2.log.TestLogHandler;
 
 
 /**
@@ -40,6 +46,7 @@ import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
  * @author Andrew Bowley
  * 17/07/2014
  */
+@RunWith(MockitoJUnitRunner.class)
 public class NativeQueryTest
 {
     enum ParamType
@@ -55,20 +62,27 @@ public class NativeQueryTest
     static Calendar CREATED_CALENDAR;
     private static final int OFFSET = 17;
     private static final int LIMIT = 100;
-    protected SqlQuery<RecordCategory> sqlQuery;
-    protected NativeQuery<RecordCategory> nativeQuery;
+	static LogRecordHandler logRecordHandler;
+	
+	@Mock
+    private SqlQuery<RecordCategory> sqlQuery;
+    private NativeQuery<RecordCategory> nativeQuery;
+
   
-    @SuppressWarnings("unchecked")
+	@BeforeClass public static void onlyOnce() {
+		logRecordHandler = TestLogHandler.logRecordHandlerInstance();
+	}
+
 	@Before
     public void setUp()
     {
+		nativeQuery = new NativeQuery<>(sqlQuery);
+		TestLogHandler.getLogRecordHandler().clear();
         if (CREATED_CALENDAR == null)
         {
             CREATED_CALENDAR = GregorianCalendar.getInstance();
             CREATED_CALENDAR.setTime(CREATED);
         }
-        sqlQuery = mock(SqlQuery.class);
-        nativeQuery = new NativeQuery<>(sqlQuery);
     }
     
     @Test
@@ -149,6 +163,7 @@ public class NativeQueryTest
         {
             assertThat(e.getMessage()).contains(persistenceException.toString());
         }
+        assertThat(logRecordHandler.match(0, "sqlQuery: javax.persistence.PersistenceException: No row matched on primary key")).isTrue();
     }
 
 

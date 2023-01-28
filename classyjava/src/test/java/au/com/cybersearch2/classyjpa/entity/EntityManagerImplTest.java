@@ -45,6 +45,7 @@ import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
 import au.com.cybersearch2.classyjpa.query.EntityQuery;
 import au.com.cybersearch2.classyjpa.transaction.TransactionState;
 import au.com.cybersearch2.classyjpa.transaction.TransactionStateFactory;
+import au.com.cybersearch2.log.TestLogHandler;
 
 /**
  * ClassyEntityManagerTest
@@ -91,6 +92,7 @@ public class EntityManagerImplTest
     @Before
     public void setUp() throws Exception 
     {
+		TestLogHandler.getLogRecordHandler().clear();
     	when(transaction.getEntityMonitor()).thenReturn(entityMonitor);
     	when(transaction.getConnectionSource()).thenReturn(connectionSource);
         entityManagerImpl = new EntityManagerImpl(transaction, persistenceConfig);

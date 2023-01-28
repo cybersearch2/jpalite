@@ -25,6 +25,7 @@ import java.util.List;
 import javax.persistence.PersistenceException;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -36,6 +37,8 @@ import com.j256.ormlite.support.ConnectionSource;
 
 import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
 import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
+import au.com.cybersearch2.classyjpa.transaction.TransactionConnection;
+import au.com.cybersearch2.log.LogRecordHandler;
 
 /**
  * ObjectMonitorTest
@@ -45,6 +48,8 @@ import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
 @RunWith(MockitoJUnitRunner.class)
 public class ObjectMonitorTest
 {
+	static LogRecordHandler logRecordHandler;
+	
     @Mock
     private EntityStore managedObjects;
     @Mock
@@ -65,16 +70,24 @@ public class ObjectMonitorTest
     private Date modified;
   
     
+	@Mock
+	TransactionConnection transConnection;
+	int transactionId;
+
+	@BeforeClass public static void onlyOnce() {
+		//logRecordHandler = TestLogHandler.logRecordHandlerInstance();
+	}
+
     @Before
     public void setUp() throws Exception 
     {
+		//TestLogHandler.getLogRecordHandler().clear();
         entity1 = new RecordCategory();
         entity2 = new RecordCategory();
         Calendar cal = GregorianCalendar.getInstance();
         cal.add(Calendar.DAY_OF_WEEK, -1);
         created = cal.getTime();
         modified = new Date();
-
     }
     
     @Test 

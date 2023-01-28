@@ -196,7 +196,7 @@ public class JavaPersistenceContext {
 	 * has occurred.
 	 * 
 	 * @param entityManager          Open EntityManager object
-	 * @param userTransactionSupport Optional implemention of user transaction in
+	 * @param userTransactionSupport Optional implementation of user transaction in
 	 *                               EntityManager object
 	 * @param transactionInfo        Enclosing transaction and associated
 	 *                               information

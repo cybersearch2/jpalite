@@ -30,6 +30,7 @@ import javax.persistence.PersistenceException;
 import javax.persistence.PersistenceUnit;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.j256.ormlite.field.DatabaseFieldConfig;
@@ -45,6 +46,8 @@ import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.classyjpa.persist.ClassAnalyser.ClassRegistry;
 import au.com.cybersearch2.classyjpa.persist.ClassAnalyser.ForeignFieldData;
+import au.com.cybersearch2.log.LogRecordHandler;
+import au.com.cybersearch2.log.TestLogHandler;
 
 /**
  * ClassAnalyserTest
@@ -86,13 +89,19 @@ public class ClassAnalyserTest
     }
     
     static final String PU_NAME = "classy-persist";
+	static LogRecordHandler logRecordHandler;
     
-    ForeignFieldData foreignFieldData;
+    private ForeignFieldData foreignFieldData;
 
     
+	@BeforeClass public static void onlyOnce() {
+		logRecordHandler = TestLogHandler.logRecordHandlerInstance();
+	}
+
     @Before
     public void setUp() throws Exception 
     {
+		TestLogHandler.getLogRecordHandler().clear();
         foreignFieldData = new ForeignFieldData();
     }
     
@@ -154,6 +163,7 @@ public class ClassAnalyserTest
             assertThat(e.getMessage()).contains(NonIdEntity.class.getName());
             assertThat(e.getMessage()).doesNotContain(RecordCategory.class.getName());
         }
+        assertThat(logRecordHandler.match(0, "Skipping class au.com.cybersearch2.classyfy.data.alfresco.NonIdEntity because no id field found")).isTrue();
     }
 
     @Test
@@ -172,6 +182,7 @@ public class ClassAnalyserTest
         {
             assertThat(e.getMessage()).isEqualTo("Failed to load following entity classes: [xau.com.cybersearch2.classyfy.data.alfresco.RecordCategory]");
         }
+        assertThat(logRecordHandler.match(0, "Class not found: xau.com.cybersearch2.classyfy.data.alfresco.RecordCategory")).isTrue();
     }
     
 
@@ -435,11 +446,11 @@ public class ClassAnalyserTest
     				assertFalse(config.isVersion());
     				assertNull(config.getColumnName());
     				assertNull(config.getColumnDefinition());
-    			} else {
-    				System.err.println("\n\n\nUnknown field: " + field);
-    			}
+    			} //else {
+    			//	System.err.println("\n\n\nUnknown field: " + field);
+    			//}
+           }
         }
-    }
  
     @Test
     public void test_many_to_many()
@@ -621,6 +632,8 @@ public class ClassAnalyserTest
             assertThat(e.getMessage()).contains(NonEntity.class.getName());
             assertThat(e.getMessage()).doesNotContain(RecordCategory.class.getName());
         }
+        assertThat(logRecordHandler.match(0, "Skipping class au.com.cybersearch2.classyfy.data.alfresco.NonEntity because no annotated fields found")).isTrue();
+        assertThat(logRecordHandler.match(1, "Skipping class au.com.cybersearch2.classyfy.data.alfresco.NonIdEntity because no id field found")).isTrue();
     }
 
     @Test 

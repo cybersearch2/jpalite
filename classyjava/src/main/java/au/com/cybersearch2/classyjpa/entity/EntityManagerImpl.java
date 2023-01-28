@@ -21,7 +21,6 @@ import javax.persistence.LockModeType;
 import javax.persistence.PersistenceException;
 import javax.persistence.TypedQuery;
 
-import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
 import au.com.cybersearch2.classyjpa.transaction.SetRollbackTransaction;
 import au.com.cybersearch2.classyjpa.transaction.UserTransactionSupport;
@@ -34,7 +33,7 @@ import au.com.cybersearch2.classyjpa.transaction.UserTransactionSupport;
  * @author Andrew Bowley
  * 01/05/2014
  */
-public class EntityManagerImpl implements EntityManagerLite, UserTransactionSupport
+public class EntityManagerImpl implements UserTransactionSupport
 {
     /** PersistenceUnitAdmin Unit configuration */
     private final PersistenceConfig persistenceConfig;

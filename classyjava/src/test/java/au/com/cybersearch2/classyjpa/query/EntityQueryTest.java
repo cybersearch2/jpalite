@@ -29,12 +29,15 @@ import javax.persistence.Query;
 import javax.persistence.TemporalType;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.j256.ormlite.stmt.QueryBuilder;
 
 import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
 import au.com.cybersearch2.classyjpa.query.DaoQuery.SimpleSelectArg;
+import au.com.cybersearch2.log.LogRecordHandler;
+import au.com.cybersearch2.log.TestLogHandler;
 
 /**
  * EntityQueryTest
@@ -55,6 +58,7 @@ public class EntityQueryTest
     static final Date   CREATED = new Date();
     static final String CREATED_COLUMN_NAME = "Created";
     static Calendar CREATED_CALENDAR;
+	static LogRecordHandler logRecordHandler;
     
     static class TestReadyQuery extends DaoQuery<RecordCategory>
     {
@@ -107,10 +111,14 @@ public class EntityQueryTest
     protected static List<RecordCategory> results;
     protected static RecordCategory testItem;
 
-    
+	@BeforeClass public static void onlyOnce() {
+		logRecordHandler = TestLogHandler.logRecordHandlerInstance();
+	}
+
     @Before
     public void setUp()
     {
+		TestLogHandler.getLogRecordHandler().clear();
         if (results == null)
         {
             testItem = new RecordCategory();
@@ -123,7 +131,6 @@ public class EntityQueryTest
         testReadyQuery.setRecordCategory(testItem);
         daoQuery = testReadyQuery;
         entityQuery = new EntityQuery<RecordCategory>(daoQuery);
-        
     }
     
     @Test
@@ -242,6 +249,7 @@ public class EntityQueryTest
         {
             assertThat(e.getMessage()).isEqualTo("Named query error: " + persistenceException.toString());
         }
+        assertThat(logRecordHandler.match(0, "Named query error: javax.persistence.PersistenceException: No row matched on primary key")).isTrue();
     }
 
     @Test
@@ -259,6 +267,7 @@ public class EntityQueryTest
         {
             assertThat(e.getMessage()).isEqualTo("Named query error: " + sqlException.toString());
         }
+        assertThat(logRecordHandler.match(0, "Named query error: java.sql.SQLException: No row matched on primary key")).isTrue();
     }
     
     @Test
@@ -320,7 +329,6 @@ public class EntityQueryTest
         {
             assertThat(e.getMessage()).isEqualTo("Parameter \"0\" is invalid");
         }
-        
     }
 
     public void do_test_EntityQuery_setParameter_string()
@@ -385,7 +393,6 @@ public class EntityQueryTest
         {
             assertThat(e.getMessage()).isEqualTo("Parameter \"xxxx\" is invalid");
         }
-        
     }
 
     public void do_test_EntityQuery_setParameter_index(ParamType paramType)

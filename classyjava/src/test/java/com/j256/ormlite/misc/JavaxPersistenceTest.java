@@ -238,9 +238,9 @@ public class JavaxPersistenceTest extends BaseCoreTest {
 				assertFalse(config.isVersion());
 				assertNull(config.getColumnName());
 				assertNull(config.getColumnDefinition());
-			} else {
-				System.err.println("\n\n\nUnknown field: " + field.getName());
-			}
+			} //else {
+			//	System.err.println("\n\n\nUnknown field: " + field.getName());
+			//}
 		}
 	}
 

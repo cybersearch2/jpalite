@@ -13,13 +13,15 @@
     limitations under the License. */
 package au.com.cybersearch2.classyjpa.transaction;
 
+import au.com.cybersearch2.classyjpa.EntityManagerLite;
+
 /**
  * UserTransactionSupport
  * Interface to extend javax.persistence.EntityManager to support user transactions
  * @author Andrew Bowley
  * 10/06/2014
  */
-public interface UserTransactionSupport
+public interface UserTransactionSupport extends EntityManagerLite
 {
     /**
      * Set user transaction flag

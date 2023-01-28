@@ -24,16 +24,23 @@ import java.util.List;
 import java.util.Locale;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 import au.com.cybersearch2.classyjpa.query.QueryInfo.RowMapper;
+import au.com.cybersearch2.log.LogRecordHandler;
+import au.com.cybersearch2.log.TestLogHandler;
 
 /**
  * SqlQueryTest
  * @author Andrew Bowley
  * 17/07/2014
  */
+@RunWith(MockitoJUnitRunner.class)
 public class SqlQueryTest
 {
 	static final class Employee {
@@ -58,15 +65,20 @@ public class SqlQueryTest
     static final String SQL_ORDER_BY = "NumberOfOrders";
     static final String SQL_LIMIT = "20";
     static Date CREATED;
+	static LogRecordHandler logRecordHandler;
 
-    protected SqlQuery<Employee> sqlQuery;
-    protected PersistenceAdmin persistenceAdmin;
-    protected QueryInfo queryInfo;
+    @Mock
+    private PersistenceAdmin persistenceAdmin;
+    private SqlQuery<Employee> sqlQuery;
+    private QueryInfo queryInfo;
 
-    @Before
-    public void setUp()
-    {
-        persistenceAdmin = mock(PersistenceAdmin.class);
+	@BeforeClass public static void onlyOnce() {
+		logRecordHandler = TestLogHandler.logRecordHandlerInstance();
+	}
+
+	@Before
+	public void setUp() {
+		TestLogHandler.getLogRecordHandler().clear();
         queryInfo = getTestQueryInfo();
         sqlQuery = new SqlQuery<Employee>(persistenceAdmin, queryInfo);
         Calendar cal = GregorianCalendar.getInstance(Locale.US);
@@ -116,6 +128,8 @@ public class SqlQueryTest
         assertThat(sqlQuery.setParam(3, "Xenon")).isEqualTo(false);
         assertThat(sqlQuery.setParam(2, CREATED)).isEqualTo(true);
         assertThat(sqlQuery.getSelectionArgs().get(1)).isEqualTo("2014-06-25 05:17:23.000000");
+        assertThat(logRecordHandler.match(0, "Query parameter 0 out of range for Named query for 'LastName=? OR LastName=?'")).isTrue();
+        assertThat(logRecordHandler.match(1, "Query parameter 3 out of range for Named query for 'LastName=? OR LastName=?'")).isTrue();
     }
     
     @Test
@@ -126,6 +140,7 @@ public class SqlQueryTest
         assertThat(sqlQuery.setParam("XXXX", "Xerces")).isEqualTo(false);
         assertThat(sqlQuery.setParam("lastname2", CREATED)).isEqualTo(true);
         assertThat(sqlQuery.getSelectionArgs().get(1)).isEqualTo("2014-06-25 05:17:23.000000");
+        assertThat(logRecordHandler.match(0, "Query parameter 'XXXX' not found for named query 'LastName=? OR LastName=?'")).isTrue();
     }
  
     @Test

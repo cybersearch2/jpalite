@@ -13,6 +13,7 @@
     limitations under the License. */
 package au.com.cybersearch2.classyapp;
 
+import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -34,6 +35,8 @@ import au.com.cybersearch2.classyjpa.query.NativeQueryTest;
 import au.com.cybersearch2.classyjpa.query.SqlQueryTest;
 import au.com.cybersearch2.classyjpa.transaction.EntityTransactionImplTest;
 import au.com.cybersearch2.classyjpa.transaction.TransactionStateTest;
+import au.com.cybersearch2.log.LogRecordHandler;
+import au.com.cybersearch2.log.TestLogHandler;
 
 /**
  * JUnitTestSuite
@@ -63,6 +66,13 @@ import au.com.cybersearch2.classyjpa.transaction.TransactionStateTest;
 })
 public class JUnitTestSuite 
 {   
+	static LogRecordHandler logRecordHandler;
+
+	@BeforeClass public static void onlyOnce() {
+		logRecordHandler = TestLogHandler.logRecordHandlerInstance();
+	}
+
+
 }
 
 

@@ -16,8 +16,10 @@ package au.com.cybersearch2.classyjpa.entity;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
 
@@ -26,93 +28,19 @@ import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
  * @author Andrew Bowley
  * 03/05/2014
  */
+@RunWith(MockitoJUnitRunner.class)
 public class OrmDaoHelperTest
 {
-/*    
-    // TODO Reinstate tests if worthy
-    // Override internal methods which create concrete objects to replace them with mocks 
-    class OrmDaoHelper<T,ID> extends OrmDaoHelper<T,ID>
-    {
-        @SuppressWarnings("unchecked")
-        PersistenceDao<RecordCategory, ID> dao = mock(PersistenceDao.class);
-        MockTableCreator tableCreator = mock(MockTableCreator.class);
-        ConnectionSource connectionSource;
+    @Mock
+	private PersistenceDao<RecordCategory> dao;
 
-        public OrmDaoHelper(Class<T> entityClass)
-        {
-            super(entityClass);
-            connectionSource = null;
-        }
-        
-        @SuppressWarnings("unchecked")
-        @Override
-        public PersistenceDao<T, ID> getDao(ConnectionSource connectionSource) 
-        {
-            this.connectionSource = connectionSource;
-            return (PersistenceDao<T, ID>)dao;
-        }
-        @Override
-        protected void createEntityTable(Class<T> clazz, ConnectionSource connectionSource) throws SQLException
-        {
-            this.connectionSource = connectionSource;
-            tableCreator.createTable(clazz, connectionSource);
-        }
-    }
-    
     @Test 
     public void test_create_for_no_entity_table_case() throws Exception
     {
-        OrmDaoHelper<RecordCategory> helper = new OrmDaoHelper<RecordCategory>(RecordCategory.class);
-        when(dao.isTableExists()).thenReturn(false);
-        RecordCategory entity = new RecordCategory();
-        ConnectionSource connectionSource = mock(ConnectionSource.class);
-        helper.create(entity, connectionSource);
-        verify(helper.tableCreator).createTable(RecordCategory.class, connectionSource);
+        OrmDaoHelper<RecordCategory> helper = new OrmDaoHelper<RecordCategory>(dao);
+         RecordCategory entity = new RecordCategory();
+        helper.create(entity);
         verify(dao).create(entity);
-        assertThat(helper.connectionSource).isEqualTo(connectionSource);
-    }
-
-    @Test 
-    public void test_create_for_entity_table_exists_case() throws Exception
-    {
-        OrmDaoHelper<RecordCategory> helper = new OrmDaoHelper<RecordCategory>(RecordCategory.class);
-        when(dao.isTableExists()).thenReturn(true);
-        RecordCategory entity = new RecordCategory();
-        ConnectionSource connectionSource = mock(ConnectionSource.class);
-        helper.create(entity, connectionSource);
-        verifyZeroInteractions(helper.tableCreator);
-        verify(dao).create(entity);
-        assertThat(helper.connectionSource).isEqualTo(connectionSource);
-    }
-
-    @Test 
-    public void test_create_sql_exception() throws Exception
-    {
-        RecordCategory entity = new RecordCategory();
-        ConnectionSource connectionSource = mock(ConnectionSource.class);
-        OrmDaoHelper<RecordCategory> helper = new OrmDaoHelper<RecordCategory>(RecordCategory.class);
-        when(dao.isTableExists()).thenReturn(false);
-        SQLException exception = new SQLException();
-        Mockito.doThrow(exception).when(helper.tableCreator).createTable(RecordCategory.class, connectionSource);
-        try
-        {
-            helper.create(entity, connectionSource);
-            failBecauseExceptionWasNotThrown(RuntimeException.class);
-        }
-        catch(RuntimeException e)
-        {
-            assertThat(e.getMessage()).isEqualTo("Error creating table for class " + RecordCategory.class.getName());
-            assertThat(e.getCause()).isEqualTo(exception);
-        }
-    }
-*/
-    PersistenceDao<RecordCategory> dao;
-
-    @SuppressWarnings("unchecked")
-    @Before
-    public void setup()
-    {
-        dao = mock(PersistenceDao.class);
     }
     
     @Test
@@ -152,7 +80,6 @@ public class OrmDaoHelperTest
         RecordCategory entity1 = new RecordCategory();
         Integer id = Integer.valueOf(1);
         when(dao.extractId(entity1)).thenReturn(id);
-        when(dao.isTableExists()).thenReturn(true);
         when(dao.idExists(id)).thenReturn(true);
         assertThat(helper.entityExists(entity1)).isTrue();
     }

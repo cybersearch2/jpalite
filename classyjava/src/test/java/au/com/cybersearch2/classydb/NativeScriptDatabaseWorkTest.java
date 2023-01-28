@@ -15,39 +15,50 @@ package au.com.cybersearch2.classydb;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.j256.ormlite.support.DatabaseConnection;
 
 import au.com.cybersearch2.classyapp.ResourceEnvironment;
+import au.com.cybersearch2.log.LogRecordHandler;
+import au.com.cybersearch2.log.TestLogHandler;
 
 /**
  * NativeScriptDatabaseWorkTest
  * @author Andrew Bowley
  * 01/08/2014
  */
+@RunWith(MockitoJUnitRunner.class)
 public class NativeScriptDatabaseWorkTest
 {
     static final String CREATE_SQL = "create table models ( _id integer primary key autoincrement, name text, _description text);\n";
     public static final String CREATE_SQL_FILENAME = "create.sql";
     public static final String DROP_SQL_FILENAME = "drop.sql";
+	static LogRecordHandler logRecordHandler;
 
+	@Mock
     ResourceEnvironment resourceEnvironment;
+	@Mock
     DatabaseConnection databaseConnection;
 
-    @Before
-    public void setUp()
-    {
-        databaseConnection = mock(DatabaseConnection.class);
-        resourceEnvironment = mock(ResourceEnvironment.class);
-    }
+	@BeforeClass public static void onlyOnce() {
+		logRecordHandler = TestLogHandler.logRecordHandlerInstance();
+	}
+
+	@Before
+	public void setUp() {
+		TestLogHandler.getLogRecordHandler().clear();
+	}
     
     @Test
     public void test_constructor()
@@ -111,6 +122,8 @@ public class NativeScriptDatabaseWorkTest
         Boolean result = databaseWork.call(databaseConnection);
         assertThat(result).isEqualTo(true);
         verify(databaseConnection).executeStatement(CREATE_SQL.trim(), DatabaseConnection.DEFAULT_RESULT_FLAGS);
+        assertThat(logRecordHandler.match(0, "Executed 1 statements from create.sql")).isTrue();
+        assertThat(logRecordHandler.match(1, "Error closing file create.sql")).isTrue();
     }
     
 }

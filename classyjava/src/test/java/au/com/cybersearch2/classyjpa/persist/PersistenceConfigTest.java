@@ -18,6 +18,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
@@ -26,6 +27,8 @@ import au.com.cybersearch2.classyjpa.query.NamedDaoQuery;
 import au.com.cybersearch2.classyjpa.query.NamedSqlQuery;
 import au.com.cybersearch2.classyjpa.query.QueryInfo;
 import au.com.cybersearch2.classyjpa.query.SqlQueryFactory;
+import au.com.cybersearch2.log.LogRecordHandler;
+import au.com.cybersearch2.log.TestLogHandler;
 
 /**
  * PersistenceConfigTest
@@ -35,12 +38,18 @@ import au.com.cybersearch2.classyjpa.query.SqlQueryFactory;
 public class PersistenceConfigTest
 {
     private static final String QUERY_NAME = "my_query";
+    private static final String QUERY_NAME_EXISTS = "Query name already exists: " + QUERY_NAME;
 
-    
-    @Before
-    public void setUp() throws Exception 
-    {
-    }
+	static LogRecordHandler logRecordHandler;
+
+	@BeforeClass public static void onlyOnce() {
+		logRecordHandler = TestLogHandler.logRecordHandlerInstance();
+	}
+
+	@Before
+	public void setUp() {
+		TestLogHandler.getLogRecordHandler().clear();
+	}
     
     @Test
     public void test_addNamedQuery()
@@ -66,6 +75,7 @@ public class PersistenceConfigTest
         } catch (Throwable t) {
         	fail(t.getMessage());
         }
+        assertThat(logRecordHandler.match(0, QUERY_NAME_EXISTS)).isTrue();
     }
 
     @Test
@@ -80,7 +90,7 @@ public class PersistenceConfigTest
     
     @Test
     public void test_addNamedSqlQuery_already_exists()
-    {   // Check error does not throw exeption or change existing setting
+    {   // Check error does not throw exception or change existing setting
         PersistenceConfig persistenceConfig = new PersistenceConfig(new SqliteDatabaseType());
         SqlQueryFactory sqlQueryFactory = mock(SqlQueryFactory.class);
         QueryInfo queryInfo = mock(QueryInfo.class);
@@ -92,5 +102,6 @@ public class PersistenceConfigTest
         } catch (Throwable t) {
         	fail(t.getMessage());
         }
-    }
+        assertThat(logRecordHandler.match(0, QUERY_NAME_EXISTS)).isTrue();
+     }
 }

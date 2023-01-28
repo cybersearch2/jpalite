@@ -102,7 +102,6 @@ public class TransactionStateTest
         verify(transConnection).release();
         assertThat(transactionState.isActive()).isFalse();
         String logMessage = String.format("Rolled back transaction id %d", transactionId);
-        logRecordHandler.printAll();
         assertThat(logRecordHandler.match(0, logMessage)).isTrue();
     }
 
@@ -128,6 +127,5 @@ public class TransactionStateTest
         assertThat(transactionState.isActive()).isFalse();
         String logMessage = String.format("Rolled back transaction id %d - \"doCommit failed\"", transactionId);
         assertThat(logRecordHandler.match(0, logMessage)).isTrue();
-        logRecordHandler.printAll();
     }
 }

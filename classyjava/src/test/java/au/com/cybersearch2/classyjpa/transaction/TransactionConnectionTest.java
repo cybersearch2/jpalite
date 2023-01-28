@@ -80,7 +80,6 @@ public class TransactionConnectionTest {
         assertThat(transactionConn.getHasSavePoint()).isTrue();
         assertThat(transactionConn.getSavePointName()).isEqualTo(savepointName);
         assertThat(transactionConn.excludeAutoCommit()).isTrue();
-        //logRecordHandler.printAll();
         String logMessage = String.format("Started savePoint transaction ORMLITE%d", transactionId);
         assertThat(logRecordHandler.match(0, "Had to set auto-commit to false")).isTrue();
         assertThat(logRecordHandler.match(1, logMessage)).isTrue();

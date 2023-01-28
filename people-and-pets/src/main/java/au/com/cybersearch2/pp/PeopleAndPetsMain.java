@@ -15,20 +15,22 @@ package au.com.cybersearch2.pp;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 
+import com.j256.ormlite.logger.Level;
+import com.j256.ormlite.logger.Logger;
 import com.j256.ormlite.support.ConnectionSource;
 
 import au.com.cybersearch2.classydb.DatabaseSupport;
 import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
-import au.com.cybersearch2.classylog.JavaLogger;
-import au.com.cybersearch2.classylog.Log;
+import au.com.cybersearch2.classylog.LogManager;
 import au.com.cybersearch2.classytask.DefaultTaskExecutor;
 import au.com.cybersearch2.classytask.TaskExecutor;
 import au.com.cybersearch2.pp.api.ObjectsStore;
 import au.com.cybersearch2.pp.api.Person;
 import au.com.cybersearch2.pp.api.Pet;
+import pu.People;
+import pu.Pets;
 
 /**
  * This application demonstrates how Jpalite provides support for in-situ database schema updates.
@@ -42,15 +44,15 @@ public class PeopleAndPetsMain
     /** Entity objects are hidden behind interfaces to allow working with different versions */
     private static final ObjectsStore objectsStoreV1;
     /** Map to implement custom log tags */
-    private final static Map<String, Log> logMap;
+    private final static Map<String, Logger> logMap;
     private static TaskExecutor taskExecutor;
 
     static {
     	/** Create and populate log map */
     	logMap = new HashMap<>(2); 
-    	logMap.put(TAG, JavaLogger.getLogger(TAG));
-    	logMap.put(PeopleAndPets.PETS_PU, JavaLogger.getLogger(PeopleAndPets.PETS_PU));
-    	logMap.put(PeopleAndPets.PEOPLE_PU, JavaLogger.getLogger(PeopleAndPets.PEOPLE_PU));
+    	logMap.put(TAG, LogManager.getLogger(PeopleAndPets.class));
+    	logMap.put(PeopleAndPets.PETS_PU, LogManager.getLogger(Pets.class));
+    	logMap.put(PeopleAndPets.PEOPLE_PU, LogManager.getLogger(People.class));
 
 
     	objectsStoreV1 = new ObjectsStore() {
@@ -103,8 +105,8 @@ public class PeopleAndPetsMain
 	 */
 	public static void logInfo(String tag, String message) 
 	{
-        Log log = logMap.get(tag);
-        if ((log != null) && log.isLoggable(tag, Level.INFO))
+        Logger log = logMap.get(tag);
+        if ((log != null) && log.isLevelEnabled(Level.INFO))
         {
             log.info(tag, message);
         }

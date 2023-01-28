@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.j256.ormlite.dao.BaseDaoImpl;
@@ -66,9 +67,13 @@ import com.j256.ormlite.table.DatabaseTableConfig;
 import com.j256.ormlite.table.ObjectFactory;
 import com.j256.ormlite.table.TableUtils;
 
+import au.com.cybersearch2.log.LogRecordHandler;
+import au.com.cybersearch2.log.TestLogHandler;
+
 public class PersistenceDaoTest 
 {
 	public static final String FOO_TABLE_NAME = "foo"; 
+	static LogRecordHandler logRecordHandler;
 	
 	@DatabaseTable(tableName = FOO_TABLE_NAME)
     protected static class Foo implements OrmEntity {
@@ -105,9 +110,13 @@ public class PersistenceDaoTest
     private static final String IN_MEMORY_PATH = "jdbc:sqlite::memory:";
     protected ConnectionSource connectionSource;
 
-    @Before
-    public void before() throws Exception 
-    {
+	@BeforeClass public static void onlyOnce() {
+		logRecordHandler = TestLogHandler.logRecordHandlerInstance();
+	}
+
+	@Before
+	public void setUp() throws SQLException {
+		TestLogHandler.getLogRecordHandler().clear();
         connectionSource = new JdbcConnectionSource(IN_MEMORY_PATH );
         DaoManager.clearCache();
     }
@@ -118,7 +127,6 @@ public class PersistenceDaoTest
         connectionSource.close();
         connectionSource = null;
     }
-
 
     protected <T, ID> Dao<T, ID> createDao(Class<T> clazz, boolean createTable) throws Exception 
     {

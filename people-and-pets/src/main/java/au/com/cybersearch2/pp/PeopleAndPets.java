@@ -15,6 +15,8 @@ package au.com.cybersearch2.pp;
 
 import java.util.concurrent.TimeUnit;
 
+import com.j256.ormlite.logger.Logger;
+
 import au.com.cybersearch2.classydb.DatabaseSupport;
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.QueryForAllGenerator;
@@ -23,7 +25,7 @@ import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWorkModule;
 import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
-import au.com.cybersearch2.classylog.JavaLogger;
+import au.com.cybersearch2.classylog.LogManager;
 import au.com.cybersearch2.classytask.DefaultTaskMessenger;
 import au.com.cybersearch2.classytask.TaskExecutor;
 import au.com.cybersearch2.classytask.TaskMessenger;
@@ -49,8 +51,7 @@ public class PeopleAndPets {
     
 	public static final Object SEPARATOR_LINE = "------------------------------------------\n"; 
 	
-	private static JavaLogger logger = JavaLogger.getLogger(PeopleAndPets.class);
-
+	private static Logger logger = LogManager.getLogger(PeopleAndPets.class);
 
     protected ApplicationComponent component;
     protected PersistenceWorkModule persistenceWorkModule;
