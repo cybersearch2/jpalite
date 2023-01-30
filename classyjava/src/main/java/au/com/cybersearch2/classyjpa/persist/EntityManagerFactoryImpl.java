@@ -13,9 +13,6 @@
     limitations under the License. */
 package au.com.cybersearch2.classyjpa.persist;
 
-import java.util.Collections;
-import java.util.Map;
-
 import com.j256.ormlite.support.ConnectionSource;
 
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
@@ -34,7 +31,7 @@ import au.com.cybersearch2.classyjpa.transaction.TransactionStateFactory;
 public class EntityManagerFactoryImpl implements EntityManagerLiteFactory
 {
     /** Database connection provider */
-    protected ConnectionSource connectionSource;
+    protected ConnectionSourceProvider connectionSourceProvider;
     /** PersistenceUnitAdmin Unit configuration information */
     protected PersistenceConfig persistenceConfig; 
     /** Flag to track if open */
@@ -45,10 +42,10 @@ public class EntityManagerFactoryImpl implements EntityManagerLiteFactory
      * @param connectionSource Database connection provider
      * @param persistenceConfig PersistenceUnitAdmin Unit configuration information
      */
-    public EntityManagerFactoryImpl(ConnectionSource connectionSource, PersistenceConfig persistenceConfig)
+    public EntityManagerFactoryImpl(PersistenceAdmin persistenceAdmin)
     {
-        this.connectionSource = connectionSource; //
-        this.persistenceConfig = persistenceConfig;
+        this.connectionSourceProvider = persistenceAdmin; //
+        this.persistenceConfig = persistenceAdmin.getConfig();
         isOpen = true;
     }
     
@@ -64,27 +61,24 @@ public class EntityManagerFactoryImpl implements EntityManagerLiteFactory
     public EntityManagerLite createEntityManager() 
     {
         checkEntityManagerFactoryClosed("createEntityManager");
-        MonitoredTransaction transaction = 
-        	new MonitoredTransaction(new TransactionStateFactory(connectionSource),
-        			                 new OrmEntityMonitor(connectionSource, persistenceConfig));
-        return new EntityManagerImpl(transaction, persistenceConfig);
+        ConnectionSource connectionSource = connectionSourceProvider.getConnectionSource();
+        return createEntityManager(connectionSource);
     }
 
-    /**
-     * Create a new application-managed EntityManager with the specified Map of properties. This method returns a new EntityManager instance
-     * each time it is invoked. The isOpen method will return true on the returned instance.
-     * 
-     * @param map
-     *            properties for entity manager
-     * @return entity manager instance
-     * @throws IllegalStateException
-     *             if the entity manager factory has been closed
-     */
-    @Override
-    public EntityManagerLite createEntityManager(Map<String, Object> map) 
-    {
-        return createEntityManager();
-    }
+	/**
+	 * Create a EntityManager bound to an existing connectionSource. Use only for
+	 * special case of database creation or update.
+	 * 
+	 * @param connectionSource The existing ConnectionSource object
+	 * @return Entity manager instance
+	 */
+	public EntityManagerLite createEntityManager(ConnectionSource connectionSource) {
+        checkEntityManagerFactoryClosed("createEntityManager");
+        MonitoredTransaction transaction = 
+            	new MonitoredTransaction(new TransactionStateFactory(connectionSource),
+            			                 new OrmEntityMonitor(connectionSource, persistenceConfig));
+        return new EntityManagerImpl(transaction, persistenceConfig);
+	}
 
     /**
      * Close the factory, releasing any resources that it holds. After a factory instance has been closed, all methods invoked on it will
@@ -112,21 +106,6 @@ public class EntityManagerFactoryImpl implements EntityManagerLiteFactory
         return isOpen;
     }
     
-    /**
-     * Get the properties and associated values that are in effect for the entity manager factory. Changing the contents of the map does not
-     * change the configuration in effect.
-     * 
-     * @return properties
-     * @throws IllegalStateException
-     *             if the entity manager factory has been closed
-     */
-    @Override
-    public Map<String, Object> getProperties() 
-    {
-        checkEntityManagerFactoryClosed("getProperties");
-        return Collections.emptyMap();
-    }
-
     /**
      * Confirm this Entity Manager is open
      * @param method Name of method being invoked

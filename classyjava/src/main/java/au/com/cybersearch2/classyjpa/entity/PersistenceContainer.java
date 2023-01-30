@@ -13,9 +13,12 @@
     limitations under the License. */
 package au.com.cybersearch2.classyjpa.entity;
 
+import com.j256.ormlite.support.ConnectionSource;
+
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.EntityManagerLiteFactory;
 import au.com.cybersearch2.classyjpa.entity.JavaPersistenceContext.EntityManagerProvider;
+import au.com.cybersearch2.classyjpa.persist.EntityManagerFactoryImpl;
 import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 
 /**
@@ -44,7 +47,7 @@ public class PersistenceContainer {
 	 * @param async            Flag set if executes asynchronously
 	 */
 	public PersistenceContainer(PersistenceAdmin persistenceAdmin, boolean async) {
-		entityManagerFactory = persistenceAdmin.getEntityManagerFactory();
+		entityManagerFactory =  new EntityManagerFactoryImpl(persistenceAdmin);
 	}
 
 	/**
@@ -70,6 +73,11 @@ public class PersistenceContainer {
 			@Override
 			public EntityManagerLite entityManagerInstance() {
 				return entityManagerFactory.createEntityManager();
+			}
+
+			@Override
+			public EntityManagerLite entityManagerInstance(ConnectionSource connectionSource) {
+				return entityManagerFactory.createEntityManager(connectionSource);
 			}
 		});
 	}

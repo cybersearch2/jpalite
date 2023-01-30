@@ -37,7 +37,7 @@ import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.support.DatabaseConnection;
 import com.j256.ormlite.support.DatabaseResults;
 
-import au.com.cybersearch2.classyjpa.persist.PersistenceUnitInfoImpl;
+import au.com.cybersearch2.classyjpa.persist.PersistenceUnitInfo;
 import au.com.cybersearch2.classyjpa.query.QueryInfo;
 import au.com.cybersearch2.classyjpa.query.ResultRow;
 import com.j256.ormlite.logger.Logger;
@@ -453,7 +453,7 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
 	}
 
 	protected String getInfoTable(Properties properties) {
-		String puName = properties.getProperty(DatabaseSupport.JTA_PREFIX + PersistenceUnitInfoImpl.PU_NAME_PROPERTY);
+		String puName = properties.getProperty(DatabaseSupport.JTA_PREFIX + PersistenceUnitInfo.PU_NAME_PROPERTY);
 		return puName + INFO_SUFFIX;
 	}
 	

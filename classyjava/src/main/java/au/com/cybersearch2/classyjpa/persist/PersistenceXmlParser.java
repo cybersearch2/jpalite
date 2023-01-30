@@ -21,8 +21,6 @@ import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.persistence.spi.PersistenceUnitInfo;
-
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -101,7 +99,7 @@ public class PersistenceXmlParser {
 	 * @throws IOException
 	 */
 	private PersistenceUnitInfo parsePersistenceUnit(String puName) throws XmlPullParserException, IOException {
-		PersistenceUnitInfoImpl pu = new PersistenceUnitInfoImpl(puName);
+		PersistenceUnitInfo pu = new PersistenceUnitInfo(puName);
 		int eventType = xpp.next();
 		while (eventType != XmlPullParser.END_DOCUMENT) {
 			if (eventType == XmlPullParser.END_TAG) { // PersistenceUnitAdmin unit end element
@@ -113,11 +111,11 @@ public class PersistenceXmlParser {
 				} else if ("class".equals(xpp.getName())) { // Entity class name
 					String className = getText();
 					if (className.length() > 0)
-						pu.managedClassNames.add(className);
+						pu.addClassName(className);
 				} else if ("property".equals(xpp.getName())) { // Property
 					String name = getAttribute("name");
 					if ((name != null) && (name.length() > 0))
-						pu.getProperties().setProperty(name, getAttribute("value"));
+						pu.setProperty(name, getAttribute("value"));
 				}
 			}
 			eventType = xpp.next();

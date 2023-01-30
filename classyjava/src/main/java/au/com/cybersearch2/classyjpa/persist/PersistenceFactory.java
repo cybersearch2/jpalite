@@ -20,12 +20,10 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.persistence.PersistenceException;
-import javax.persistence.spi.PersistenceUnitInfo;
 
 import org.xmlpull.v1.XmlPullParserException;
 
 import com.j256.ormlite.field.DataPersisterManager;
-import com.j256.ormlite.support.ConnectionSource;
 
 import au.com.cybersearch2.classyapp.ResourceEnvironment;
 import au.com.cybersearch2.classydb.ConnectionSourceFactory;
@@ -155,16 +153,16 @@ public class PersistenceFactory
     public void initializeAllConnectionSources(ConnectionSourceFactory connectionSourceFactory)
     {
         //Initialize PU implementations
-        for (Map.Entry<String, DatabaseAdminImpl> entry: databaseAdminImplMap.entrySet())
-        {
-            PersistenceAdminImpl persistenceAdmin = persistenceImplMap.get(entry.getKey());
-            PersistenceUnitInfo puInfo = persistenceAdmin.getConfig().getPuInfo();
-            String databaseName = PersistenceAdminImpl.getDatabaseName(puInfo);
-            ConnectionSource connectionSource = 
-                    connectionSourceFactory.getConnectionSource(databaseName, puInfo.getProperties());
-            persistenceAdmin.setConnectionSource(connectionSource);
-            persistenceAdmin.setSingleConnection();
-        }
+       //for (Map.Entry<String, DatabaseAdminImpl> entry: databaseAdminImplMap.entrySet())
+        //{
+            //PersistenceAdminImpl persistenceAdmin = persistenceImplMap.get(entry.getKey());
+           // PersistenceUnitInfo puInfo = persistenceAdmin.getConfig().getPuInfo();
+            //String databaseName = PersistenceAdminImpl.getDatabaseName(puInfo);
+           // ConnectionSource connectionSource = 
+           //         connectionSourceFactory.getConnectionSource(databaseName, puInfo.getProperties());
+            //persistenceAdmin.setConnectionSource(connectionSource);
+            //persistenceAdmin.setSingleConnection();
+      //  }
     }
     
     /**
@@ -181,7 +179,7 @@ public class PersistenceFactory
         Map<String, PersistenceUnitInfo> persistenceUnitInfoMap = null;
         try
         {
-            inputStream = resourceEnv.openResource(PersistenceUnitInfoImpl.PERSISTENCE_CONFIG_FILENAME);
+            inputStream = resourceEnv.openResource(PersistenceUnitInfo.PERSISTENCE_CONFIG_FILENAME);
             parser = new PersistenceXmlParser();
             persistenceUnitInfoMap = parser.parsePersistenceXml(inputStream);
         }
@@ -214,7 +212,8 @@ public class PersistenceFactory
             // This includes setting up DAOs for all entity classes
             PersistenceConfig persistenceConfig = new PersistenceConfig(databaseSupport.getDatabaseType());
             persistenceConfig.setEntityClassLoader(resourceEnvironment.getEntityClassLoader(name));
-            persistenceConfig.setPuInfo(puMap.get(name));
+            PersistenceUnitInfo puInfo = puMap.get(name);
+            persistenceConfig.setPuInfo(puInfo);
             // Create objects for JPA and native support which are accessed using PersistenceFactory
             PersistenceAdminImpl persistenceAdmin = new PersistenceAdminImpl(name, databaseSupport, persistenceConfig);
             persistenceImplMap.put(name, persistenceAdmin);
@@ -233,7 +232,7 @@ public class PersistenceFactory
     protected OpenHelper getOpenHelperCallbacks(Properties properties)
     {
         // Property "open-helper-callbacks-classname"
-        String openHelperCallbacksClassname = properties.getProperty(DatabaseSupport.JTA_PREFIX + PersistenceUnitInfoImpl.CUSTOM_OHC_PROPERTY);
+        String openHelperCallbacksClassname = properties.getProperty(DatabaseSupport.JTA_PREFIX + PersistenceUnitInfo.CUSTOM_OHC_PROPERTY);
         if (openHelperCallbacksClassname != null)
         {
             // Custom

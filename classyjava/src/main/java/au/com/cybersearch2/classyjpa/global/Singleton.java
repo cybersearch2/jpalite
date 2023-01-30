@@ -16,10 +16,12 @@ package au.com.cybersearch2.classyjpa.global;
 import java.lang.reflect.InvocationTargetException;
 
 import au.com.cybersearch2.classylog.LogManager;
+import au.com.cybersearch2.service.WorkerService;
 
 public enum Singleton {
 
-	log_manager(LogManager.class);
+	log_manager(LogManager.class),
+	worker_service(WorkerService.class);
 
 	private final Object object;
 	private final Class<?> myClass;

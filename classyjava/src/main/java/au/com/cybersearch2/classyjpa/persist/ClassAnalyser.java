@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.persistence.PersistenceException;
 
@@ -116,12 +117,12 @@ public class ClassAnalyser {
 	 * Returns a list of database table configurations for specified list of class
 	 * names
 	 * 
-	 * @param managedClassNames List of class names representing all entities within
+	 * @param managedClassNames Set of class names representing all entities within
 	 *                          a single PersistenceUnitAdmin Unit
-	 * @return List of DatabaseTableConfig
+	 * @return S of DatabaseTableConfig
 	 */
 	@SuppressWarnings("unchecked")
-	protected List<DatabaseTableConfig<?>> getDatabaseTableConfigList(List<String> managedClassNames) {
+	protected List<DatabaseTableConfig<?>> getDatabaseTableConfigList(Set<String> managedClassNames) {
 		List<Class<? extends OrmEntity>> classList = new ArrayList<>();
 		// Report list of failed classes only after consuming managedClassNames list
 		List<String> failedList = null;

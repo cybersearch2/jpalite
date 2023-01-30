@@ -13,14 +13,14 @@
     limitations under the License. */
 package au.com.cybersearch2.classyjpa.persist;
 
-import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.persistence.PersistenceException;
 
+import au.com.cybersearch2.classydb.ConnectionSourceFactory;
 import au.com.cybersearch2.classydb.DatabaseAdmin;
 import au.com.cybersearch2.classydb.DatabaseSupport;
-import au.com.cybersearch2.classydb.ConnectionSourceFactory;
 
 /**
  * PersistenceContext
@@ -94,7 +94,7 @@ public class PersistenceContext
      * @param puName PersistenceUnitAdmin unit name
      * @param managedClassNames Class name list
      */
-    public void registerClasses(String puName, List<String> managedClassNames)
+    public void registerClasses(String puName, Set<String> managedClassNames)
     {
     	getPersistenceAdmin(puName).registerClasses(managedClassNames);
     }

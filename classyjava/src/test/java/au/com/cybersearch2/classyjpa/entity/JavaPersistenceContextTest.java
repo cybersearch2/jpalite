@@ -35,6 +35,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.j256.ormlite.support.ConnectionSource;
+
 import au.com.cybersearch2.classyfy.data.alfresco.RecordCategory;
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.entity.JavaPersistenceContext.EntityManagerProvider;
@@ -279,7 +281,12 @@ public class JavaPersistenceContextTest
             public EntityManagerLite entityManagerInstance()
             {
                 throw exception;
-            }};
+            }
+
+			@Override
+			public EntityManagerLite entityManagerInstance(ConnectionSource connectionSource) {
+                throw exception;
+			}};
         JavaPersistenceContext jpaContext = new JavaPersistenceContext(persistenceWork, entityManagerProvider);
         try
         {

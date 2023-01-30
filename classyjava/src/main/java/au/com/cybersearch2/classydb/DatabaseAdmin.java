@@ -15,6 +15,8 @@ package au.com.cybersearch2.classydb;
 
 import com.j256.ormlite.support.ConnectionSource;
 
+import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
+
 /**
  * DatabaseAdmin
  * @author Andrew Bowley
@@ -68,4 +70,12 @@ public interface DatabaseAdmin
     void onUpgrade(ConnectionSource connectionSource, int oldVersion, int newVersion);
 
     OpenHelper getCustomOpenHelperCallbacks();
+    
+	/**
+	 * Open database and handle create/upgrade events
+	 * @param persistenceConfig PersistenceUnitAdmin Unit Configuration
+	 * @param databaseSupport Database Support for specific database type 
+	 */
+    void initializeDatabase(PersistenceConfig persistenceConfig, DatabaseSupport databaseSupport);
+
 }

@@ -22,8 +22,11 @@ import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.transaction.TransactionInfo;
 import au.com.cybersearch2.classyjpa.transaction.UserTransactionSupport;
 import com.j256.ormlite.logger.Logger;
+import com.j256.ormlite.support.ConnectionSource;
+
 import au.com.cybersearch2.classylog.LogManager;
 import au.com.cybersearch2.classytask.WorkStatus;
+import au.com.cybersearch2.container.PersistenceUnit;
 
 /**
  * JavaPersistenceContext Creates a persistence context and executes a task in
@@ -35,6 +38,7 @@ import au.com.cybersearch2.classytask.WorkStatus;
 public class JavaPersistenceContext {
 	public interface EntityManagerProvider {
 		EntityManagerLite entityManagerInstance();
+		EntityManagerLite entityManagerInstance(ConnectionSource connectionSource);
 	}
 
 	private static Logger logger = LogManager.getLogger(JavaPersistenceContext.class);
@@ -68,6 +72,26 @@ public class JavaPersistenceContext {
 	}
 
 	/**
+	 * Construct JavaPersistenceContext object
+	 * 
+	 * @param persistenceWork       Work to be performed in Java  PersistenceUnitAdmin context
+	 * @param unit                  Persistence unit
+	 */
+	public JavaPersistenceContext(PersistenceWork persistenceWork, PersistenceUnit unit) {
+		this(persistenceWork, new EntityManagerProvider() {
+
+			@Override
+			public EntityManagerLite entityManagerInstance() {
+				return unit.createEntityManager();
+			}
+
+			@Override
+			public EntityManagerLite entityManagerInstance(ConnectionSource connectionSource) {
+				return unit.createEntityManager(connectionSource);
+			}});
+	}
+
+	/**
 	 * Returns transaction information
 	 * 
 	 * @return TransactionInfo object
@@ -96,10 +120,23 @@ public class JavaPersistenceContext {
 	 *         exception thrown on transaction begin() called.
 	 */
 	public Boolean doTask() {
+		return execute(entityManagerProvider.entityManagerInstance());
+	}
+		
+	/**
+	 * Execute persistence work with given connection source.
+	 * @param connectionSource Open connection source
+	 * @return Boolean result - TRUE = success, FALSE = failure/rollback or null if
+	 *         exception thrown on transaction begin() called.
+	 */
+	public Boolean doTask(ConnectionSource connectionSource) {
+		return execute(entityManagerProvider.entityManagerInstance(connectionSource));
+	}
+		
+    private Boolean execute(EntityManagerLite entityManager) {
 		status = WorkStatus.RUNNING;
 		// Use UserTransactionSupport interface to safely set user transaction mode
 		UserTransactionSupport userTransactionSupport = null;
-		EntityManagerLite entityManager = entityManagerProvider.entityManagerInstance();
 		if (entityManager instanceof UserTransactionSupport) {
 			userTransactionSupport = (UserTransactionSupport) entityManager;
 			// Set user transaction true initially to obtain actual transaction object

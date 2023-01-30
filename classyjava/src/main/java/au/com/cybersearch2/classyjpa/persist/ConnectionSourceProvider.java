@@ -20,7 +20,7 @@ import com.j256.ormlite.support.ConnectionSource;
  * @author Andrew Bowley
  * 29/07/2014
  */
-public interface ConnectionSourceFactory
+public interface ConnectionSourceProvider
 {
     /**
      * Returns connection source

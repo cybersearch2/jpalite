@@ -13,13 +13,11 @@
     limitations under the License. */
 package au.com.cybersearch2.classyjpa.persist;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayInputStream;
-import java.util.List;
 import java.util.Map;
-
-import javax.persistence.spi.PersistenceUnitInfo;
+import java.util.Set;
 
 import org.junit.Test;
 
@@ -51,9 +49,9 @@ public class PersistenceXmlParserTest
         PersistenceUnitInfo info = result.get("classyfy");
         assertThat(info).isNotNull();
         assertThat(info.getPersistenceUnitName()).isEqualTo("classyfy");
-        List<String> managed = info.getManagedClassNames();
+        Set<String> managed = info.getManagedClassNames();
         assertThat(managed.size()).isEqualTo(1);
-        assertThat(managed.get(0)).isEqualTo("au.com.cybersearch2.data.alfresco.RecordCategory");
+        assertThat(managed.iterator().next()).isEqualTo("au.com.cybersearch2.data.alfresco.RecordCategory");
     }
 
 }

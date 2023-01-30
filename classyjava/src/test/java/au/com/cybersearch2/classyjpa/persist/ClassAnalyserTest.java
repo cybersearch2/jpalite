@@ -23,8 +23,10 @@ import static org.junit.Assert.assertTrue;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.PersistenceException;
 import javax.persistence.PersistenceUnit;
@@ -137,7 +139,7 @@ public class ClassAnalyserTest
     @Test
     public void test_getDatabaseTableConfigList()
     {
-        List<String> managedClassNames = new ArrayList<>();
+        Set<String> managedClassNames = new HashSet<>();
         managedClassNames.add(RecordCategory.class.getName());
         ClassAnalyser classAnalyser = new ClassAnalyser(new SqliteDatabaseType(), new TestClassRegistry(RecordCategory.class));
         List<DatabaseTableConfig<?>> configList = classAnalyser.getDatabaseTableConfigList(managedClassNames);
@@ -149,7 +151,7 @@ public class ClassAnalyserTest
     @Test
     public void test_getDatabaseTableConfigList_non_id_entity()
     {
-        List<String> managedClassNames = new ArrayList<>();
+        Set<String> managedClassNames = new HashSet<>();
         managedClassNames.add(RecordCategory.class.getName());
         managedClassNames.add(NonIdEntity.class.getName());
         ClassAnalyser classAnalyser = new ClassAnalyser(new SqliteDatabaseType(), new TestClassRegistry(RecordCategory.class));
@@ -169,7 +171,7 @@ public class ClassAnalyserTest
     @Test
     public void test_getDatabaseTableConfigList_class_not_found()
     {
-        List<String> managedClassNames = new ArrayList<>();
+        Set<String> managedClassNames = new HashSet<>();
         managedClassNames.add("x" + RecordCategory.class.getName());
         managedClassNames.add(NonIdEntity.class.getName());
         ClassAnalyser classAnalyser = new ClassAnalyser(new SqliteDatabaseType(), new TestClassRegistry(RecordCategory.class));
@@ -189,7 +191,7 @@ public class ClassAnalyserTest
     @Test
     public void test_getDatabaseTableConfigList_one_to_many()
     {
-        List<String> managedClassNames = new ArrayList<>();
+        Set<String> managedClassNames = new HashSet<>();
         managedClassNames.add(Employee.class.getName());
         managedClassNames.add(Department.class.getName());
         ClassAnalyser classAnalyser = new ClassAnalyser(new SqliteDatabaseType(), new ClassRegistry(){
@@ -248,7 +250,7 @@ public class ClassAnalyserTest
                 //f (!(entityClass == Javax.class))
                 //    throw new IllegalArgumentException(entityClass.getName() + " not valid");
             }});
-        List<DatabaseTableConfig<?>> configList = classAnalyser.getDatabaseTableConfigList(Collections.singletonList("com.j256.ormlite.misc.Javax"));
+        List<DatabaseTableConfig<?>> configList = classAnalyser.getDatabaseTableConfigList(Collections.singleton("com.j256.ormlite.misc.Javax"));
         assertThat(configList).isNotNull();
         assertThat(configList.size()).isEqualTo(1);
         Iterator<Field> iterator = fieldList.iterator();
@@ -455,7 +457,7 @@ public class ClassAnalyserTest
     @Test
     public void test_many_to_many()
     {
-        List<String> managedClassNames = new ArrayList<>();
+        Set<String> managedClassNames = new HashSet<>();
         managedClassNames.add(User.class.getName());
         managedClassNames.add(Post.class.getName());
         managedClassNames.add(UserPost.class.getName());
@@ -551,7 +553,7 @@ public class ClassAnalyserTest
     @Test
     public void test_one_to_many_fetch()
     {
-        List<String> managedClassNames = new ArrayList<>();
+        Set<String> managedClassNames = new HashSet<>();
         managedClassNames.add(EagerEmployee.class.getName());
         managedClassNames.add(EagerDepartment.class.getName());
         ClassAnalyser classAnalyser = new ClassAnalyser(new SqliteDatabaseType(), new ClassRegistry(){
@@ -600,7 +602,7 @@ public class ClassAnalyserTest
     @Test
     public void test_one_to_many_no_foreign_collection()
     {
-        List<String> managedClassNames = new ArrayList<>();
+        Set<String> managedClassNames = new HashSet<>();
         managedClassNames.add(Employee.class.getName());
         ClassAnalyser classAnalyser = new ClassAnalyser(new SqliteDatabaseType(), new TestClassRegistry(Employee.class));
         try
@@ -617,7 +619,7 @@ public class ClassAnalyserTest
     @Test
     public void test_getDatabaseTableConfigList_non_entity()
     {
-        List<String> managedClassNames = new ArrayList<>();
+        Set<String> managedClassNames = new HashSet<>();
         managedClassNames.add(RecordCategory.class.getName());
         managedClassNames.add(NonEntity.class.getName());
         managedClassNames.add(NonIdEntity.class.getName());

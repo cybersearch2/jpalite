@@ -17,6 +17,7 @@ import com.j256.ormlite.support.ConnectionSource;
 
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.entity.JavaPersistenceContext.EntityManagerProvider;
+import au.com.cybersearch2.classyjpa.persist.EntityManagerFactoryImpl;
 import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
 import au.com.cybersearch2.classytask.ProgressListener;
@@ -130,6 +131,7 @@ public class PersistenceWorkModule
     {
 		PersistenceContainer container = new PersistenceContainer(persistenceAdmin, async);
 		container.setUserTransactionMode(isUserTransactions);
+		EntityManagerFactoryImpl entityManagerFactory = new EntityManagerFactoryImpl(persistenceAdmin);
         JavaPersistenceContext jpaContext = 
         		connectionSource == null ? 
         			container.getPersistenceTask(persistenceWork) :
@@ -138,8 +140,13 @@ public class PersistenceWorkModule
         		        @Override
         		        public EntityManagerLite entityManagerInstance()
         		        {
-        		            return persistenceAdmin.createEntityManager(connectionSource);
+        		            return entityManagerFactory.createEntityManager();
         		        }
+        		        
+        				@Override
+        				public EntityManagerLite entityManagerInstance(ConnectionSource connectionSource) {
+        					return entityManagerFactory.createEntityManager(connectionSource);
+        				}
         		    });
         WorkUnit<Void> backgroundTask = new WorkUnit<Void>() {
 

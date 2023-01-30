@@ -15,28 +15,20 @@ package au.com.cybersearch2.classyjpa.persist;
 
 import java.util.List;
 import java.util.Properties;
-
-import javax.persistence.PersistenceException;
-import javax.persistence.spi.PersistenceUnitInfo;
+import java.util.Set;
 
 import com.j256.ormlite.db.DatabaseType;
+import com.j256.ormlite.logger.Logger;
 import com.j256.ormlite.support.ConnectionSource;
 
+import au.com.cybersearch2.classydb.ConnectionSourceFactory;
 import au.com.cybersearch2.classydb.DatabaseAdmin;
 import au.com.cybersearch2.classydb.DatabaseSupport;
-import au.com.cybersearch2.classyjpa.EntityManagerLite;
-import au.com.cybersearch2.classyjpa.EntityManagerLiteFactory;
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
-import au.com.cybersearch2.classyjpa.entity.OrmEntityMonitor;
 import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
-import au.com.cybersearch2.classyjpa.entity.EntityManagerImpl;
-import au.com.cybersearch2.classyjpa.entity.MonitoredTransaction;
 import au.com.cybersearch2.classyjpa.query.DaoQueryFactory;
 import au.com.cybersearch2.classyjpa.query.QueryInfo;
 import au.com.cybersearch2.classyjpa.query.SqlQueryFactory;
-import au.com.cybersearch2.classyjpa.transaction.TransactionStateFactory;
-
-import com.j256.ormlite.logger.Logger;
 import au.com.cybersearch2.classylog.LogManager;
 
 /**
@@ -54,8 +46,6 @@ public class PersistenceAdminImpl implements PersistenceAdmin {
 	private final PersistenceConfig config;
 	/** Implementation of javax.persistence.PersistenceUnitInfo */
 	private final PersistenceUnitInfo puInfo;
-	/** Implementation of PersistenceProvider interface */
-	private final PersistenceProviderImpl provider;
 	/** Direct database access to allow native operations to be performed */
 	private final DatabaseSupport databaseSupport;
 	/** Database name */
@@ -72,19 +62,17 @@ public class PersistenceAdminImpl implements PersistenceAdmin {
 	 * @param puName          Persistence Unit (PU) name
 	 * @param databaseSupport Native support
 	 * @param config          Persistence unit configuration
+	 * @param connectionSource Connection source
 	 */
-	public PersistenceAdminImpl(String puName, DatabaseSupport databaseSupport, PersistenceConfig config) {
+	public PersistenceAdminImpl(String puName,
+			                    DatabaseSupport databaseSupport, 
+			                    PersistenceConfig config) {
 		this.puName = puName;
 		this.config = config;
 		this.puInfo = config.getPuInfo();
 		this.databaseSupport = databaseSupport;
 		databaseName = getDatabaseName(puInfo);
-		provider = new PersistenceProviderImpl(puName, config, this);
-	}
-
-	public void setSingleConnection() {
-		ConnectionSource connectionSource = getConnectionSource();
-		singleConnection = Boolean.valueOf(connectionSource.isSingleConnection(DATABASE_INFO_NAME));
+		singleConnection = Boolean.valueOf(getConnectionSource().isSingleConnection(DATABASE_INFO_NAME));
 	}
 
 	/**
@@ -94,6 +82,9 @@ public class PersistenceAdminImpl implements PersistenceAdmin {
 	 */
 	@Override
 	public ConnectionSource getConnectionSource() {
+		if ((connectionSource == null) || !connectionSource.isOpen(""))
+			connectionSource = 
+			    ((ConnectionSourceFactory)databaseSupport).getConnectionSource(databaseName, puInfo.getProperties());
 		return connectionSource;
 	}
 
@@ -120,31 +111,6 @@ public class PersistenceAdminImpl implements PersistenceAdmin {
 	@Override
 	public void addNamedQuery(String name, QueryInfo queryInfo, SqlQueryFactory queryGenerator) {
 		config.addNamedQuery(name, queryInfo, queryGenerator);
-	}
-
-	/**
-	 * Returns EntityManager Factory for this perisistence unit
-	 * 
-	 * @return EntityManagerLiteFactory
-	 */
-	@Override
-	public EntityManagerLiteFactory getEntityManagerFactory() {
-		return provider.createContainerEntityManagerFactory(puInfo, null);
-	}
-
-	/**
-	 * Create a EntityManager bound to an existing connectionSource. Use only for
-	 * special case of database creation or update.
-	 * 
-	 * @param connectionSource The existing ConnectionSource object
-	 * @return Entity manager instance
-	 */
-	@Override
-	public EntityManagerLite createEntityManager(ConnectionSource connectionSource) {
-        MonitoredTransaction transaction = 
-            	new MonitoredTransaction(new TransactionStateFactory(connectionSource),
-            			                 new OrmEntityMonitor(connectionSource, config));
-            return new EntityManagerImpl(transaction, config);
 	}
 
 	/**
@@ -220,13 +186,22 @@ public class PersistenceAdminImpl implements PersistenceAdmin {
 	}
 
 	@Override
-	public boolean isSingleConnection() {
-		// Default to true until setSingleConnection() is called
-		return singleConnection == null ? true : singleConnection;
+	public PersistenceUnitInfo getPuInfo() {
+		return puInfo;
 	}
 
 	@Override
-	public void registerClasses(List<String> managedClassNames) {
+	public PersistenceConfig getConfig() {
+		return config;
+	}
+
+	@Override
+	public boolean isSingleConnection() {
+		return singleConnection;
+	}
+
+	@Override
+	public void registerClasses(Set<String> managedClassNames) {
 		config.registerClasses(managedClassNames);
 	}
 
@@ -283,18 +258,12 @@ public class PersistenceAdminImpl implements PersistenceAdmin {
 	public static String getDatabaseName(PersistenceUnitInfo puInfo) {
 		String databaseName = puInfo.getProperties()
 				.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DATABASE_NAME);
-		if ((databaseName == null) || (databaseName.length() == 0))
-			throw new PersistenceException(String.format("\"%s\" does not have property \"%s\"",
+		if ((databaseName == null) || (databaseName.length() == 0)) {
+			logger.warn(String.format("\"%s\" does not have property \"%s\"",
 					puInfo.getPersistenceUnitName(), DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DATABASE_NAME));
+			databaseName = DatabaseSupport.JTA_PREFIX + puInfo.getPersistenceUnitName();
+		}
 		return databaseName;
-	}
-
-	protected void setConnectionSource(ConnectionSource connectionSource) {
-		this.connectionSource = connectionSource;
-	}
-
-	protected PersistenceConfig getConfig() {
-		return config;
 	}
 
 	protected DatabaseSupport getDatabaseSupport() {

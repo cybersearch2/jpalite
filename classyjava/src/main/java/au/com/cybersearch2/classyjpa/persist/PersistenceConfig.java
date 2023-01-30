@@ -33,9 +33,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.persistence.TypedQuery;
-import javax.persistence.spi.PersistenceUnitInfo;
 
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.db.DatabaseType;
@@ -187,7 +187,7 @@ public class PersistenceConfig {
 	 */
 	public void setPuInfo(PersistenceUnitInfo puInfo) {
 		this.puInfo = puInfo;
-		List<String> managedClassNames = puInfo.getManagedClassNames();
+		Set<String> managedClassNames = puInfo.getManagedClassNames();
 		if (!managedClassNames.isEmpty())
 			registerClasses(managedClassNames);
 	}
@@ -231,7 +231,7 @@ public class PersistenceConfig {
 		return namedQueryMap.containsKey(name) || nativeQueryMap.containsKey(name);
 	}
 
-	protected void registerClasses(List<String> managedClassNames) {
+	protected void registerClasses(Set<String> managedClassNames) {
 		ClassRegistry classRegistry = new ClassRegistry() {
 
 			@Override
