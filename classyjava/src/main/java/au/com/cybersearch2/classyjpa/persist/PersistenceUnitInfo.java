@@ -18,7 +18,8 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import au.com.cybersearch2.classydb.DatabaseSupport;
+import au.com.cybersearch2.container.JpaSetting;
+import au.com.cybersearch2.container.SettingsMap;
 
 /**
  * PersistenceUnitInfo
@@ -33,10 +34,11 @@ public class PersistenceUnitInfo
     public static final String CUSTOM_OHC_PROPERTY = "open-helper-class";
     
     private final String persistenceUnitName;
-    
-    String persistenceProviderClassName = "";
-    Set<String> managedClassNames;
-    Properties properties;
+    private final Set<String> managedClassNames;
+   
+    private String persistenceProviderClassName = "";
+    private Properties properties;
+    private SettingsMap settingsMap;
  
     /**
      * Construct PersistenceUnitInfo object
@@ -47,8 +49,7 @@ public class PersistenceUnitInfo
         this.persistenceUnitName = persistenceUnitName;
         managedClassNames = new HashSet<>();
         properties = new Properties();
-        properties.setProperty(DatabaseSupport.JTA_PREFIX + PU_NAME_PROPERTY, persistenceUnitName);
-        
+        settingsMap = new SettingsMap();
     }
 
     public void addClassName(String className) {
@@ -60,7 +61,11 @@ public class PersistenceUnitInfo
         return Collections.unmodifiableSet(managedClassNames);
     }
 
-    public String getPersistenceProviderClassName() 
+    protected void setPersistenceProviderClassName(String persistenceProviderClassName) {
+		this.persistenceProviderClassName = persistenceProviderClassName;
+	}
+
+	public String getPersistenceProviderClassName() 
     {
         return persistenceProviderClassName;
     }
@@ -79,5 +84,13 @@ public class PersistenceUnitInfo
 
 	public void setProperty(String key, String attribute) {
 		properties.setProperty(key, attribute);
+	}
+
+	public void put(JpaSetting key, String value) {
+		settingsMap.put(key, value);
+	}
+
+	public SettingsMap getSettingsMap() {
+		return settingsMap;
 	}
 }

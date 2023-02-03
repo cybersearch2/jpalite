@@ -14,12 +14,11 @@
 package au.com.cybersearch2.classydb;
 
 import java.util.List;
-import java.util.Properties;
-
-import au.com.cybersearch2.classyjpa.query.QueryInfo;
 
 import com.j256.ormlite.db.DatabaseType;
 import com.j256.ormlite.support.ConnectionSource;
+
+import au.com.cybersearch2.classyjpa.query.QueryInfo;
 
 /**
  * DatabaseSupport
@@ -77,23 +76,22 @@ public interface DatabaseSupport
      */
     Object getSingleResult(ConnectionSource connectionSource, QueryInfo queryInfo);
     
-    /**
-     * Gets the database version.
-     * @param  connectionSource Open ConnectionSource object of database. Can be null for Android SQLite. 
-     * @param properties Properties defined in persistence.xml
-     * @return the database version
-     */
-    int getVersion(ConnectionSource connectionSource, Properties properties);
+	/**
+	 * Gets the database version.
+	 * 
+	 * @param connectionSource Open ConnectionSource object of database.
+	 * @param puName       Persistence unit name
+	 * @return the database version
+	 */
+    int getVersion(ConnectionSource connectionSource, String puName);
 
-    /**
-     * Sets the database version.
-     * @param  connectionSource Open ConnectionSource object of database. Can be null for Android SQLite.
-     * @param properties Properties defined in persistence.xml
-     * @param version the new database version
-     */
-    void setVersion(int version, Properties properties, ConnectionSource connectionSource);
-    
-    void registerOpenHelperCallbacks(OpenHelper openHelper);
-    List<OpenHelper> getOpenHelperCallbacksList();
+	/**
+	 * Sets the database version.
+	 * 
+	 * @param connectionSource Open ConnectionSource object of database.
+	 * @param puName       Persistence unit name
+	 * @param version          the new database version
+	 */
+    void setVersion(int version, String puName, ConnectionSource connectionSource);
 
 }

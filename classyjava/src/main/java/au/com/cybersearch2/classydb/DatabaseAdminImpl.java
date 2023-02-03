@@ -15,10 +15,11 @@ package au.com.cybersearch2.classydb;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Properties;
 
 import javax.persistence.EntityTransaction;
 
+import com.j256.ormlite.logger.Level;
+import com.j256.ormlite.logger.Logger;
 import com.j256.ormlite.support.ConnectionSource;
 
 import au.com.cybersearch2.classyapp.ResourceEnvironment;
@@ -28,10 +29,9 @@ import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
 import au.com.cybersearch2.classyjpa.transaction.EntityTransactionImpl;
 import au.com.cybersearch2.classyjpa.transaction.TransactionCallable;
 import au.com.cybersearch2.classyjpa.transaction.TransactionStateFactory;
-
-import com.j256.ormlite.logger.Level;
-import com.j256.ormlite.logger.Logger;
 import au.com.cybersearch2.classylog.LogManager;
+import au.com.cybersearch2.container.JpaSetting;
+import au.com.cybersearch2.container.SettingsMap;
 
 /**
  * DatabaseAdminImpl
@@ -48,31 +48,29 @@ public class DatabaseAdminImpl implements DatabaseAdmin
     private final PersistenceAdmin persistenceAdmin;
     /** Resource environment provides system-specific file open method. */
     private final ResourceEnvironment resourceEnvironment;
-    private final OpenHelper openHelper;
+    
+    /** Open helper callbacks */
+    private OpenHelper openHelper;
     
     /**
      * Construct a DatabaseAdminImpl object
      * @param persistenceAdmin The persistence unit connectionSource and properties provider  
      * @param resourceEnvironment Resource environment
-     * @param openHelper Open helper callbacks
      */
     public DatabaseAdminImpl(
             PersistenceAdmin persistenceAdmin, 
-            ResourceEnvironment resourceEnvironment,
-            OpenHelper openHelper)
+            ResourceEnvironment resourceEnvironment)
     {
         this.persistenceAdmin = persistenceAdmin;
         this.resourceEnvironment = resourceEnvironment;
-        this.openHelper = openHelper;
-        if (openHelper != null)
-        {
-            openHelper.setDatabaseAdmin(this);
-            openHelper.setPersistenceAdmin(persistenceAdmin);
-        }
     }
 
+    public void setOpenHelper(OpenHelper openHelper) {
+        this.openHelper = openHelper;
+    }
+    
     @Override
-    public OpenHelper getCustomOpenHelperCallbacks()
+    public OpenHelper getOpenHelper()
     {
         return openHelper;
     }
@@ -87,14 +85,14 @@ public class DatabaseAdminImpl implements DatabaseAdmin
     @Override
     public void onCreate(ConnectionSource connectionSource) 
     {
-        Properties properties = persistenceAdmin.getProperties();
-        // Get SQL script file names from persistence.xml properties
-        // A filename may be null if operation not supported
-         String schemaFilename = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.SCHEMA_FILENAME);
-        String dataFilename = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DATA_FILENAME);
-        if (!((schemaFilename == null) && (dataFilename == null)))
+    	SettingsMap settingsMap = persistenceAdmin.getPuInfo().getSettingsMap();
+    	boolean hasSchemaFilename = settingsMap.hasSetting(JpaSetting.schema_filename);
+    	boolean hasDataFilename = settingsMap.hasSetting(JpaSetting.data_filename);
+        if (hasSchemaFilename || hasDataFilename)
         {
         	// Database work is executed as background task
+        	String schemaFilename = settingsMap.get(JpaSetting.schema_filename);
+        	String dataFilename = settingsMap.get(JpaSetting.data_filename);
         	TransactionCallable processFilesCallable = 
                 new NativeScriptDatabaseWork(resourceEnvironment, schemaFilename, dataFilename);    
         	executeTask(connectionSource, processFilesCallable);
@@ -110,11 +108,12 @@ public class DatabaseAdminImpl implements DatabaseAdmin
     @Override
     public void onUpgrade(ConnectionSource connectionSource, int oldVersion, int newVersion)
     {
-        Properties properties = persistenceAdmin.getProperties();
-        String filename = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.UPGRADE_FILENAME);
-        boolean upgradeSupported = filename != null;
-        if (upgradeSupported) {
-        	upgradeSupported = false;
+        SettingsMap settingsMap = persistenceAdmin.getPuInfo().getSettingsMap();
+        String filename = null;
+         boolean upgradeSupported = settingsMap.hasSetting(JpaSetting.upgrade_filename);
+         if (upgradeSupported) {
+            filename = settingsMap.get(JpaSetting.upgrade_filename);
+         	upgradeSupported = false;
 	        InputStream instream = null;
 	        try
 	        {
@@ -144,15 +143,17 @@ public class DatabaseAdminImpl implements DatabaseAdmin
 	 * @param persistenceConfig PersistenceUnitAdmin Unit Configuration
 	 * @param databaseSupport Database Support for specific database type 
 	 */
+	@Override
     public void initializeDatabase(PersistenceConfig persistenceConfig, DatabaseSupport databaseSupport)
     {
         // Ensure database version is up to date.
-    	Properties properties = persistenceConfig.getPuInfo().getProperties();
-    	int currentDatabaseVersion = PersistenceAdminImpl.getDatabaseVersion(properties);
+    	String puName = persistenceAdmin.getPuName();
+		SettingsMap settingsMap = persistenceConfig.getPuInfo().getSettingsMap();
+   	    int currentDatabaseVersion = PersistenceAdminImpl.getDatabaseVersion(settingsMap);
         // Get a connection to open the database and possibly trigger a create or upgrade event (eg. AndroidSQLite)
         ConnectionSource connectionSource = persistenceAdmin.getConnectionSource();
         boolean dropSchema = false;
-        int reportedDatabaseVersion = databaseSupport.getVersion(connectionSource, properties);
+        int reportedDatabaseVersion = databaseSupport.getVersion(connectionSource, puName);
         if (reportedDatabaseVersion != currentDatabaseVersion)
         {   // No assistance provided by helper to trigger create/upgrade event
             // Allow custom create/upgrade handler
@@ -163,17 +164,17 @@ public class DatabaseAdminImpl implements DatabaseAdmin
         		else
         			openHelper.onCreate(connectionSource);
         		// Get database version again in case onCreate() set it
-        		reportedDatabaseVersion = databaseSupport.getVersion(connectionSource, properties);
+        		reportedDatabaseVersion = databaseSupport.getVersion(connectionSource, puName);
         		if (reportedDatabaseVersion != currentDatabaseVersion)
-        		    databaseSupport.setVersion(currentDatabaseVersion, properties, connectionSource);
+        			persistenceAdmin.setVersion(currentDatabaseVersion);
         	}
         	else
         	{
         		dropSchema = currentDatabaseVersion < reportedDatabaseVersion;
         		if (dropSchema) {
-        			dropSchema = properties.containsKey(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DROP_SCHEMA_FILENAME);
+        			dropSchema = settingsMap.hasSetting(JpaSetting.drop_schema_filename);
         			if (dropSchema) {
-        				dropSchema= dropSchema(connectionSource);
+        				dropSchema= dropSchema(settingsMap.get(JpaSetting.drop_schema_filename), connectionSource);
             			if (dropSchema) {
 		            		if (openHelper == null)
 		            			onCreate(connectionSource);
@@ -187,8 +188,8 @@ public class DatabaseAdminImpl implements DatabaseAdmin
 	        		else
 	        			openHelper.onUpgrade(connectionSource, reportedDatabaseVersion, currentDatabaseVersion);
         		}
-    		    databaseSupport.setVersion(currentDatabaseVersion, properties, connectionSource);
-       	    }
+        		persistenceAdmin.setVersion(currentDatabaseVersion);
+      	    }
         }
         persistenceConfig.checkEntityTablesExist(connectionSource);
     }
@@ -209,12 +210,11 @@ public class DatabaseAdminImpl implements DatabaseAdmin
    
     /**
      * Database drop schema handler.
+     * @param filename Name of file with SQL to drop the schema
      * @param connectionSource An open ConnectionSource to be employed for all database activities.
      */
-    private boolean dropSchema(ConnectionSource connectionSource)
+    private boolean dropSchema(String filename, ConnectionSource connectionSource)
     {
-        Properties properties = persistenceAdmin.getProperties();
-        String filename = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DROP_SCHEMA_FILENAME);
         boolean downgradeSupported = false;
         InputStream instream = null;
         try {
@@ -254,6 +254,7 @@ public class DatabaseAdminImpl implements DatabaseAdmin
                 logger.error("Error closing file " + filename, e);
             }
     }
+
 
 
 }

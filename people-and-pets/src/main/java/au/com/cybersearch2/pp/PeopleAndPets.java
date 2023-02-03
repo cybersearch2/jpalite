@@ -13,35 +13,27 @@
     limitations under the License. */
 package au.com.cybersearch2.pp;
 
-import java.util.concurrent.TimeUnit;
-
 import com.j256.ormlite.logger.Logger;
 
-import au.com.cybersearch2.classydb.DatabaseSupport;
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.QueryForAllGenerator;
 import au.com.cybersearch2.classyjpa.entity.PersistenceTask;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
-import au.com.cybersearch2.classyjpa.entity.PersistenceWorkModule;
 import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
-import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
 import au.com.cybersearch2.classylog.LogManager;
-import au.com.cybersearch2.classytask.DefaultTaskMessenger;
-import au.com.cybersearch2.classytask.TaskExecutor;
-import au.com.cybersearch2.classytask.TaskMessenger;
-import au.com.cybersearch2.classytask.TaskStatus;
 import au.com.cybersearch2.classytask.WorkStatus;
+import au.com.cybersearch2.container.JpaContainer;
+import au.com.cybersearch2.container.JpaProcess;
+import au.com.cybersearch2.container.PersistenceUnit;
 import au.com.cybersearch2.pp.api.ObjectsStore;
 import au.com.cybersearch2.pp.api.Person;
 import au.com.cybersearch2.pp.api.Pet;
-import au.com.cybersearch2.pp.jpa.PeopleAndPetsFactory;
 import au.com.cybersearch2.pp.jpa.PeopleUpdate;
 import au.com.cybersearch2.pp.jpa.PetsUpdate;
 
 
 public class PeopleAndPets {
 
-    static public final int JPA_VERSION = 1;
     static public final String PETS_PU = "pets";
     static public final String PEOPLE_PU = "people";
 
@@ -53,80 +45,25 @@ public class PeopleAndPets {
 	
 	private static Logger logger = LogManager.getLogger(PeopleAndPets.class);
 
-    protected ApplicationComponent component;
-    protected PersistenceWorkModule persistenceWorkModule;
-    protected PersistenceContext persistenceContext;
-    private TaskExecutor taskExecutor;
-    private final TaskMessenger<Void,Boolean> taskMessenger;
+	protected JpaContainer jpaContainer;
     
-    protected class ApplicationComponent {
-
-    	private PeopleAndPetsFactory peopleAndPetsFactory;
-    	
-    	public ApplicationComponent(int version) {
-    		peopleAndPetsFactory = new PeopleAndPetsFactory(version);
-    		prepareDatabaseSupport(peopleAndPetsFactory.getDatabaseSupport());
-    	}
-
-		public PersistenceContext persistenceContext() {
-			return peopleAndPetsFactory.getPersistenceContext();
-		}
-
-		public WorkStatus execute(PersistenceWorkModule persistenceWorkModule) {
-			TaskStatus taskStatus = persistenceWorkModule.doTask(persistenceContext());
-			try {
-				taskStatus.await(5, TimeUnit.SECONDS);
-				return taskStatus.getWorkStatus();
-			} catch (InterruptedException e) {
-				return WorkStatus.FAILED;
-			}
-		}
-		
-		protected void prepareDatabaseSupport(DatabaseSupport databaseSupport) {
-			
-		}
-	}
-
-    public PeopleAndPets(TaskExecutor taskExecutor) 
-    {
-    	this.taskExecutor = taskExecutor;
-        taskMessenger = new DefaultTaskMessenger<Void>(Void.class);
-    }
-    
-	public PersistenceContext getPersistenceContext()
-	{
-	    return persistenceContext;
-	}
-	
 	public int performTasks(ObjectsStore objectsStore) {
         int status = 0;
-        try
-        {
-            // Run tasks serially to exercise databases
-            PetsUpdate petsUpdate = new PetsUpdate(objectsStore, "main");
-            performPersistenceWork(PETS_PU, petsUpdate);
-			// Our string builder for building the content-view
-			StringBuilder sb = new StringBuilder();
-            PeopleUpdate peopleUpdate = new PeopleUpdate(objectsStore, "main");
-            performPersistenceWork(PEOPLE_PU, peopleUpdate);
-            PeopleAndPetsMain.displayVersions(getPersistenceContext());
-            PeopleAndPetsMain.logInfo("Tasks completed successfully");
-            displayMessage(sb
-					.append(SEPARATOR_LINE)
-					.append(petsUpdate.getMessage())
-					.append(SEPARATOR_LINE)
-					.append(peopleUpdate.getMessage())
-					.toString());
-        }
-        catch (Throwable  e)
-        {
-            e.printStackTrace();
-            status = 1;
-        }
-        finally
-        {
-        	shutdown();
-        }
+        // Run tasks serially to exercise databases
+        PetsUpdate petsUpdate = new PetsUpdate(objectsStore, "main");
+        performPersistenceWork(PETS_PU, petsUpdate);
+		// Our string builder for building the content-view
+		StringBuilder sb = new StringBuilder();
+        PeopleUpdate peopleUpdate = new PeopleUpdate(objectsStore, "main");
+        performPersistenceWork(PEOPLE_PU, peopleUpdate);
+        jpaContainer.forEach(unit -> displayVersion(unit.getPersistenceUnitName()));
+        PeopleAndPetsMain.logInfo("Tasks completed successfully");
+        displayMessage(sb
+				.append(SEPARATOR_LINE)
+				.append(petsUpdate.getMessage())
+				.append(SEPARATOR_LINE)
+				.append(peopleUpdate.getMessage())
+				.toString());
         return status;
 	}
 	
@@ -137,7 +74,13 @@ public class PeopleAndPets {
      */
     public boolean setUp()
     {
-    	persistenceContext = initializeApplication();
+		try {
+			jpaContainer = new JpaContainer();
+			jpaContainer.initialize(getJpaVersion());
+		} catch (Throwable e) {
+			e.printStackTrace();
+			return false;
+		}
 		try {
 			initializeDatabase();
 		} catch (InterruptedException e) {
@@ -150,18 +93,8 @@ public class PeopleAndPets {
 		return true;
      }
 
-    public void shutdown()
-    {
-    	taskMessenger.shutdown();
-    	if (persistenceContext != null)
-    	{
-	        String[] puNames = { PETS_PU, PEOPLE_PU }; 
-	        {
-	            for (String puName: puNames)
-	                persistenceContext.getPersistenceAdmin(puName).close();
-	        }
-	        persistenceContext = null;
-    	}
+	public void close() throws InterruptedException {
+     	jpaContainer.close();
     }
  
     /**
@@ -198,32 +131,45 @@ public class PeopleAndPets {
             }
         };
         // Execute work and wait synchronously for completion
-        persistenceWorkModule = new PersistenceWorkModule(puName, persistenceWork, taskMessenger, taskExecutor);
-        return component.execute(persistenceWorkModule);
+    	JpaProcess process = jpaContainer.execute(puName, persistenceWork);
+		return process.exitValue();
     }
 
-    protected PersistenceContext initializeApplication()
-    {
-        // Set up dependency injection, which creates an ObjectGraph from a PeopleAndPetsModule configuration object
-        component = new ApplicationComponent(JPA_VERSION);
-        return component.persistenceContext();
+	/**
+	 * Display the current JPA schema version of a persistence unit
+	 * @param unitName Persistence unit name
+	 */
+   public int getVersion(String unitName) {
+	    PersistenceUnit unit = jpaContainer.getUnit(unitName);
+		return unit.getPersistenceAdmin().getVersion();
+   }
+   
+	/**
+	 * Display the current JPA schema version of a persistence unit
+	 * @param unit Persistence unit
+	 */
+   public void displayVersion(String unitName) {
+	    int unitVersion = getVersion(unitName);
+		System.out.println(String.format("%s version = %s", unitName,  unitVersion));
     }
     
-    protected void initializeDatabase() throws InterruptedException
+    protected boolean initializeDatabase() throws InterruptedException
     {
+    	PersistenceUnit petsUnit = jpaContainer.getUnit(PETS_PU);
         // Get Interface for JPA Support, required to create named queries
-        PersistenceAdmin persistenceAdmin1 = persistenceContext.getPersistenceAdmin(PETS_PU);
+        PersistenceAdmin persistenceAdmin1 = petsUnit.getPersistenceAdmin();
         // Create named queries to find all objects of an entity class.
         // Note QueryForAllGenerator class is reuseable as it allows any Many to Many association to be queried.
         QueryForAllGenerator<PetData> allPetDataObjects = 
                 new QueryForAllGenerator<PetData>(PetData.class, persistenceAdmin1);
         persistenceAdmin1.addNamedQuery(PetData.class, ALL_PET_DATA, allPetDataObjects);
-        // Get Interface for JPA Support, required to create named queries
-        PersistenceAdmin persistenceAdmin2 = persistenceContext.getPersistenceAdmin(PEOPLE_PU);
+    	PersistenceUnit peopleUnit = jpaContainer.getUnit(PEOPLE_PU);
+       // Get Interface for JPA Support, required to create named queries
+        PersistenceAdmin persistenceAdmin2 = peopleUnit.getPersistenceAdmin();
         QueryForAllGenerator<PersonData> allPersonDataObjects = 
                 new QueryForAllGenerator<PersonData>(PersonData.class, persistenceAdmin2);
         persistenceAdmin2.addNamedQuery(PersonData.class, ALL_PERSON_DATA, allPersonDataObjects);
-       	populateDatabases();
+       	return populateDatabases();
     }
     
 	/**
@@ -235,14 +181,18 @@ public class PeopleAndPets {
 		System.out.println(message);
 	}
 
+    protected int getJpaVersion() {
+		return 1;
+	}
+
 	/**
 	 * Populate databases with initial sample data
 	 * @throws InterruptedException if interrupted
 	 */
-    private void populateDatabases() throws InterruptedException
+    private boolean populateDatabases() throws InterruptedException
 	{
          // PersistenceUnitAdmin task adds 2 PetData entity objects to the helloTwoDb1.db database using JPA. 
-		performPersistenceWork(PETS_PU, new PersistenceTask(){
+		WorkStatus status = performPersistenceWork(PETS_PU, new PersistenceTask(){
 
 			@Override
 			public void doTask(EntityManagerLite entityManager) 
@@ -254,8 +204,10 @@ public class PeopleAndPets {
                 entityManager.persist(pet2);
                 PeopleAndPetsMain.logInfo(PETS_PU, "Created new PetData entries");
 			}});
+		if (status != WorkStatus.FINISHED)
+			return false;
     	// PersistenceUnitAdmin task adds 2 PersonData entity objects to the helloTwoDb2.db database using JPA.
-		performPersistenceWork(PEOPLE_PU, new PersistenceTask(){
+		status = performPersistenceWork(PEOPLE_PU, new PersistenceTask(){
 
 			@Override
 			public void doTask(EntityManagerLite entityManager) 
@@ -267,7 +219,7 @@ public class PeopleAndPets {
 				entityManager.persist(person2);
 				PeopleAndPetsMain.logInfo(PEOPLE_PU, "Created new PersonData entries");
 			}});
+		return status == WorkStatus.FINISHED;
 	}
-
 
 }

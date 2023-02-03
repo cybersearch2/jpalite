@@ -1,0 +1,29 @@
+{
+  "databaseType": "H2",
+  "connectionType": "file",
+  "units":[
+    {
+      "name": "people",
+      "classes":[
+      "au.com.cybersearch2.pp.v2.PersonDataV2"
+      ],
+     "settings":[
+     "databaseName = people-and-pets.db",
+     "databaseVersion = 2",
+     "upgradeFilename = people-upgrade-H2-v2.sql",
+     "openHelperClass = au.com.cybersearch2.pp.v2.PeopleOpenHelperCallbacks"
+      ]
+    },
+    {
+      "name": "pets",
+      "classes":[
+      "au.com.cybersearch2.pp.v2.PetDataV2"
+      ],
+     "settings":[
+     "databaseName = people-and-pets.db",
+     "databaseVersion = 2",
+     "upgradeFilename = pets-upgrade-H2-v2.sql",
+     "openHelperClass = au.com.cybersearch2.pp.v2.PetsOpenHelperCallbacks"
+      ]
+    }  ]
+}

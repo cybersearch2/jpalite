@@ -107,7 +107,7 @@ public class PersistenceXmlParser {
 					return pu;
 			} else if (eventType == XmlPullParser.START_TAG) {
 				if ("provider".equals(xpp.getName())) { // Provider class name
-					pu.persistenceProviderClassName = getText();
+					pu.setPersistenceProviderClassName(getText());
 				} else if ("class".equals(xpp.getName())) { // Entity class name
 					String className = getText();
 					if (className.length() > 0)

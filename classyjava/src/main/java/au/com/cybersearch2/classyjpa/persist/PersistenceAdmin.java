@@ -15,7 +15,6 @@ package au.com.cybersearch2.classyjpa.persist;
 
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 
 import com.j256.ormlite.db.DatabaseType;
 import com.j256.ormlite.support.ConnectionSource;
@@ -25,6 +24,7 @@ import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
 import au.com.cybersearch2.classyjpa.query.DaoQueryFactory;
 import au.com.cybersearch2.classyjpa.query.QueryInfo;
 import au.com.cybersearch2.classyjpa.query.SqlQueryFactory;
+import au.com.cybersearch2.container.JpaSetting;
 
 /**
  * PersistenceAdmin
@@ -73,7 +73,7 @@ public interface PersistenceAdmin extends ConnectionSourceProvider
      * @return String
      */
     String getDatabaseName();
-    
+ 
     /**
      * Close all database connections
      */
@@ -90,6 +90,9 @@ public interface PersistenceAdmin extends ConnectionSourceProvider
      * @return int
      */
     int getDatabaseVersion();
+ 
+    String getSetting(JpaSetting key);
+    boolean hasSetting(JpaSetting key);
     
     /**
      * Returns PU properties
@@ -101,11 +104,19 @@ public interface PersistenceAdmin extends ConnectionSourceProvider
 
 	PersistenceConfig getConfig();
 	
-    /**
-     * Register specified classes
-     * @param managedClassNames Class name set
-     */
-    void registerClasses(Set<String> managedClassNames);
+	/**
+	 * Gets the database version.
+	 * 
+	 * @return the database version
+	 */
+    int getVersion();
+
+	/**
+	 * Sets the database version.
+	 * 
+	 * @param version          the new database version
+	 */
+    void setVersion(int version);
 
     /** 
      * Returns flag set true if connection source is for a single connection 

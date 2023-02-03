@@ -28,7 +28,10 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import javax.persistence.PersistenceException;
@@ -54,17 +57,39 @@ import au.com.cybersearch2.classyjpa.persist.PersistenceAdminImpl;
 import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
 import au.com.cybersearch2.classyjpa.persist.PersistenceUnitInfo;
 import au.com.cybersearch2.classyjpa.persist.PrimitiveJavaDoubleType;
+import au.com.cybersearch2.service.WorkerService;
 
 /**
  * Container for Jpalite persistence implementation
  */
 public class JpaContainer {
 
+	private static class Property {
+		
+		private final String key;
+		private final String value;
+		
+		public Property(String key, String value) {
+			this.key = key;
+			this.value = value;
+		}
+
+		protected String getKey() {
+			return key;
+		}
+
+		protected String getValue() {
+			return value;
+		}
+	}
+	
 	public static final String RESOURCE_PATH_NAME = "jpalite.resource-path";
 	public static final String JSON_FILENAME = "jpalite.json";
 	public static final String DATABASE_TYPE = "databaseType";
 	public static final String CONNECTION_TYPE = "connectionType";
 
+	/** List of persistence unit names in order of appearance in jpalite.json */
+	private final List<String> puNames;
 	/** All persistence units mapped by name */
 	private final Map<String, PersistenceUnit> persistenceUnits;
 	/** Database type enumeration based on Ormlite types */
@@ -81,6 +106,8 @@ public class JpaContainer {
     private EnumSet<JpaOption> jpaOptions;
     /** First, possibly only, persistence unit defined in configuration */
     private String primeUnit;
+    /** jpalite version number. Default value of zero is initial version. */
+    private int version;
 	
     /**
      * Construct JpaContainer. No parameters supports singleton implementation
@@ -90,8 +117,19 @@ public class JpaContainer {
 		databaseType = DatabaseType.H2;
 		connectionType = ConnectionType.memory;
 		persistenceUnits = new HashMap<>();
+		puNames = new ArrayList<>();
 		jpaOptions = EnumSet.noneOf(JpaOption.class);
 		primeUnit = "";
+	}
+	
+	/**
+	 * Establish persistence units configured in given version of jpalite.json file
+	 */
+	public void initialize(int version) {
+	    this.version = version;
+	    if (version < 1)
+			throw new JpaliteException(String.format("Invalid version '%d'. It must be greater than zero", version));
+	    initialize();
 	}
 	
 	/**
@@ -105,14 +143,23 @@ public class JpaContainer {
 		analyseDatabaseType(getString(DATABASE_TYPE, jsonObject));
 		analyseConnectionType(getString(CONNECTION_TYPE, jsonObject));
 		analyseOptions(jsonObject);
+		if (jpaOptions.contains(JpaOption.use_double_long_bits))
+	        DataPersisterManager.registerDataPersisters(
+	        		JavaDoubleType.getSingleton(), PrimitiveJavaDoubleType.getSingleton());
+
         databaseSupport = getDatabaseSupport(databaseType, connectionType);
         resourceEnvironment = createResourceEnvironment(jsonFile.getParent());
-        Map<String, PersistenceUnitInfo> puInfoMap = parsePersistenceJson(jsonObject);
-        createPersistenceUnits(puInfoMap);
+        List<PersistenceUnitInfo> puInfoList = parsePersistenceJson(jsonObject);
+        puInfoList.forEach(item -> puNames.add(item.getPersistenceUnitName()));
+        createPersistenceUnits(puInfoList);
         databaseSupport.initialize();
 		isInitialized = true;
 	}
 
+	public void forEach(Consumer<PersistenceUnit> action) {
+		puNames.forEach(item -> action.accept(persistenceUnits.get(item)));
+	}
+	
 	public DatabaseType getDatabaseType() {
 		return databaseType;
 	}
@@ -121,23 +168,72 @@ public class JpaContainer {
 		return connectionType;
 	}
 
+	public PersistenceUnit getUnit(String name) {
+		if (!persistenceUnits.containsKey(name))
+			throw new JpaliteException(String.format("Persistence unit named '%s' not found", name));
+		return persistenceUnits.get(name);
+	}
+	
+	public PersistenceUnit getPrimeUnit() {
+		return persistenceUnits.get(primeUnit);
+	}
+
+	/**
+	 * Execute given persistence work on prime persistence unit
+	 * @param unitName Persistence unit name
+	 * @param jpaliteWork Function to perform with entity manager
+	 * @return JpaProcess object
+	 */
+	public JpaProcess execute(String unitName, PersistenceWork jpaliteWork) {
+		PersistenceUnit unit = getUnit(unitName);
+		boolean isSyncMode = jpaOptions.contains(JpaOption.synchronous_mode);
+		boolean isUserTransactions = 
+				unit.getPersistenceAdmin().hasSetting(JpaSetting.user_transactions);
+		JpaProcess jpaProcess = 
+			new JpaProcess(unit, jpaliteWork, isSyncMode);
+		if (isUserTransactions)
+			jpaProcess.setUserTransactions(true);
+		if (isSyncMode) 
+		    return jpaProcess.waitFor();
+		else
+		    return execute(new JpaProcess(unit, jpaliteWork));
+	}
+	
 	/**
 	 * Execute given persistence work on prime persistence unit
 	 * @param jpaliteWork Function to perform with entity manager
 	 * @return JpaProcess object
 	 */
 	public JpaProcess execute(PersistenceWork jpaliteWork) {
-		JpaRunner jpaRunner = new JpaRunner(persistenceUnits.get(primeUnit));
-		return jpaRunner.execute(jpaliteWork);
+		return execute(primeUnit, jpaliteWork);
 	}
 
+    /**
+     * Close all database connections
+     * @throws InterruptedException 
+     */
+    public void close() throws InterruptedException
+    {
+   	    persistenceUnits.values().forEach(unit -> unit.close());
+        WorkerService.await();
+    }
+    
+	private JpaProcess execute(JpaProcess jpaProcess) {
+	    CompletableFuture<JpaProcess> processFuture = jpaProcess.onExit();
+	    try {
+			return processFuture.get(30, TimeUnit.SECONDS);
+		} catch (InterruptedException | ExecutionException | TimeoutException e) {
+	    	throw new PersistenceException("Jpa process failed to terminate normally", e);
+		}
+	}
+	
 	/**
 	 * Create all persistence units using information from jpalite.json
 	 * @param puInfoMap Persistence unit configurations mapped by name
 	 */
-	private void createPersistenceUnits(Map<String, PersistenceUnitInfo> puInfoMap) {
-		puInfoMap.forEach((key, value) -> {
-			persistenceUnits.put(key, createPersistenceUnit(value));
+	private void createPersistenceUnits(List<PersistenceUnitInfo> puInfoList) {
+		puInfoList.forEach(item -> {
+			persistenceUnits.put(item.getPersistenceUnitName(), createPersistenceUnit(item));
 		});
 	}
 
@@ -218,6 +314,7 @@ public class JpaContainer {
 	private File getJpaliteJson() {
 		File jsonFile = null;
 		URL resourceUrl = null;
+		String segment = version < 1 ? JSON_FILENAME : String.format("v%d/%s", version, JSON_FILENAME);
 		// First look at system property
 		String resourcePath = System.getProperty(RESOURCE_PATH_NAME, "");
 		if (resourcePath.isEmpty()) {
@@ -227,14 +324,14 @@ public class JpaContainer {
                 throw new Error("Can't find user.home ??");
             resourcePath = Paths.get(homePath, ".jpalite")
                     .toAbsolutePath().normalize().toString();
-            jsonFile = new File(JSON_FILENAME, JSON_FILENAME);
+            jsonFile = new File(resourcePath, segment);
             if (!jsonFile.exists()) {
             	// Next try to find the file on the classpath 
             	jsonFile = null;
-				resourceUrl = this.getClass().getClassLoader().getResource("jpalite");
+				resourceUrl = this.getClass().getResource("/");
 				if (resourceUrl != null) {
 					try {
-						jsonFile = new File(resourceUrl.toURI().getPath());
+						jsonFile = new File(resourceUrl.toURI().getPath(), segment);
 					} catch (URISyntaxException e) {
 					}
 					resourcePath = jsonFile.getParent();
@@ -244,7 +341,7 @@ public class JpaContainer {
 				}
             }
 		} else 
-			jsonFile = new File(resourcePath, JSON_FILENAME);
+			jsonFile = new File(resourcePath, segment);
 		if (jsonFile == null)
 			throw new JpaliteException(String.format("Resource path not found in System property %s", RESOURCE_PATH_NAME));
 		return jsonFile;
@@ -285,40 +382,58 @@ public class JpaContainer {
 		throw new PersistenceException(String.format("Unsupported database type %s", databaseType.name()));
 	}
 
-	private Map<String, PersistenceUnitInfo> parsePersistenceJson(JSONObject jsonObject) {
-		Map<String, PersistenceUnitInfo> puMap = new HashMap<>();
-		forEach(jsonObject, "units", persistenceUnit -> parseUnit((JSONObject)persistenceUnit, puMap));
-	    if (puMap.isEmpty())
+	private List<PersistenceUnitInfo> parsePersistenceJson(JSONObject jsonObject) {
+		List<PersistenceUnitInfo> puList = new ArrayList<>();
+		forEach(jsonObject, "units", persistenceUnit -> parseUnit((JSONObject)persistenceUnit, puList));
+	    if (puList.isEmpty())
 	    	throw new JpaliteException(String.format("File %s has no persistence unit configured", JSON_FILENAME));
-		return puMap;
+		return puList;
 	}
 
-	private void parseUnit(JSONObject puJson, Map<String, PersistenceUnitInfo> puMap) {
+	private void parseUnit(JSONObject puJson, List<PersistenceUnitInfo> puList) {
 		String name = (String) puJson.get("name");
 		if (name == null)
-			throw new JpaliteException(String.format("File %s persistence unit %d name missing", JSON_FILENAME, puMap.size() + 1));
+			throw new JpaliteException(String.format("File %s persistence unit %d name missing", JSON_FILENAME, puList.size() + 1));
 		PersistenceUnitInfo pu = new PersistenceUnitInfo(name);
-		puMap.put(name, pu);
+		puList.add(pu);
 		forEach(puJson, "classes", entityClass -> 
 			pu.addClassName(entityClass.toString()));
 		if (pu.getManagedClassNames().isEmpty())
-	    	throw new JpaliteException(String.format("File %s persistence unit $s has no entity classes", JSON_FILENAME, name));
-		forEach(puJson, "properties", property -> {
-			String key;
-			String value;
-			int pos = property.toString().indexOf('=');
-			if (pos != -1) {
-				key = property.toString().substring(0, pos);
-				value = property.toString().substring(pos +1);
-			} else {
-				key = property.toString();
-				value = "true";
+	    	throw new JpaliteException(String.format("File %s persistence unit %s has no entity classes", JSON_FILENAME, name));
+		forEach(puJson, "settings", item -> {
+			int count = pu.getSettingsMap().size();
+			Property property = getProperty(item.toString());
+			for (JpaSetting jpaSetting: JpaSetting.values()) {
+				if (jpaSetting.getKey().equalsIgnoreCase(property.getKey())) {
+					pu.getSettingsMap().put(jpaSetting, property.getValue());
+					break;
+				}
 			}
-			pu.setProperty(key, value);
+			if (count == pu.getSettingsMap().size())
+				throw new JpaliteException(
+					String.format("File %s persistence unit %s has unknown setting %s", JSON_FILENAME, name, property.getKey()));
+		});
+		forEach(puJson, "properties", item -> {
+			Property property = getProperty(item.toString());
+			pu.setProperty(property.getKey(), property.getValue());
 		});
 	}
 
-    /**
+    private Property getProperty(String string) {
+		String key;
+		String value;
+		int pos = string.indexOf('=');
+		if (pos != -1) {
+			key = string.substring(0, pos);
+			value = string.substring(pos +1);
+		} else {
+			key = string;
+			value = "true";
+		}
+		return new Property(key.trim(), value.trim());
+    }
+    
+	/**
      * Initialize persistence unit implementations based on persistence.xml configuration
      * @throws PersistenceException
      */
@@ -331,12 +446,17 @@ public class JpaContainer {
         persistenceConfig.setPuInfo(configuration);
         // Create objects for JPA and native support which are accessed using PersistenceFactory
         PersistenceAdminImpl persistenceAdmin = new PersistenceAdminImpl(name, databaseSupport, persistenceConfig);
-        OpenHelper openHelper = getOpenHelperCallbacks(persistenceConfig.getPuInfo().getProperties());
-        DatabaseAdminImpl databaseAdmin = new DatabaseAdminImpl(persistenceAdmin, resourceEnvironment, openHelper);
+        OpenHelper openHelper = getOpenHelperCallbacks(persistenceConfig.getPuInfo().getSettingsMap());
+        DatabaseAdminImpl databaseAdmin = new DatabaseAdminImpl(persistenceAdmin, resourceEnvironment);
+        PersistenceUnit unit = new PersistenceUnit(name, databaseAdmin, persistenceAdmin, persistenceConfig);
+        if (openHelper != null) {
+            openHelper.setPersistenceUnit(unit);
+            databaseAdmin.setOpenHelper(openHelper);
+        }
     	databaseAdmin.initializeDatabase(persistenceConfig, databaseSupport);
     	if (primeUnit.isEmpty())
     		primeUnit = name;
-    	return new PersistenceUnit(name, databaseAdmin, persistenceAdmin, persistenceConfig);
+    	return unit;
     }
 
     /**
@@ -344,17 +464,19 @@ public class JpaContainer {
      * @param properties Properties object
      * @return OpenHelperCallbacks or null if not defined
      */
-    private OpenHelper getOpenHelperCallbacks(Properties properties)
+    private OpenHelper getOpenHelperCallbacks(SettingsMap settingsMap)
     {
-        // Property "open-helper-callbacks-classname"
-        String openHelperCallbacksClassname = properties.getProperty(DatabaseSupport.JTA_PREFIX + PersistenceUnitInfo.CUSTOM_OHC_PROPERTY);
-        if (openHelperCallbacksClassname != null)
+        if (settingsMap.hasSetting(JpaSetting.open_helper_class))
         {
-            // Custom
-            for (OpenHelper openHelper: databaseSupport.getOpenHelperCallbacksList())
-                if (openHelper.getClass().getName().equals(openHelperCallbacksClassname))
-                    return openHelper;
-            throw new PersistenceException(openHelperCallbacksClassname + " object not registered");
+        	String openHelperCallbacksClassname = settingsMap.get(JpaSetting.open_helper_class);
+        	Class<?> openHelperClass;
+			try {
+				openHelperClass = Class.forName(openHelperCallbacksClassname);
+            	if (openHelperClass.isAssignableFrom(OpenHelper.class)) 
+        	        return (OpenHelper)openHelperClass.getConstructor().newInstance();
+        	} catch (Throwable e) {
+                throw new JpaliteException(String.format("Error instanciating open helper class %s", openHelperCallbacksClassname), e);
+			}
         }
         // Mo match
         return null;

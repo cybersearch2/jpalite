@@ -71,7 +71,7 @@ public class NativeScriptDatabaseWork implements TransactionCallable {
 		};
 		boolean success = false;
 		for (String filename : filenames) {
-			if ((filename == null) || (filename.length() == 0))
+			if ((filename == null) || (filename.isEmpty()))
 				continue;
 			success = false;
 			InputStream instream = null;

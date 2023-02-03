@@ -1,0 +1,26 @@
+{
+  "databaseType": "H2",
+  "connectionType": "file",
+  "units":[
+    {"name": "pets",
+      "classes":[
+      "au.com.cybersearch2.pp.PetData"
+      ],
+     "settings":[
+     "databaseName = people-and-pets.db",
+     "databaseVersion = 1",
+     "dropSchemaFilename = pets-restart.sql"
+      ]
+    },
+    {"name": "people",
+      "classes":[
+      "au.com.cybersearch2.pp.PersonData"
+      ],
+     "settings":[
+     "databaseName = people-and-pets.db",
+     "databaseVersion = 1",
+     "dropSchemaFilename = people-restart.sql"
+      ]
+    }
+  ]
+}

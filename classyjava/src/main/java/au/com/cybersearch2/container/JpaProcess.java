@@ -37,6 +37,9 @@ public class JpaProcess {
 			return persistenceContext.getWorkStatus();
 		}
 	}
+	
+	/** Flag set true if operating in synchronous mode */
+	private final boolean isSynchronous;
 	/**  Executes a task in a persistence context */
 	private final JavaPersistenceContext persistenceContext;
 	/** Final work status */
@@ -48,39 +51,45 @@ public class JpaProcess {
 	 * @param persistenceWork Persistence work to be performed
 	 */
 	public JpaProcess(PersistenceUnit unit, PersistenceWork persistenceWork) {
+		this(unit, persistenceWork, false);
+	}
+	
+	/**
+	 * Construct JpaProcess object
+	 * @param unit Persistence unit selected to provide the context
+	 * @param persistenceWork Persistence work to be performed
+	 * @param isSynchronous Flag set true if operating in synchronous mode
+	 */
+	public JpaProcess(PersistenceUnit unit, PersistenceWork persistenceWork, boolean isSynchronous) {
+		this.isSynchronous = isSynchronous;
 		persistenceContext = new JavaPersistenceContext(persistenceWork, unit);
 		workStatus = WorkStatus.PENDING;
 	}
 
     /**
-     * Causes the current thread to wait, if necessary, until the
+     * Causes the current thread to wait until the
      * process represented by this {@code Process} object has
-     * terminated.  This method returns immediately if the process
-     * has already terminated.  If the process has not yet
-     * terminated, the calling thread will be blocked until the
+     * terminated.  The calling thread will be blocked until the
      * process exits.
      *
      * @return the exit value of the process represented by this
      *         {@code JpaProcess} object which is the final status value {@link au.com.cybersearch2.classytask.WorkStatus}
-     * @throws InterruptedException if the current thread is
-     *         {@linkplain Thread#interrupt() interrupted} by another
-     *         thread while it is waiting, then the wait is ended and
-     *         an {@link InterruptedException} is thrown.
      */
-    public WorkStatus waitFor() throws InterruptedException {
-		try {
-			workStatus = WorkerService.submitWork(new JpaProcessWorker());
-		} catch (ExecutionException e) {
-			throw new JpaliteException("Persistence work terminated with an error", e.getCause());
-		}
-    	return workStatus;
+    public JpaProcess waitFor() {
+    	if (!isSynchronous)
+    		throw new UnsupportedOperationException();
+		persistenceContext.onPostExecute(persistenceContext.doTask());
+		workStatus = persistenceContext.getWorkStatus();
+		return this;
     }
-
+    
     /**
      * Returns future which waits for process termination
      * @return CompletableFuture object
      */
     public CompletableFuture<JpaProcess> onExit() {
+    	if (isSynchronous)
+    		throw new UnsupportedOperationException();
         return CompletableFuture.supplyAsync(this::waitForInternal);
     }
 
@@ -100,7 +109,11 @@ public class JpaProcess {
                 ForkJoinPool.managedBlock(new ForkJoinPool.ManagedBlocker() {
                     @Override
                     public boolean block() throws InterruptedException {
-                        waitFor();
+                		try {
+                			workStatus = WorkerService.submitWork(new JpaProcessWorker());
+                		} catch (ExecutionException e) {
+                			throw new JpaliteException("Persistence work terminated with an error", e.getCause());
+                		}
                         return true;
                     }
 
@@ -160,5 +173,13 @@ public class JpaProcess {
             return false;
         }
     }
+
+    /**
+     * Set user transactions flag
+     * @param value boolean
+     */
+	public void setUserTransactions(boolean value) {
+		persistenceContext.getTransactionInfo().setUserTransaction(value);
+	}
 
 }

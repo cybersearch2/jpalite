@@ -15,7 +15,7 @@ package au.com.cybersearch2.classydb;
 
 import com.j256.ormlite.support.ConnectionSource;
 
-import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
+import au.com.cybersearch2.container.PersistenceUnit;
 
 /**
  * OpenHelperCallbacks
@@ -25,8 +25,7 @@ import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
  */
 public interface OpenHelper
 {
-    void setDatabaseAdmin(DatabaseAdmin databaseAdmin);
-    void setPersistenceAdmin(PersistenceAdmin persistenceAdmin);
+    void setPersistenceUnit(PersistenceUnit unit);
     
     /**
      * What to do when your database needs to be created. Usually this entails creating the tables and loading any

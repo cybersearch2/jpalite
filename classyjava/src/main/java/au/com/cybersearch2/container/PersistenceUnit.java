@@ -55,7 +55,7 @@ public class PersistenceUnit {
      * Returns persistence unit name
      * @return String
      */
-    String getPersistenceUnitName() {
+	public String getPersistenceUnitName() {
     	return persistenceUnitName;
     }
     
@@ -63,7 +63,7 @@ public class PersistenceUnit {
      * Returns Database-specific admin object
      * @return DatabaseAdmin
      */
-    DatabaseAdmin getDatabaseAdmin() {
+	public DatabaseAdmin getDatabaseAdmin() {
     	return databaseAdmin;
     }
     
@@ -71,7 +71,7 @@ public class PersistenceUnit {
      * Returns JPA administration object
      * @return PersistenceAdmin
      */
-    PersistenceAdmin getPersistenceAdmin() {
+	public PersistenceAdmin getPersistenceAdmin() {
     	return persistenceAdmin;
     }
 
@@ -97,6 +97,14 @@ public class PersistenceUnit {
         return entityManagerFactory.createEntityManager(connectionSource);
 	}
 	
+    /**
+     * Close all database connections
+     */
+    public void close()
+    {
+    	persistenceAdmin.close();
+    }
+
 	protected PersistenceConfig getPersistenceConfig() {
 		return persistenceConfig;
 	}

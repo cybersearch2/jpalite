@@ -31,8 +31,8 @@ public class JpaContainerTest {
 			"     \"classes\":[",
 			"      \"au.com.cybersearch2.classyfy.data.alfresco.RecordCategory\"",
 			"     ]",
-			"     \"properties\":[",
-			"      \"JTA_database-name = categories\"",
+			"     \"settings\":[",
+			"      \"databaseName = categories\"",
 			"     ]",
 			"    }",
 			"]}"

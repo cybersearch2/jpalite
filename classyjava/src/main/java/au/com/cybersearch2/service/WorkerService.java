@@ -45,26 +45,30 @@ public class WorkerService {
     }
 
 	public static void await() throws InterruptedException {
-		getSingleton().semaphore.acquire(MAX_THREADS);
+		WorkerService singleton = (WorkerService)Singleton.worker_service.getObject();
+		if (singleton.isActive) {
+			singleton.semaphore.acquire(MAX_THREADS);
+			singleton.semaphore.release(MAX_THREADS);
+		}
 	}
 	
 	private static WorkerService getSingleton() {
 		WorkerService singleton = (WorkerService)Singleton.worker_service.getObject();
-		if (!singleton.isActive) {
-			singleton.isActive = true;
-			Runtime.getRuntime().addShutdownHook(new Thread() {
-		      public void run() {
-		    	  singleton.shutdown(2L);
-		      }
-		    });
+		if (!singleton.isActive) 
 			singleton.activate();
-		}
 		return singleton;
 	}
 	
-    private void activate() {
-    	if ((executorService == null) || executorService.isShutdown())
+	synchronized private void  activate() {
+    	if ((executorService == null) || executorService.isShutdown()) {
 		    executorService = Executors.newFixedThreadPool(MAX_THREADS, Executors.defaultThreadFactory());	
+			Runtime.getRuntime().addShutdownHook(new Thread() {
+			      public void run() {
+			    	  shutdown(2L);
+			      }
+			    });
+			isActive = true;
+   	    }
     }
     
     private WorkStatus submit(Callable<WorkStatus> worker) throws InterruptedException, ExecutionException {

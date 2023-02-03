@@ -1,0 +1,19 @@
+{
+  "databaseType": "H2",
+  "connectionType": "memory",
+  "options":[
+  "synchronousMode"
+  ],
+  "units":[
+    {"name": "manytomany",
+      "classes":[
+      "au.com.cybersearch2.example.User",
+      "au.com.cybersearch2.example.Post",
+      "au.com.cybersearch2.example.UserPost"
+     ],
+     "settings":[
+      "databaseName = manytomany"
+     ]
+    }
+  ]
+}

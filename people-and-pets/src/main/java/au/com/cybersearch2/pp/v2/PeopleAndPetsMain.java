@@ -13,8 +13,6 @@
     limitations under the License. */
 package au.com.cybersearch2.pp.v2;
 
-import au.com.cybersearch2.classytask.DefaultTaskExecutor;
-import au.com.cybersearch2.classytask.TaskExecutor;
 import au.com.cybersearch2.pp.api.ObjectsStore;
 import au.com.cybersearch2.pp.api.Person;
 import au.com.cybersearch2.pp.api.Pet;
@@ -28,7 +26,6 @@ import au.com.cybersearch2.pp.api.Pet;
 public class PeopleAndPetsMain extends au.com.cybersearch2.pp.PeopleAndPetsMain {
 
     private static final ObjectsStore objectsStoreV2;
-    private static TaskExecutor taskExecutor;
 
     static {
     	objectsStoreV2= new ObjectsStore() {
@@ -50,16 +47,14 @@ public class PeopleAndPetsMain extends au.com.cybersearch2.pp.PeopleAndPetsMain 
      */
 	public static void main(String[] args)
 	{
-     	taskExecutor = new DefaultTaskExecutor();
      	int returnCode = 1;
      	try {
-            PeopleAndPetsV2 peopleAndPetsV2 = new PeopleAndPetsV2(taskExecutor);
+            PeopleAndPetsV2 peopleAndPetsV2 = new PeopleAndPetsV2();
             if (peopleAndPetsV2.setUp())
             	returnCode = peopleAndPetsV2.performTasks(objectsStoreV2);
      	} catch (Throwable t) {
      		t.printStackTrace();
      	} finally {
-     		taskExecutor.shutdown();
      		System.exit(returnCode);
      	}
 	}

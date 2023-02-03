@@ -15,14 +15,12 @@ package au.com.cybersearch2.classyjpa.persist;
 
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 
 import com.j256.ormlite.db.DatabaseType;
 import com.j256.ormlite.logger.Logger;
 import com.j256.ormlite.support.ConnectionSource;
 
 import au.com.cybersearch2.classydb.ConnectionSourceFactory;
-import au.com.cybersearch2.classydb.DatabaseAdmin;
 import au.com.cybersearch2.classydb.DatabaseSupport;
 import au.com.cybersearch2.classyjpa.entity.OrmEntity;
 import au.com.cybersearch2.classyjpa.entity.PersistenceDao;
@@ -30,6 +28,8 @@ import au.com.cybersearch2.classyjpa.query.DaoQueryFactory;
 import au.com.cybersearch2.classyjpa.query.QueryInfo;
 import au.com.cybersearch2.classyjpa.query.SqlQueryFactory;
 import au.com.cybersearch2.classylog.LogManager;
+import au.com.cybersearch2.container.JpaSetting;
+import au.com.cybersearch2.container.SettingsMap;
 
 /**
  * PersistenceAdminImpl Persistence unit implementation
@@ -84,7 +84,7 @@ public class PersistenceAdminImpl implements PersistenceAdmin {
 	public ConnectionSource getConnectionSource() {
 		if ((connectionSource == null) || !connectionSource.isOpen(""))
 			connectionSource = 
-			    ((ConnectionSourceFactory)databaseSupport).getConnectionSource(databaseName, puInfo.getProperties());
+			    ((ConnectionSourceFactory)databaseSupport).getConnectionSource(puName, databaseName, puInfo.getProperties());
 		return connectionSource;
 	}
 
@@ -154,7 +154,7 @@ public class PersistenceAdminImpl implements PersistenceAdmin {
 
 	@Override
 	public int getDatabaseVersion() {
-		return getDatabaseVersion(puInfo.getProperties());
+		return getDatabaseVersion(puInfo.getSettingsMap());
 	}
 
 	/**
@@ -200,10 +200,25 @@ public class PersistenceAdminImpl implements PersistenceAdmin {
 		return singleConnection;
 	}
 
+	/**
+	 * Gets the database version.
+	 * 
+	 * @return the database version
+	 */
 	@Override
-	public void registerClasses(Set<String> managedClassNames) {
-		config.registerClasses(managedClassNames);
-	}
+    public int getVersion() {
+    	return databaseSupport.getVersion(connectionSource, puName);
+    }
+
+	/**
+	 * Sets the database version.
+	 * 
+	 * @param version          the new database version
+	 */
+	@Override
+    public void setVersion(int version) {
+		databaseSupport.setVersion(version, puName, connectionSource);
+    }
 
 	/**
 	 * Returns DAO for given entity class
@@ -232,42 +247,47 @@ public class PersistenceAdminImpl implements PersistenceAdmin {
 		return config.getDao(entityClass, getConnectionSource());
 	}
 
+	@Override
+	public String getSetting(JpaSetting key) {
+		return puInfo.getSettingsMap().get(key);
+	}
+
+	@Override
+	public boolean hasSetting(JpaSetting key) {
+		return puInfo.getSettingsMap().hasSetting(key);
+	}
+
 	/**
 	 * Returns database version, which is defined as PU property "database-version".
 	 * Defaults to 1 if not defined
 	 * 
-	 * @param properties Database properties
+	 * @param settingsMap Settings map
 	 * @return int
 	 */
-	public static int getDatabaseVersion(Properties properties) {
+	public static int getDatabaseVersion(SettingsMap settingsMap) {
 		// Database version defaults to 1
 		int databaseVersion = 1;
-		if (properties != null) {
-			String textVersion = properties.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DATABASE_VERSION);
 			try {
-				if (textVersion != null)
-					databaseVersion = Integer.parseInt(textVersion);
+				if (settingsMap.hasSetting(JpaSetting.database_version))
+					databaseVersion = Integer.parseInt(settingsMap.get(JpaSetting.database_version));
 			} catch (NumberFormatException e) {
-				logger.error("Invalid " + DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DATABASE_VERSION + " value: \""
-						+ textVersion);
+				logger.error(JpaSetting.database_version.getDescription() + " is invalid ");
 			}
-		}
 		return databaseVersion;
 	}
 
 	public static String getDatabaseName(PersistenceUnitInfo puInfo) {
-		String databaseName = puInfo.getProperties()
-				.getProperty(DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DATABASE_NAME);
-		if ((databaseName == null) || (databaseName.length() == 0)) {
-			logger.warn(String.format("\"%s\" does not have property \"%s\"",
-					puInfo.getPersistenceUnitName(), DatabaseSupport.JTA_PREFIX + DatabaseAdmin.DATABASE_NAME));
-			databaseName = DatabaseSupport.JTA_PREFIX + puInfo.getPersistenceUnitName();
+		SettingsMap settingsMap = puInfo.getSettingsMap();
+		String databaseName = null;
+		if (settingsMap.hasSetting(JpaSetting.database_name)) 
+			databaseName = settingsMap.get(JpaSetting.database_name);
+		if (databaseName == null)
+		{
+			logger.warn(String.format("\"%s\" not set in unit \"%s\"",
+				JpaSetting.database_name.getDescription(), puInfo.getPersistenceUnitName()));
+			databaseName = puInfo.getPersistenceUnitName();
 		}
 		return databaseName;
-	}
-
-	protected DatabaseSupport getDatabaseSupport() {
-		return databaseSupport;
 	}
 
 }

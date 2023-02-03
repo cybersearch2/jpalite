@@ -24,5 +24,13 @@ import com.j256.ormlite.support.ConnectionSource;
  */
 public interface ConnectionSourceFactory
 {
-    ConnectionSource getConnectionSource(String databaseName, Properties properties);
+	/**
+	 * Returns ConnectionSource object
+	 * 
+	 * @param puName Persistence unit name
+	 * @param databaseName Database name
+	 * @param properties   Properties defined in persistence.xml
+	 * @return ConnectionSource
+	 */
+    ConnectionSource getConnectionSource(String puName, String databaseName, Properties properties);
 }

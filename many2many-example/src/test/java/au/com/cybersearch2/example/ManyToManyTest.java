@@ -28,12 +28,14 @@ package au.com.cybersearch2.example;
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/> */
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import org.junit.Before;
+import java.io.File;
+
 import org.junit.Test;
-import au.com.cybersearch2.classytask.WorkStatus;
+
+import au.com.cybersearch2.container.JpaContainer;
 
 
 /**
@@ -43,27 +45,15 @@ import au.com.cybersearch2.classytask.WorkStatus;
  */
 public class ManyToManyTest
 {
-    @Before
-    public void setUp() 
-    {
-    } 
-    
     @Test 
     public void test_many_to_many_jpa() throws Exception
     {
-        ManyToManyMain manyToManyMain = new ManyToManyMain();
-        manyToManyMain.setUp();
-        PostsByUserEntityTask postsByUserEntityTask = new PostsByUserEntityTask(
-                manyToManyMain.getUser1().id);
-
-        assertEquals(manyToManyMain.execute(postsByUserEntityTask), WorkStatus.FINISHED);
+        ManyToManyMain manyToManyMain = new ManyToManyMain(true);
 		Transcript transcript = new Transcript();
-        manyToManyMain.verifyPostsByUser(postsByUserEntityTask.getPosts(), transcript);
-        UsersByPostTask usersByPostTask= new UsersByPostTask(
-                manyToManyMain.getPost1().id,
-                manyToManyMain.getPost2().id);
-        assertEquals(manyToManyMain.execute(usersByPostTask), WorkStatus.FINISHED);
-        manyToManyMain.verifyUsersByPost(usersByPostTask.getUsersByPost1(), usersByPostTask.getUsersByPost2(), transcript);
+		File resourcePath = new File("src/main/resources");
+		System.setProperty(JpaContainer.RESOURCE_PATH_NAME, resourcePath.getAbsolutePath());
+		assertTrue(manyToManyMain.setUp());
+        manyToManyMain.runApplication(transcript);
         if (transcript.getErrorCount() > 0) {
      		transcript.getObservations().forEach(entry -> { 
      			if (!entry.isStatus())

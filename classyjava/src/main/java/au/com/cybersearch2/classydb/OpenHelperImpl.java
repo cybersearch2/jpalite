@@ -18,9 +18,10 @@ import com.j256.ormlite.support.ConnectionSource;
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.entity.PersistenceTask;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
-import au.com.cybersearch2.classyjpa.entity.PersistenceWorkModule;
-import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
-import au.com.cybersearch2.classytask.TaskStatus;
+import au.com.cybersearch2.classytask.WorkStatus;
+import au.com.cybersearch2.container.JpaProcess;
+import au.com.cybersearch2.container.JpaSetting;
+import au.com.cybersearch2.container.PersistenceUnit;
 
 /**
  * Implementation of onCreate() and onUpdate() OpenHelper abstract methods.
@@ -35,8 +36,7 @@ import au.com.cybersearch2.classytask.TaskStatus;
  */
 public class OpenHelperImpl implements OpenHelper
 {
-    protected DatabaseAdmin databaseAdmin;
-    protected PersistenceAdmin persistenceAdmin;
+	protected PersistenceUnit unit;
     
     /**
      * Create ClassyOpenHelperCallbacks object
@@ -46,14 +46,9 @@ public class OpenHelperImpl implements OpenHelper
     {
     }
 
-    public void setDatabaseAdmin(DatabaseAdmin databaseAdmin)
-    {
-        this.databaseAdmin = databaseAdmin;
-    }
-
-    public void setPersistenceAdmin(PersistenceAdmin persistenceAdmin)
-    {
-        this.persistenceAdmin = persistenceAdmin;
+	@Override
+	public void setPersistenceUnit(PersistenceUnit unit) {
+        this.unit = unit;
     }
 
     /**
@@ -71,11 +66,11 @@ public class OpenHelperImpl implements OpenHelper
     @Override
     public void onCreate(ConnectionSource connectionSource) 
     {
-        if (databaseAdmin != null)
-            databaseAdmin.onCreate(connectionSource);
+        validate(unit);
+        unit.getDatabaseAdmin().onCreate(connectionSource);
     }
 
-    /**
+	/**
      * What to do when your database needs to be updated. This could mean careful migration of old data to new data.
      * Maybe adding or deleting database columns, etc..
      * 
@@ -97,8 +92,8 @@ public class OpenHelperImpl implements OpenHelper
             int oldVersion,
             int newVersion) 
     {
-        if (databaseAdmin != null)
-    	    databaseAdmin.onUpgrade(connectionSource, oldVersion, newVersion);
+        validate(unit);
+        unit.getDatabaseAdmin().onUpgrade(connectionSource, oldVersion, newVersion);
     }
 
     /**
@@ -107,10 +102,9 @@ public class OpenHelperImpl implements OpenHelper
      * @param persistenceTask Object specifying unit of work
      * @return Executable object to track task status
      */
-    protected TaskStatus doWork(final ConnectionSource connectionSource, final PersistenceTask persistenceTask)
+    protected WorkStatus doWork(final ConnectionSource connectionSource, final PersistenceTask persistenceTask)
     {
-        if (persistenceAdmin == null)
-            throw new IllegalStateException(getClass().getName() + " not initialized");
+        validate(unit);
         // PersistenceUnitAdmin work required for JavaPersistenceContext, but only doTask() is relevant
         // as work is performed on caller's thread
         PersistenceWork persistenceWork = new PersistenceWork(){
@@ -133,8 +127,19 @@ public class OpenHelperImpl implements OpenHelper
             	// TODO onRollback
             }
         };
-        PersistenceWorkModule persistenceWorkModule = 
-        	new PersistenceWorkModule(persistenceAdmin.getPuName(), connectionSource, persistenceWork);    
-        return persistenceWorkModule.doTask(persistenceAdmin);
+		boolean isUserTransactions = 
+				unit.getPersistenceAdmin().hasSetting(JpaSetting.user_transactions);
+		JpaProcess jpaProcess = 
+			new JpaProcess(unit, persistenceWork, true);
+		if (isUserTransactions)
+			jpaProcess.setUserTransactions(true);
+		return jpaProcess.waitFor().exitValue();
     }
+
+    private void validate(PersistenceUnit unit2) {
+		if (unit == null)
+			throw new IllegalStateException("Persistence unit not set");
+		
+	}
+
 }

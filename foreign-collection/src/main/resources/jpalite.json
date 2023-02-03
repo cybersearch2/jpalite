@@ -1,0 +1,18 @@
+{
+  "databaseType": "H2",
+  "connectionType": "memory",
+  "options":[
+  "synchronousMode"
+  ],
+  "units":[
+    {"name": "account",
+      "classes":[
+      "au.com.cybersearch2.example.Account",
+      "au.com.cybersearch2.example.Order"
+     ],
+     "settings":[
+      "databaseName = account"
+     ]
+    }
+  ]
+}

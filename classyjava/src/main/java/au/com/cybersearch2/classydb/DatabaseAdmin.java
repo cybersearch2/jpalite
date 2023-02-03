@@ -24,19 +24,6 @@ import au.com.cybersearch2.classyjpa.persist.PersistenceConfig;
  */
 public interface DatabaseAdmin
 {
-    /** Property key for create database */
-    public final static String SCHEMA_FILENAME = "schema-filename";
-    /** Property key for drop database */
-    public final static String DROP_SCHEMA_FILENAME = "drop-schema-filename";
-    /** Property key for populate database */
-    public final static String DATA_FILENAME = "data-filename";
-    /** Property key for update database. */
-    public final static String UPGRADE_FILENAME = "upgrade-filename";
-    /** Property key for database version */
-    public final static String DATABASE_VERSION = "database-version";
-    /** Property key for database name */
-    public final static String DATABASE_NAME = "database-name";
-
     /**
      * To support android.database.sqlite.SQLiteOpenHelper
      * Called when the database is created for the first time. This is where the
@@ -69,7 +56,10 @@ public interface DatabaseAdmin
      */
     void onUpgrade(ConnectionSource connectionSource, int oldVersion, int newVersion);
 
-    OpenHelper getCustomOpenHelperCallbacks();
+    /** 
+     * Returns open helper callbacks object or null if none 
+     */
+    OpenHelper getOpenHelper();
     
 	/**
 	 * Open database and handle create/upgrade events

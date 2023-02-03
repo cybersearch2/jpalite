@@ -14,6 +14,7 @@
 package au.com.cybersearch2.classyjpa.persist;
 
 import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
+import au.com.cybersearch2.container.JpaContainer;
 
 /**
  * PersistenceWorker
@@ -22,7 +23,7 @@ import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
 public abstract class PersistenceWorker
 {
     /** Application persistence interface */
-	protected PersistenceContext persistenceContext;
+	protected JpaContainer jpaContainer;
     /** JPA container to execute named query */
 	protected String persistenceUnit;
 	/** Aggregate count of errors to track asynchronous work progress */
@@ -31,21 +32,21 @@ public abstract class PersistenceWorker
 	/**
 	 * Construct PersistenceWorker object
      * @param persistenceUnit Name of persistence unit defined in persistence.xml configuration file
-	 * @param persistenceContext Application persistence interface
+	 * @param jpaContainer Application persistence interface
 	 */
-	public PersistenceWorker(String persistenceUnit, PersistenceContext persistenceContext)
+	public PersistenceWorker(String persistenceUnit, JpaContainer jpaContainer)
 	{
 		this.persistenceUnit = persistenceUnit;
-		this.persistenceContext = persistenceContext;
+		this.jpaContainer = jpaContainer;
 	}
 
     /**
      * Return persistence context
-     * @return PersistenceContext object
+     * @return JpaContainer object
      */ 	
-    public PersistenceContext getPersistenceContext() 
+    public JpaContainer getPersistenceContext() 
     {
-		return persistenceContext;
+		return jpaContainer;
 	}
 
     /**

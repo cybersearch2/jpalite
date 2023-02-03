@@ -32,17 +32,12 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
 package au.com.cybersearch2.example;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
-import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
-import au.com.cybersearch2.classytask.DefaultTaskExecutor;
-import au.com.cybersearch2.classytask.DefaultTaskMessenger;
-import au.com.cybersearch2.classytask.TaskExecutor;
-import au.com.cybersearch2.classytask.TaskMessenger;
-import au.com.cybersearch2.classytask.TaskStatus;
 import au.com.cybersearch2.classytask.WorkStatus;
+import au.com.cybersearch2.container.JpaContainer;
+import au.com.cybersearch2.container.JpaProcess;
 
 /**
  * ORIGINAL COMMENTS:
@@ -68,42 +63,43 @@ public class ManyToManyMain
     static public final String USERS_BY_POST = "users_by_post";
     static public final String PU_NAME = "manytomany";
 
-    private static TaskExecutor taskExecutor;
+    private final boolean quietMode;
+    
+	private JpaContainer jpaContainer;
 
     User user1;
     User user2;
     Post post1;
     Post post2;
 
-    protected PersistenceContext persistenceContext;
-    protected ManyToManyFactory manyToManyFactory;
-    protected TaskMessenger<Void,Boolean> taskMessenger;
-
-    /**
-     * Create ManyToManyMain object
-     * This creates and populates the database using JPA, provides verification logic and runs a test from main().
-     */
     public ManyToManyMain() {
-        // Set up dependency injection, which creates an ObjectGraph from a ManyToManyModule configuration object
-        taskMessenger = new DefaultTaskMessenger<Void>(Void.class);
-        persistenceContext = createFactory();
-        // Note that the table for each entity class will be created in the following step (assuming database is in memory).
-        // To populate these tables, call setUp().
+    	quietMode = false;
     }
-
+    
+    public ManyToManyMain(boolean quietMode) {
+    	this.quietMode = quietMode;
+    }
+    
     /**
      * Test ManyToMany association
      * @param args Not used
      */
 	public static void main(String[] args) {
-     	taskExecutor = new DefaultTaskExecutor();
+		ManyToManyMain manyToManyMain = null;
+		int returnCode = 0;
      	try {
-            new ManyToManyMain().runApplication();
+     		manyToManyMain = new ManyToManyMain();
+     		if (manyToManyMain.setUp()) {
+     		   if (!manyToManyMain.runApplication(new Transcript()))
+     			   returnCode = 1;
+     		}
      	} catch (Throwable t) {
      		t.printStackTrace();
      	} finally {
-     		taskExecutor.shutdown();
-     		System.exit(0);
+     		try {
+     			manyToManyMain.close();
+     		} catch (InterruptedException e) {}
+      		System.exit(returnCode);
      	}
 	}
 	
@@ -112,7 +108,14 @@ public class ManyToManyMain
      * Note the calling thread is suspended while the work is performed on a background thread. 
      * @throws InterruptedException if interrupted
      */
-    public void setUp() throws InterruptedException {
+    public boolean setUp() throws InterruptedException {
+		try {
+			jpaContainer = new JpaContainer();
+			jpaContainer.initialize();
+		} catch (Throwable e) {
+			e.printStackTrace();
+			return false;
+		}
         // PersistenceUnitAdmin work adds 2 users and 2 posts to the database using JPA.
         // Hence there will be an enclosing transaction to ensure data consistency.
         // Any failure will result in an IllegalStateExeception being thrown from
@@ -152,23 +155,12 @@ public class ManyToManyMain
             }
         };
         // Execute work and wait synchronously for completion
-        execute(setUpWork);
+    	JpaProcess process = jpaContainer.execute(setUpWork);
+		return process.exitValue() == WorkStatus.FINISHED;
     }
 
-    protected PersistenceContext createFactory() {
-        manyToManyFactory = new ManyToManyFactory(taskExecutor, taskMessenger);
-        return manyToManyFactory.getPersistenceContext();
-    }
-    
-    protected WorkStatus execute(PersistenceWork persistenceWork) throws InterruptedException {
-        TaskStatus taskStatus = manyToManyFactory.doTask(persistenceWork);
-        taskStatus.await(500, TimeUnit.SECONDS);
-        return taskStatus.getWorkStatus();
-    }
-
-    public void close() {
-    	taskMessenger.shutdown();
-        persistenceContext.close();
+    public void close() throws InterruptedException {
+    	jpaContainer.close();
     }
 
     /**
@@ -247,45 +239,49 @@ public class ManyToManyMain
         transcript.add("User2 namess match = " + status, status);
     }
  
-    protected void runApplication() {
-        try {
-            setUp();
-            User user1 = getUser1();
-            User user2 = getUser2();
-            Post post1 = getPost1();
-            Post post2 = getPost2();
-            PostsByUserEntityTask postsByUserEntityTask = new PostsByUserEntityTask(
-                    user1.id);
-            execute(postsByUserEntityTask);
-            List<Post> posts = postsByUserEntityTask.getPosts();
-    		Transcript transcript = new Transcript();
-            verifyPostsByUser(posts, transcript);
-            System.out.println("PostsByUser: ");
-            System.out.println(user1.name + " posted \"" + posts.get(0).contents + "\" & \"" + posts.get(1).contents + "\"");
-            UsersByPostTask usersByPostTask= new UsersByPostTask(
-                    post1.id,
-                    post2.id);
-            execute(usersByPostTask);
-            verifyUsersByPost(usersByPostTask.getUsersByPost1(), usersByPostTask.getUsersByPost2(), transcript);
-     		transcript.getObservations().forEach(entry -> { 
-     			if (entry.isStatus())
-     				System.out.println(entry.getReport());
-     			else
-     				System.err.println(entry.getReport());
-     		});
-     		if (transcript.getErrorCount() == 0) {
-                System.out.println("UsersByPosts: ");
-                System.out.println("Only " + user1.name + " posted \"" + post1.contents + "\"");
-                System.out.println("Both " + user1.name + " and " + user2.name +
-                        " posted \"" + post2.contents + "\"");
-     			System.out.println("Success");
-     		} else
-     			System.err.println("Failed");
+    protected boolean runApplication(Transcript transcript) {
+        User user1 = getUser1();
+        User user2 = getUser2();
+        Post post1 = getPost1();
+        Post post2 = getPost2();
+        PostsByUserEntityTask postsByUserEntityTask = new PostsByUserEntityTask(
+                user1.id);
+        JpaProcess process = jpaContainer.execute(postsByUserEntityTask);
+        if (process.exitValue() != WorkStatus.FINISHED)
+        	return false;
+        List<Post> posts = postsByUserEntityTask.getPosts();
+        verifyPostsByUser(posts, transcript);
+        if (!quietMode) {
+        	System.out.println("PostsByUser: ");
+        	System.out.println(user1.name + " posted \"" + posts.get(0).contents + "\" & \"" + posts.get(1).contents + "\"");
         }
-        catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        UsersByPostTask usersByPostTask= new UsersByPostTask(
+                post1.id,
+                post2.id);
+        process = jpaContainer.execute(usersByPostTask);
+        if (process.exitValue() != WorkStatus.FINISHED)
+        	return false;
+
+        verifyUsersByPost(usersByPostTask.getUsersByPost1(), usersByPostTask.getUsersByPost2(), transcript);
+ 		transcript.getObservations().forEach(entry -> { 
+ 			if (entry.isStatus())
+ 				System.out.println(entry.getReport());
+ 			else
+ 				System.err.println(entry.getReport());
+ 		});
+ 		if (transcript.getErrorCount() == 0) {
+ 			if (!quietMode) {
+	            System.out.println("UsersByPosts: ");
+	            System.out.println("Only " + user1.name + " posted \"" + post1.contents + "\"");
+	            System.out.println("Both " + user1.name + " and " + user2.name +
+	                    " posted \"" + post2.contents + "\"");
+	 			System.out.println("Success");
+ 			}
+ 			return true;
+ 		} else {
+ 			System.err.println("Failed");
+ 		}
+		return false;
     }
-    
 
 }

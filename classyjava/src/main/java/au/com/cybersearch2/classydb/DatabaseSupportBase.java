@@ -20,8 +20,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.regex.Pattern;
 
 import javax.persistence.PersistenceException;
@@ -31,16 +31,15 @@ import org.h2.jdbcx.JdbcDataSource;
 import com.j256.ormlite.db.DatabaseType;
 import com.j256.ormlite.field.FieldType;
 import com.j256.ormlite.field.SqlType;
+import com.j256.ormlite.logger.Logger;
 import com.j256.ormlite.stmt.StatementBuilder.StatementType;
 import com.j256.ormlite.support.CompiledStatement;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.support.DatabaseConnection;
 import com.j256.ormlite.support.DatabaseResults;
 
-import au.com.cybersearch2.classyjpa.persist.PersistenceUnitInfo;
 import au.com.cybersearch2.classyjpa.query.QueryInfo;
 import au.com.cybersearch2.classyjpa.query.ResultRow;
-import com.j256.ormlite.logger.Logger;
 
 /**
  * DatabaseSupportBase
@@ -131,12 +130,13 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
 	/**
 	 * Returns ConnectionSource object
 	 * 
+	 * @param puName Persistence unit name
 	 * @param databaseName Database name
 	 * @param properties   Properties defined in persistence.xml
 	 * @return ConnectionSource
 	 */
 	@Override
-	public ConnectionSource getConnectionSource(String databaseName, Properties properties) {
+	public ConnectionSource getConnectionSource(String puName, String databaseName, Properties properties) {
 		ConnectionSource connectionSource = null;
 		ConnectionPair connectionPair = connectionSourceMap.get(databaseName);
 		if (connectionPair != null)
@@ -145,7 +145,7 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
 			try {
 				connectionSource = getConnectionSourceForType(databaseName, properties);
 				DatabaseConnection databaseConnection = connectionSource
-						.getReadWriteConnection(getInfoTable(properties));
+						.getReadWriteConnection(puName + INFO_SUFFIX);
 				connectionSourceMap.put(databaseName, new ConnectionPair(connectionSource, databaseConnection));
 			} catch (SQLException e) {
 				throw new PersistenceException("Cannot create connectionSource for database " + databaseName, e);
@@ -179,31 +179,19 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
 		return databaseType;
 	}
 
-	@Override
-	public void registerOpenHelperCallbacks(OpenHelper openHelper) {
-		if (openHelperCallbacksList.isEmpty())
-			openHelperCallbacksList = new ArrayList<>();
-		openHelperCallbacksList.add(openHelper);
-	}
-
-	@Override
-	public List<OpenHelper> getOpenHelperCallbacksList() {
-		return openHelperCallbacksList;
-	}
-
 	/**
 	 * Gets the database version.
 	 * 
 	 * @param connectionSource Open ConnectionSource object of database.
-	 * @param properties       Properties defined in persistence.xml
+	 * @param puName       Persistence unit name
 	 * @return the database version
 	 */
 	@Override
-	public int getVersion(ConnectionSource connectionSource, Properties properties) {
+	public int getVersion(ConnectionSource connectionSource, String puName) {
 		int databaseVersion = 0;
 		boolean tableExists = false;
 		DatabaseConnection connection = null;
-		String infoTableName = getInfoTable(properties);
+		String infoTableName = puName + INFO_SUFFIX;
 		try {
 			connection = connectionSource.getReadOnlyConnection(infoTableName);
 			tableExists = connection.isTableExists(infoTableName);
@@ -226,25 +214,22 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
 	 * 
 	 * @param connectionSource Open ConnectionSource object of database. Can be null
 	 *                         for Android SQLite.
-	 * @param properties       Properties defined in persistence.xml
+	 * @param puName       Persistence unit name
 	 * @param version          the new database version
 	 */
 	@Override
-	public void setVersion(int version, Properties properties, ConnectionSource connectionSource) {
-		boolean tableExists = false;
+	public void setVersion(int version, String puName, ConnectionSource connectionSource) {
 		DatabaseConnection connection = null;
-		String infoTableName = getInfoTable(properties);
 		try {
-			connection = connectionSource.getReadOnlyConnection(infoTableName);
-			tableExists = connection.isTableExists(infoTableName);
-			if (tableExists)
-				connection.executeStatement(getVersionUpdateStatement(infoTableName, version),
-						DatabaseConnection.DEFAULT_RESULT_FLAGS);
+			connection = connectionSource.getReadOnlyConnection("");
+			int resultFlags = DatabaseConnection.DEFAULT_RESULT_FLAGS;
+			boolean isAutoCommit = connection.isAutoCommitSupported() && connection.isAutoCommit();
+			if (isAutoCommit)
+				doSetVersion(version, puName,connection );
 			else {
-				connection.executeStatement(getVersionCreateStatement(infoTableName),
-						DatabaseConnection.DEFAULT_RESULT_FLAGS);
-				connection.executeStatement(getVersionInsertStatement(infoTableName, version),
-						DatabaseConnection.DEFAULT_RESULT_FLAGS);
+				connection.executeStatement("BEGIN;", resultFlags);
+				doSetVersion(version, puName,connection );
+				connection.executeStatement("COMMIT;", resultFlags);
 			}
 		} catch (SQLException e) {
 			throw new PersistenceException(e);
@@ -452,11 +437,18 @@ public abstract class DatabaseSupportBase implements DatabaseSupport, Connection
 			}
 	}
 
-	protected String getInfoTable(Properties properties) {
-		String puName = properties.getProperty(DatabaseSupport.JTA_PREFIX + PersistenceUnitInfo.PU_NAME_PROPERTY);
-		return puName + INFO_SUFFIX;
-	}
-	
+    private void doSetVersion(int version, String puName, DatabaseConnection connection) throws SQLException {
+		String infoTableName = puName + INFO_SUFFIX;
+		int resultFlags = DatabaseConnection.DEFAULT_RESULT_FLAGS;
+		boolean tableExists = connection.isTableExists(infoTableName);
+		if (tableExists)
+			connection.executeStatement(getVersionUpdateStatement(infoTableName, version), resultFlags);
+		else {
+			connection.executeStatement(getVersionCreateStatement(infoTableName), resultFlags);
+			connection.executeStatement(getVersionInsertStatement(infoTableName, version), resultFlags);
+		}
+    }
+		
 	protected static boolean isEmpty(String text) {
 		return (text == null) || (text.length() == 0);
 	}

@@ -32,7 +32,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
 package au.com.cybersearch2.example;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import javax.persistence.TypedQuery;
 
@@ -40,13 +39,8 @@ import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.QueryForAllGenerator;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
 import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
-import au.com.cybersearch2.classyjpa.persist.PersistenceContext;
-import au.com.cybersearch2.classytask.DefaultTaskExecutor;
-import au.com.cybersearch2.classytask.DefaultTaskMessenger;
-import au.com.cybersearch2.classytask.TaskExecutor;
-import au.com.cybersearch2.classytask.TaskMessenger;
-import au.com.cybersearch2.classytask.TaskStatus;
-import au.com.cybersearch2.classytask.WorkStatus;
+import au.com.cybersearch2.container.JpaContainer;
+import au.com.cybersearch2.container.PersistenceUnit;
 
 /**
  * Demonstrates a one-to-many table relationship.
@@ -56,20 +50,13 @@ public class ForeignCollectionMain {
 
 	public static final String ACCOUNTS_PU = "account";
 	private static final String ALL_ORDERS = "all_orders";
-    private static TaskExecutor taskExecutor;
-
-    private PersistenceContext persistenceContext;
-    private ForeignCollectionFactory foreignCollectionFactory;
-    private TaskMessenger<Void,Boolean> taskMessenger;
-
-    public ForeignCollectionMain() {
-        taskMessenger = new DefaultTaskMessenger<Void>(Void.class);
-    }
-
+	
+	private JpaContainer jpaContainer;
+ 
 	public static void main(String[] args) throws Exception {
-     	taskExecutor = new DefaultTaskExecutor();
+		ForeignCollectionMain foreignCollectionMain = null;
      	try {
-     		ForeignCollectionMain foreignCollectionMain = new ForeignCollectionMain();
+     		foreignCollectionMain = new ForeignCollectionMain();
      		foreignCollectionMain.setUp();
      	    // read and write some data
      		Transcript transcript = foreignCollectionMain.readWriteData();
@@ -86,14 +73,16 @@ public class ForeignCollectionMain {
      	} catch (Throwable t) {
      		t.printStackTrace();
      	} finally {
-     		taskExecutor.shutdown();
+     		//taskExecutor.shutdown();
+     		try {
+     		    foreignCollectionMain.close();
+     		} catch (InterruptedException e) {}
      		System.exit(0);
      	}
 	}
 
-    public void close() {
-    	taskMessenger.shutdown();
-        persistenceContext.close();
+    public void close() throws InterruptedException {
+     	jpaContainer.close();
     }
 
     /**
@@ -103,9 +92,11 @@ public class ForeignCollectionMain {
      */
     public boolean setUp()
     {
-    	persistenceContext = createFactory();
 		try {
-			initializeDatabase();
+			jpaContainer = new JpaContainer();
+			jpaContainer.initialize();
+			//
+			initializeDatabase(jpaContainer.getPrimeUnit());
 		} catch (InterruptedException e) {
 			return false;
 		} catch (Throwable e) {
@@ -114,15 +105,6 @@ public class ForeignCollectionMain {
 		}
 		return true;
      }
-
-    public void shutdown()
-    {
-    	taskMessenger.shutdown();
-    	if (persistenceContext != null) {
-	        persistenceContext.getPersistenceAdmin(ACCOUNTS_PU).close();
-	        persistenceContext = null;
-    	}
-    }
 
 	private Transcript readWriteData() throws Exception {
 		Transcript transcript = new Transcript();
@@ -206,31 +188,14 @@ public class ForeignCollectionMain {
             }
         };
         // Execute work and wait synchronously for completion
-        try {
-            execute(mainWork);
-         } catch (Throwable t) {
-        	t.printStackTrace();
-        } finally {
-        	shutdown();
-        }
+       	jpaContainer.execute(mainWork);
 		return transcript;
 	}
 	
-    private PersistenceContext createFactory() {
-    	foreignCollectionFactory = new ForeignCollectionFactory(taskExecutor, taskMessenger);
-        return foreignCollectionFactory.getPersistenceContext();
-    }
-    
-    private WorkStatus execute(PersistenceWork persistenceWork) throws InterruptedException {
-        TaskStatus taskStatus = foreignCollectionFactory.doTask(persistenceWork);
-        taskStatus.await(500, TimeUnit.SECONDS);
-        return taskStatus.getWorkStatus();
-    }
-
-    private void initializeDatabase() throws InterruptedException
+    private void initializeDatabase(PersistenceUnit unit) throws InterruptedException
     {
         // Get Interface for JPA Support, required to create named queries
-        PersistenceAdmin persistenceAdmin1 = persistenceContext.getPersistenceAdmin(ACCOUNTS_PU);
+        PersistenceAdmin persistenceAdmin1 = unit.getPersistenceAdmin();
         // Create named queries to find all objects of an entity class.
         // Note QueryForAllGenerator class is reuseable as it allows any Many to Many association to be queried.
         QueryForAllGenerator<Order> allOrderObjects = 

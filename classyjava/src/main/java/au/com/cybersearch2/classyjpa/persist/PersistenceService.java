@@ -16,6 +16,8 @@ package au.com.cybersearch2.classyjpa.persist;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import au.com.cybersearch2.container.JpaContainer;
+
 /**
  * PersistenceService
  * @author Andrew Bowley
@@ -33,9 +35,9 @@ public abstract class PersistenceService<E> extends PersistenceWorker
      * @param persistenceUnit Persistence unit
      * @param persistenceContext persistence context
      */
-    public PersistenceService(String persistenceUnit, PersistenceContext persistenceContext)
+    public PersistenceService(String persistenceUnit, JpaContainer jpaContainer)
     {
-        super(persistenceUnit, persistenceContext);
+        super(persistenceUnit, jpaContainer);
         entityQueue = new LinkedBlockingQueue<E>(MAX_QUEUE_LENGTH);
         runConsumer();
     }
