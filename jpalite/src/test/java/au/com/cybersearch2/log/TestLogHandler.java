@@ -15,7 +15,7 @@ public class TestLogHandler extends MemoryHandler {
 	}
 
 	public static LogRecordHandler getLogRecordHandler() {
-		return logRecordHandler;
+		return logRecordHandlerInstance();
 	}
 
 	public static LogRecordHandler logRecordHandlerInstance() {

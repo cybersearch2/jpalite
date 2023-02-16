@@ -634,8 +634,8 @@ public class ClassAnalyserTest
             assertThat(e.getMessage()).contains(NonEntity.class.getName());
             assertThat(e.getMessage()).doesNotContain(RecordCategory.class.getName());
         }
-        assertThat(logRecordHandler.match(0, "Skipping class au.com.cybersearch2.classyfy.data.alfresco.NonEntity because no annotated fields found")).isTrue();
-        assertThat(logRecordHandler.match(1, "Skipping class au.com.cybersearch2.classyfy.data.alfresco.NonIdEntity because no id field found")).isTrue();
+        assertThat(logRecordHandler.match(0, "Skipping class au.com.cybersearch2.classyfy.data.alfresco.NonIdEntity because no id field found")).isTrue();
+        assertThat(logRecordHandler.match(1, "Skipping class au.com.cybersearch2.classyfy.data.alfresco.NonEntity because no annotated fields found")).isTrue();
     }
 
     @Test 

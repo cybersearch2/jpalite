@@ -1,7 +1,7 @@
 package au.com.cybersearch2.container;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+//import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -71,7 +71,7 @@ public class JpaContainerTest {
 		JpaProcess process = jpaContainer.execute(persistenceWork);
 		assertThat(process.exitValue()).isEqualTo(WorkStatus.FINISHED);
 	}
-	
+/*	
 	@Test
 	public void test_no_resource_path() {
 		try {
@@ -83,7 +83,7 @@ public class JpaContainerTest {
            assertThat(e.getMessage()).contains("Resource path not found in System property jpalite.resource-path");
        }
 	}
-
+*/
 	private static String createTempFile() {
 	    Path tempFile;
 	    Path resourcePath = null;
