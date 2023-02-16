@@ -21,7 +21,7 @@ public class TestLogHandler extends MemoryHandler {
 	}
 
 	public static LogRecordHandler getLogRecordHandler() {
-		return logRecordHandler;
+		return logRecordHandlerInstance();
 	}
 
 	public static LogRecordHandler logRecordHandlerInstance() {
@@ -29,7 +29,7 @@ public class TestLogHandler extends MemoryHandler {
 			logRecordHandler = new LogRecordHandler();
 			URL url = TestLogHandler.class.getResource(PROPERTIES_PATH);
 			if (url == null)
-				url = TestLogHandler.class.getResource("/people-and-pets" + PROPERTIES_PATH);
+				url = TestLogHandler.class.getResource("/target/test-classes" + PROPERTIES_PATH);
 			if (url == null)
     	    	throw new RuntimeException("Test logging config file logging.properties not found on classpath");
     	    try (InputStream in = new FileInputStream(new File(url.toURI().getPath()))) {
