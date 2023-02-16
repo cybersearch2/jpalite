@@ -17,8 +17,8 @@ import com.j256.ormlite.logger.Logger;
 
 import au.com.cybersearch2.classydb.DatabaseSupportBase;
 import au.com.cybersearch2.classylog.LogManager;
-import au.com.cybersearch2.classytask.WorkStatus;
 import au.com.cybersearch2.container.JpaContainer;
+import au.com.cybersearch2.container.WorkStatus;
 import au.com.cybersearch2.log.LogRecordHandler;
 import au.com.cybersearch2.log.TestLogHandler;
 import au.com.cybersearch2.pp.PeopleAndPets;

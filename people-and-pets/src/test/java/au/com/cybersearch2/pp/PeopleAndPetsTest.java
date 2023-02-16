@@ -39,8 +39,8 @@ import org.junit.Test;
 
 import au.com.cybersearch2.classydb.DatabaseSupport.ConnectionType;
 import au.com.cybersearch2.classydb.DatabaseSupportBase;
-import au.com.cybersearch2.classytask.WorkStatus;
 import au.com.cybersearch2.container.JpaContainer;
+import au.com.cybersearch2.container.WorkStatus;
 import au.com.cybersearch2.pp.api.ObjectsStore;
 import au.com.cybersearch2.pp.api.Person;
 import au.com.cybersearch2.pp.api.Pet;

@@ -35,9 +35,9 @@ import java.util.List;
 
 import au.com.cybersearch2.classyjpa.EntityManagerLite;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
-import au.com.cybersearch2.classytask.WorkStatus;
 import au.com.cybersearch2.container.JpaContainer;
 import au.com.cybersearch2.container.JpaProcess;
+import au.com.cybersearch2.container.WorkStatus;
 
 /**
  * ORIGINAL COMMENTS:

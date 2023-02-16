@@ -12,10 +12,10 @@ builtin support currently provided for H2 and SQLite.
 
 ## Getting Started
 
-The instructions for getting started can be found at [Jpalite Home Page](http://cybersearch2.com.au/develop/classydata.html).
+The instructions for getting started can be found at [Jpalite Home Page](http://cybersearch2.com.au/logic/jpalite.html).
 You will need to clone this project from the [Github site](https://github.com/cybersearch2/jpalite) and then use
 Maven to install it. Both Java SE version 11 and above and Maven need to be installed in order to proceed. Once
-the project is installed you can progress through the eamples starting with [many2many example](http://cybersearch2.com.au/develop/many2many.html).
+the project is installed you can progress through the examples starting with the [Foreign Collection example](http://cybersearch2.com.au/develop/foreign-collection.html).
 
 
    

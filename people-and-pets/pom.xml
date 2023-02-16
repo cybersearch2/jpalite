@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>au.com.cybersearch2</groupId>
-    <artifactId>classy_data</artifactId>
+    <artifactId>jpalite-head</artifactId>
     <version>3.6.${revision}</version>
   </parent>
   <artifactId>people-and-pets</artifactId>
@@ -78,7 +78,7 @@
   <dependencies>
 	<dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>classyjava</artifactId>
+      <artifactId>jpalite</artifactId>
       <version>${project.version}</version>
     </dependency>
      <dependency>
@@ -99,10 +99,6 @@
       <groupId>org.xerial</groupId>
       <artifactId>sqlite-jdbc</artifactId>
     </dependency>
-    <dependency>  
-	  <groupId>com.google.guava</groupId>
-	  <artifactId>guava</artifactId>
-	</dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

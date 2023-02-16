@@ -21,10 +21,10 @@ import au.com.cybersearch2.classyjpa.entity.PersistenceTask;
 import au.com.cybersearch2.classyjpa.entity.PersistenceWork;
 import au.com.cybersearch2.classyjpa.persist.PersistenceAdmin;
 import au.com.cybersearch2.classylog.LogManager;
-import au.com.cybersearch2.classytask.WorkStatus;
 import au.com.cybersearch2.container.JpaContainer;
 import au.com.cybersearch2.container.JpaProcess;
 import au.com.cybersearch2.container.PersistenceUnit;
+import au.com.cybersearch2.container.WorkStatus;
 import au.com.cybersearch2.pp.api.ObjectsStore;
 import au.com.cybersearch2.pp.api.Person;
 import au.com.cybersearch2.pp.api.Pet;
@@ -131,7 +131,8 @@ public class PeopleAndPets {
             }
         };
         // Execute work and wait synchronously for completion
-    	JpaProcess process = jpaContainer.execute(puName, persistenceWork);
+    	JpaProcess process = 
+    		jpaContainer.execute(puName, persistenceWork);
 		return process.exitValue();
     }
 
