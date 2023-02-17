@@ -200,13 +200,14 @@ public class PP_UpdateTest {
     		
     	};
     	File[] files = defaultDatabaseFile.listFiles(filter);
-    	Arrays.asList(files).forEach(file -> {
-    		try {
-    			file.delete();
-    		} catch (Throwable t) {
-    			t.printStackTrace();
-    		}
-    	});
+    	if (files != null)
+	    	Arrays.asList(files).forEach(file -> {
+	    		try {
+	    			file.delete();
+	    		} catch (Throwable t) {
+	    			t.printStackTrace();
+	    		}
+	    	});
     }
     
 }
