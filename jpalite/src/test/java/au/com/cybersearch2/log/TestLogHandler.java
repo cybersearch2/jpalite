@@ -29,8 +29,6 @@ public class TestLogHandler extends MemoryHandler {
 			logRecordHandler = new LogRecordHandler();
 			URL url = TestLogHandler.class.getResource(PROPERTIES_PATH);
 			if (url == null)
-				url = TestLogHandler.class.getResource("/target/test-classes" + PROPERTIES_PATH);
-			if (url == null)
     	    	throw new RuntimeException("Test logging config file logging.properties not found on classpath");
     	    try (InputStream in = new FileInputStream(new File(url.toURI().getPath()))) {
 				au.com.cybersearch2.classylog.LogManager.initialize(new BufferedInputStream(in));

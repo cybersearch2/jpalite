@@ -56,6 +56,30 @@
             </execution>
          </executions>
        </plugin>       
+	   <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>copy-resources</id>
+                    <phase>process-classes</phase>
+                    <goals>
+                        <goal>copy-resources</goal>
+                    </goals>
+                    <configuration>
+                        <outputDirectory>${basedir}/target/test-classes/</outputDirectory>
+                        <resources>
+                            <resource>
+                                <directory>${basedir}/src/test/java</directory>
+                                <includes>
+                                    <include>logging.properties</include>
+                                </includes>
+                            </resource>
+                        </resources>
+                    </configuration>
+                </execution>
+            </executions>
+       </plugin>
        <!-- Set skipTests = "true" to bypass test phase in build -->
        <plugin>
             <groupId>org.apache.maven.plugins</groupId>
